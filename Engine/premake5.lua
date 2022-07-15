@@ -7,6 +7,9 @@ project "Engine"
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "enginepch.h"
+	pchsource "src/enginepch.cpp"
+
 	files
 	{
 		"src/**.cpp",
@@ -15,6 +18,7 @@ project "Engine"
 
 	includedirs 
 	{
+		"src/",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glad}",

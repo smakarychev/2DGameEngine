@@ -1,14 +1,19 @@
+#include "enginepch.h"
 #include "Application.h"
 
 namespace Engine {
 	Application::Application() 
-	{}
+	{
+		m_Window = Window::Create();
+	}
 	Application::~Application()	
-	{}
+	{
+
+	}
 
 	void Application::Run()
 	{
-		for (;;);
+		m_Window->OnUpdate();
 	}
 }
 

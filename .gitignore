@@ -350,3 +350,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 roadmap.md
+*.sln

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "Application.h"
 #include "Log.h"
 
