@@ -17,3 +17,8 @@
 
 /* Window */
 #include "Engine/Window.h"
+
+/* Custom heap allocators */
+#include "Engine/Allocators/StackAllocator.h"
+#include "Engine/Allocators/DequeAllocator.h"
+#include "Engine/Allocators/PoolAllocator.h"
