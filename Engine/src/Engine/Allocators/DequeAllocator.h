@@ -16,11 +16,19 @@ namespace Engine
 		void* AllocTop(U32 sizeBytes);
 		void* AllocBottom(U32 sizeBytes);
 
+		void* AllocTopAligned(U32 sizeBytes, U16 alignment);
+		void* AllocBottomAligned(U32 sizeBytes, U16 alignment);
+
 		template <typename T>
 		T* AllocTop(U32 count = 1) { return static_cast<T*>(AllocTop(count * sizeof(T))); }
 		template <typename T>
 		T* AllocBottom(U32 count = 1) { return static_cast<T*>(AllocBottom(count * sizeof(T))); }
 		
+		template <typename T>
+		T* AllocTopAligned(U32 count, U16 alignment) { return static_cast<T*>(AllocTopAligned(count * sizeof(T), alignment)); }
+		template <typename T>
+		T* AllocBottomAligned(U32 count, U16 alignment) { return static_cast<T*>(AllocBottomAligned(count * sizeof(T), alignment)); }
+
 		// Get the current stack top.
 
 		U32 GetTopMarker() const;

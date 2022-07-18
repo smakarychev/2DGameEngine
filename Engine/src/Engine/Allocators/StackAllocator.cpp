@@ -13,10 +13,35 @@ namespace Engine
 
 	void* StackAllocator::Alloc(U32 sizeBytes)
 	{
+		U32 newMarker = m_Marker + sizeBytes;
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
-		if (m_Marker + sizeBytes > m_StackSize) return nullptr;
+		if (newMarker > m_StackSize)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_StackSize - m_Marker);
+			return nullptr;
+		}
 		U8* address = m_StackMemory + m_Marker;
-		m_Marker += sizeBytes;
+		m_Marker = newMarker;
+		return static_cast<void*>(address);
+	}
+
+	void* StackAllocator::AllocAligned(U32 sizeBytes, U16 alignment)
+	{
+		U16 mask = alignment - 1;
+		U32 actualBytes = sizeBytes + mask;
+
+		U32 newMarker = m_Marker + actualBytes;
+		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
+		if (newMarker > m_StackSize) 
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_StackSize - m_Marker);
+			return nullptr;
+		}
+
+		// Align memory address.
+		U8* address = MemoryAllocator::AlignPointer(m_StackMemory + m_Marker, alignment);
+		m_Marker = newMarker;
+
 		return static_cast<void*>(address);
 	}
 
@@ -37,4 +62,5 @@ namespace Engine
 	{
 		MemoryAllocator::FreeAligned(m_StackMemory);
 	}
+
 }

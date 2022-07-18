@@ -15,11 +15,19 @@ namespace Engine
 	void* DequeAllocator::AllocTop(U32 sizeBytes)
 	{
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
-		if (sizeBytes > m_TopMarker) return nullptr;
+		if (sizeBytes > m_TopMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
 		U32 newTopMarker = m_TopMarker - sizeBytes;
 
 		// If requested block cannot be allocated, return nullptr
-		if (newTopMarker < m_BottomMarker) return nullptr;
+		if (newTopMarker < m_BottomMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
 		m_TopMarker = newTopMarker;
 		U8* address = m_DequeMemory + m_TopMarker;
 		return static_cast<void*>(address);
@@ -30,8 +38,53 @@ namespace Engine
 		U32 newBottomMarker = m_BottomMarker + sizeBytes;
 
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
-		if (newBottomMarker > m_TopMarker) return nullptr;
+		if (newBottomMarker > m_TopMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
 		U8* address = m_DequeMemory + m_BottomMarker;
+		m_BottomMarker = newBottomMarker;
+		return static_cast<void*>(address);
+	}
+
+	void* DequeAllocator::AllocTopAligned(U32 sizeBytes, U16 alignment)
+	{
+		U16 mask = alignment - 1;
+		U32 actualBytes = sizeBytes + mask;
+
+		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
+		if (actualBytes > m_TopMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
+		U32 newTopMarker = m_TopMarker - actualBytes;
+
+		// If requested block cannot be allocated, return nullptr
+		if (newTopMarker < m_BottomMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
+		m_TopMarker = newTopMarker;
+		U8* address = MemoryAllocator::AlignPointer(m_DequeMemory + m_TopMarker, alignment);
+		return static_cast<void*>(address);
+	}
+
+	void* DequeAllocator::AllocBottomAligned(U32 sizeBytes, U16 alignment)
+	{
+		U16 mask = alignment - 1;
+		U32 actualBytes = sizeBytes + mask;
+
+		U32 newBottomMarker = m_BottomMarker + actualBytes;
+		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
+		if (newBottomMarker > m_TopMarker)
+		{
+			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			return nullptr;
+		}
+		U8* address = MemoryAllocator::AlignPointer(m_DequeMemory + m_BottomMarker, alignment);
 		m_BottomMarker = newBottomMarker;
 		return static_cast<void*>(address);
 	}
