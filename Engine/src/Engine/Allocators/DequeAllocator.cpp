@@ -2,20 +2,23 @@
 #include "DequeAllocator.h"
 
 #include "Engine/Allocators/DequeAllocator.h"
+#include "MemoryAllocator.h"
 #include "Engine/Log.h"
 
 namespace Engine
 {
 	DequeAllocator::DequeAllocator(U32 dequeSizeBytes) : m_TopMarker(dequeSizeBytes), m_BottomMarker(0), m_DequeSize(dequeSizeBytes)
 	{
-		m_DequeMemory = new U8[dequeSizeBytes];
+		m_DequeMemory = reinterpret_cast<U8*>(MemoryAllocator::AllocAligned(dequeSizeBytes));
 	}
 
 	void* DequeAllocator::AllocTop(U32 sizeBytes)
 	{
-		I32 newTopMarker = static_cast<I32>(m_TopMarker) - static_cast<I32>(sizeBytes);
-
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
+		if (sizeBytes > m_TopMarker) return nullptr;
+		U32 newTopMarker = m_TopMarker - sizeBytes;
+
+		// If requested block cannot be allocated, return nullptr
 		if (newTopMarker < m_BottomMarker) return nullptr;
 		m_TopMarker = newTopMarker;
 		U8* address = m_DequeMemory + m_TopMarker;
@@ -64,6 +67,6 @@ namespace Engine
 
 	DequeAllocator::~DequeAllocator()
 	{
-		delete[] m_DequeMemory;
+		MemoryAllocator::FreeAligned(m_DequeMemory);
 	}
 }

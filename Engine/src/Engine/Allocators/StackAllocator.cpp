@@ -1,13 +1,14 @@
 #include "enginepch.h"
 
 #include "StackAllocator.h"
+#include "MemoryAllocator.h"
 #include "Engine/Log.h"
 
 namespace Engine
 {
 	StackAllocator::StackAllocator(U32 stackSizeBytes) : m_Marker(0), m_StackSize(stackSizeBytes)
 	{
-		m_StackMemory = new U8[stackSizeBytes];
+		m_StackMemory = reinterpret_cast<U8*>(MemoryAllocator::AllocAligned(stackSizeBytes));
 	}
 
 	void* StackAllocator::Alloc(U32 sizeBytes)
@@ -34,6 +35,6 @@ namespace Engine
 
 	StackAllocator::~StackAllocator()
 	{
-		delete[] m_StackMemory;
+		MemoryAllocator::FreeAligned(m_StackMemory);
 	}
 }
