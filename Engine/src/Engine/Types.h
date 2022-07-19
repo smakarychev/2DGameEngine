@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cinttypes>
 
 namespace Engine
@@ -14,4 +16,10 @@ namespace Engine
 
 	using F32 = float;
 	using F64 = double;
+
 }
+
+inline auto operator""_B(const Engine::U64 val) -> Engine::U64 { return val; }
+inline auto operator""_KiB(const Engine::U64 val) -> Engine::U64 { return 1024 * val; }
+inline auto operator""_MiB(const Engine::U64 val) -> Engine::U64 { return 1024 * 1024 * val; }
+inline auto operator""_GiB(const Engine::U64 val) -> Engine::U64 { return 1024 * 1024 * 1024 * val; }
