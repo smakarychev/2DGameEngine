@@ -4,6 +4,8 @@
 
 namespace Engine
 {
+	// TODO: move to config.
+	const U32 POOL_ALLOCATOR_INCREMENT = 32;
 	class PoolAllocator
 	{
 	public:
@@ -19,27 +21,28 @@ namespace Engine
 		// Return element to the pull
 		void Dealloc(void* memory);
 
-		// Clears the pull (no memory dealoc).
-		void Clear();
-
+		// Allocates extra memory when pull is empty.
+		void ExpandPoolSize();
+	
 	private:
-		struct Chunk
+		void InitializePool(void* memory, U32 count);
+	private:
+		struct PoolElement
 		{
-			union
-			{
-				// Store pointer to next element in the same memory.
-				Chunk* Next;
-				U8* Data;
-			};
+			// This represents data and pointer to next at the same time.
+			PoolElement* Next;
 		};
 
 		U8* m_PoolMemory;
 		U32 m_TypeSizeBytes;
 
-		U32 m_AllocatedChunks;
-		U32 m_TotalChunks;
+		U32 m_AllocatedPoolElements;
+		U32 m_TotalPoolElements;
 
 		// A pointer to the element to be taken from the pool.
-		Chunk* m_FreeChunk;
+		PoolElement* m_FreePoolElement;
+
+		// TODO: have to change it to custom memory manager.
+		std::vector<void*> m_AdditionalAllocations;
 	};
 }
