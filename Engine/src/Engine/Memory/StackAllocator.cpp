@@ -1,14 +1,14 @@
 #include "enginepch.h"
 
 #include "StackAllocator.h"
-#include "MemoryAllocator.h"
+#include "MemoryUtils.h"
 #include "Engine/Log.h"
 
 namespace Engine
 {
 	StackAllocator::StackAllocator(U32 stackSizeBytes) : m_Marker(0), m_StackSize(stackSizeBytes)
 	{
-		m_StackMemory = reinterpret_cast<U8*>(MemoryAllocator::AllocAligned(stackSizeBytes));
+		m_StackMemory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(stackSizeBytes));
 	}
 
 	void* StackAllocator::Alloc(U32 sizeBytes)
@@ -39,7 +39,7 @@ namespace Engine
 		}
 
 		// Align memory address.
-		U8* address = MemoryAllocator::AlignPointer(m_StackMemory + m_Marker, alignment);
+		U8* address = MemoryUtils::AlignPointer(m_StackMemory + m_Marker, alignment);
 		m_Marker = newMarker;
 
 		return static_cast<void*>(address);
@@ -60,7 +60,7 @@ namespace Engine
 
 	StackAllocator::~StackAllocator()
 	{
-		MemoryAllocator::FreeAligned(m_StackMemory);
+		MemoryUtils::FreeAligned(m_StackMemory);
 	}
 
 }

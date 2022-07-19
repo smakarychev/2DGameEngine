@@ -1,7 +1,7 @@
 #include "enginepch.h"
 
 #include "PoolAllocator.h"
-#include "MemoryAllocator.h"
+#include "MemoryUtils.h"
 #include "Engine/Log.h"
 #include "Engine/Core.h"
 
@@ -10,7 +10,7 @@ namespace Engine
 	PoolAllocator::PoolAllocator(U32 typeSizeBytes, U32 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedChunks(0), m_TotalChunks(count)
 	{
 		ENGINE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
-		m_PoolMemory = reinterpret_cast<U8*>(MemoryAllocator::AllocAligned(typeSizeBytes * count));
+		m_PoolMemory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(typeSizeBytes * count));
 		m_FreeChunk = reinterpret_cast<Chunk*>(m_PoolMemory);
 
 		// Intialize linked list.
@@ -41,14 +41,14 @@ namespace Engine
 	}
 	
 	
-	void PoolAllocator::Dealloc()
+	void PoolAllocator::Dealloc(void* memory)
 	{
-		if (static_cast<void*>(m_FreeChunk) > m_PoolMemory)
+		if (m_AllocatedChunks > 0)
 		{
 			// Return element to the linked list (the pool).
-			Chunk* nextChunk = m_FreeChunk;
-			m_FreeChunk -= m_TypeSizeBytes;
-			m_FreeChunk->Next = nextChunk;
+			Chunk* nextChunk = static_cast<Chunk*>(memory);
+			nextChunk->Next = m_FreeChunk;
+			m_FreeChunk = nextChunk;
 			m_AllocatedChunks--;
 		}
 		else
@@ -65,6 +65,6 @@ namespace Engine
 
 	PoolAllocator::~PoolAllocator()
 	{
-		MemoryAllocator::FreeAligned(m_PoolMemory);
+		MemoryUtils::FreeAligned(m_PoolMemory);
 	}
 }

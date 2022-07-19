@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-	class MemoryAllocator
+	class MemoryUtils
 	{
 	public:
 		static uintptr_t AlignAdress(uintptr_t address, U16 alignment);

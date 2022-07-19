@@ -1,17 +1,17 @@
 #include "enginepch.h"
 
-#include "MemoryAllocator.h"
+#include "MemoryUtils.h"
 
 namespace Engine
 {
-	uintptr_t MemoryAllocator::AlignAdress(uintptr_t address, U16 alignment)
+	uintptr_t MemoryUtils::AlignAdress(uintptr_t address, U16 alignment)
 	{
 		const U16 mask = alignment - 1;
 		ENGINE_ASSERT((alignment & mask) == 0, "Alignment have to be the power of 2.");
 		return (address + mask) & ~mask;
 	}
 
-	void* MemoryAllocator::AllocAligned(U32 bytes, U16 alignment)
+	void* MemoryUtils::AllocAligned(U32 bytes, U16 alignment)
 	{
 		// Extra bytes to ensure proper alignment.
 		U32 actualBytes = bytes + alignment;
@@ -32,7 +32,7 @@ namespace Engine
 		return alignedMemory;
 	}
 
-	void MemoryAllocator::FreeAligned(void* memory)
+	void MemoryUtils::FreeAligned(void* memory)
 	{
 		if (memory)
 		{

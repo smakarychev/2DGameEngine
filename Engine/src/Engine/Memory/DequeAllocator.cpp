@@ -1,15 +1,15 @@
 #include "enginepch.h"
 #include "DequeAllocator.h"
 
-#include "Engine/Allocators/DequeAllocator.h"
-#include "MemoryAllocator.h"
+#include "DequeAllocator.h"
+#include "MemoryUtils.h"
 #include "Engine/Log.h"
 
 namespace Engine
 {
 	DequeAllocator::DequeAllocator(U32 dequeSizeBytes) : m_TopMarker(dequeSizeBytes), m_BottomMarker(0), m_DequeSize(dequeSizeBytes)
 	{
-		m_DequeMemory = reinterpret_cast<U8*>(MemoryAllocator::AllocAligned(dequeSizeBytes));
+		m_DequeMemory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(dequeSizeBytes));
 	}
 
 	void* DequeAllocator::AllocTop(U32 sizeBytes)
@@ -68,7 +68,7 @@ namespace Engine
 			return nullptr;
 		}
 		m_TopMarker = newTopMarker;
-		U8* address = MemoryAllocator::AlignPointer(m_DequeMemory + m_TopMarker, alignment);
+		U8* address = MemoryUtils::AlignPointer(m_DequeMemory + m_TopMarker, alignment);
 		return static_cast<void*>(address);
 	}
 
@@ -84,7 +84,7 @@ namespace Engine
 			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
-		U8* address = MemoryAllocator::AlignPointer(m_DequeMemory + m_BottomMarker, alignment);
+		U8* address = MemoryUtils::AlignPointer(m_DequeMemory + m_BottomMarker, alignment);
 		m_BottomMarker = newBottomMarker;
 		return static_cast<void*>(address);
 	}
@@ -120,6 +120,6 @@ namespace Engine
 
 	DequeAllocator::~DequeAllocator()
 	{
-		MemoryAllocator::FreeAligned(m_DequeMemory);
+		MemoryUtils::FreeAligned(m_DequeMemory);
 	}
 }

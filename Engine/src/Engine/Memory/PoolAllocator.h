@@ -17,7 +17,7 @@ namespace Engine
 		T* Alloc() { return static_cast<T*>(Alloc()); }
 
 		// Return element to the pull
-		void Dealloc();
+		void Dealloc(void* memory);
 
 		// Clears the pull (no memory dealoc).
 		void Clear();
