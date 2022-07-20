@@ -20,7 +20,7 @@ namespace Engine
 	void* PoolAllocator::Alloc()
 	{
 		// If requested block cannot be allocated (the pool is empty), expand pool size.
-		if (m_FreePoolElement == nullptr) ExpandPoolSize();
+		if (m_FreePoolElement == nullptr) m_FreePoolElement = reinterpret_cast<PoolElement*>(ExpandPool());
 		
 		// Take element from the linked list (the pool).
 		PoolElement* free = m_FreePoolElement;
@@ -46,14 +46,14 @@ namespace Engine
 		}
 	}
 
-	void PoolAllocator::ExpandPoolSize()
+	void* PoolAllocator::ExpandPool()
 	{
 		// Allocate additional memory (according to config).
-		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT);
-		m_FreePoolElement = reinterpret_cast<PoolElement*>(poolExtension);
+		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT_ELEMENTS);
 		m_AdditionalAllocations.push_back(poolExtension);
-		m_TotalPoolElements += POOL_ALLOCATOR_INCREMENT;
-		InitializePool(poolExtension, POOL_ALLOCATOR_INCREMENT);
+		m_TotalPoolElements += POOL_ALLOCATOR_INCREMENT_ELEMENTS;
+		InitializePool(poolExtension, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+		return poolExtension;
 	}
 
 	void PoolAllocator::InitializePool(void* memory, U32 count)
