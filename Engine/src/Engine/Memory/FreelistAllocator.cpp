@@ -90,12 +90,14 @@ namespace Engine
 	{
 		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
 
-		if (node->Size - sizeBytes <= nodeHeaderSize) return;
-
 		U8* newNodeMemoryAddress = reinterpret_cast<U8*>(node) + sizeBytes + nodeHeaderSize;
-		U32 newNodeSize = node->Size - sizeBytes;
-		FreelistNode* newNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(newNodeMemoryAddress, newNodeSize));
-		node->Size -= newNodeSize;
+		U8* alignedNewNodeMemoryAddress = MemoryUtils::AlignPointer(newNodeMemoryAddress, alignof(std::max_align_t));
+		U8 offset = static_cast<U8>((alignedNewNodeMemoryAddress - newNodeMemoryAddress) & 0xFF);
+
+		U32 newChunkSize = node->Size - (sizeBytes + offset);
+		if (newChunkSize <= nodeHeaderSize) return;
+		FreelistNode* newNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(alignedNewNodeMemoryAddress, newChunkSize));
+		node->Size -= newChunkSize;
 		newNode->Next = node->Next;
 		node->Next = newNode;
 	}
