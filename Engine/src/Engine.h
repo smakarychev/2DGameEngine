@@ -19,6 +19,7 @@
 #include "Engine/Window.h"
 
 /* Custom heap allocators */
-#include "Engine/Allocators/StackAllocator.h"
-#include "Engine/Allocators/DequeAllocator.h"
-#include "Engine/Allocators/PoolAllocator.h"
+#include "Engine/Memory/StackAllocator.h"
+#include "Engine/Memory/DequeAllocator.h"
+#include "Engine/Memory/PoolAllocator.h"
+#include "Engine/Memory/FreelistAllocator.h"
