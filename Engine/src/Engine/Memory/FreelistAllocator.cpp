@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	FreelistAllocator::FreelistAllocator(U32 sizeBytes) : m_FitStrategy(FitStrategy::FirstFit)
+	FreelistAllocator::FreelistAllocator(U32 sizeBytes) : m_FitPolicy(FitPolicy::FirstFit)
 	{
 		ENGINE_ASSERT(sizeBytes >= FreelistNode::HeaderSize(), "Freelist allocator must be larger.");
 		// Allocate the initial chunk of memory, which later will be subdivided into smaller chunks.
@@ -15,22 +15,25 @@ namespace Engine
 		m_FreelistMemory = reinterpret_cast<U8*>(freelistMemory);
 		m_FirstNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(freelistMemory, sizeBytes));
 		m_LastNode = m_FirstNode;
-		m_SearchStart = m_FirstNode;
 	}
 	
 	void* FreelistAllocator::AllocAligned(U32 sizeBytes, U16 alignment)
 	{
 		U32 actualBytes = sizeBytes + alignment;
 		// Find free node with sufficient size. 
-		FreelistNode* node = reinterpret_cast<FreelistNode*>(FindFreeNode(actualBytes));
+		void* prevNodeAddress = nullptr;
+		FreelistNode* node = reinterpret_cast<FreelistNode*>(FindFreeNodeAddress(actualBytes, &prevNodeAddress));
+		FreelistNode* prevNode = reinterpret_cast<FreelistNode*>(prevNodeAddress);
 
 		// Allocate extra space if no freeNode was found.
 		if (node == nullptr)
 			node = reinterpret_cast<FreelistNode*>(ExpandFreelist());
 
-		// Subdivide memory to smaller chunks.
+		// Subdivide memory to smaller chunks and remove used node.
 		SplitFreelist(node, actualBytes);
-		node->IsUsed = true;
+		// If we split the last node, it should change.
+		if (m_LastNode->Next) m_LastNode = m_LastNode->Next;
+		Remove(node, prevNode);
 
 		// Ensure memory alignment
 		U8* alignedMemory = reinterpret_cast<U8*>(MemoryUtils::AlignPointer(node->Data, alignment));
@@ -53,15 +56,16 @@ namespace Engine
 		ptrdiff_t offset = alignedMemory[-1];
 		U8* rawMemory = alignedMemory - offset;
 
-		// Get FreelistNode from memory address and mark it as free
 		FreelistNode* node = reinterpret_cast<FreelistNode*>(rawMemory - nodeHeaderSize);
-		ENGINE_ASSERT(node->IsUsed == true, "node is already free.");
-		node->IsUsed = false;
+		FreelistNode* prevNode = reinterpret_cast<FreelistNode*>(FindPrevNode(node));
+		Insert(node, prevNode);
+
+		MergeFreeList(node, prevNode);
 	}
 
-	void FreelistAllocator::SetFitStrategy(FitStrategy strategy)
+	void FreelistAllocator::SetFitPolicy(FitPolicy strategy)
 	{
-		m_FitStrategy = strategy;
+		m_FitPolicy = strategy;
 	}
 
 	void* FreelistAllocator::GetInitializedNode(void* memory, U32 size)
@@ -70,7 +74,6 @@ namespace Engine
 		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
 		node->Size = size - nodeHeaderSize;
 		node->Next = nullptr;
-		node->IsUsed = false;
 		node->Data = reinterpret_cast<U8*>(node) + nodeHeaderSize;
 		return node;
 	}
@@ -78,11 +81,26 @@ namespace Engine
 	void* FreelistAllocator::ExpandFreelist()
 	{
 		// Allocate additional memory (according to config).
+		// This allocation can return address which is less than m_FirstNode.
 		void* freelistExtension = MemoryUtils::AllocAligned(FREELIST_ALLOCATOR_INCREMENT_BYTES);
 		m_AdditionalAllocations.push_back(freelistExtension);
-		FreelistNode* newLastNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(freelistExtension, FREELIST_ALLOCATOR_INCREMENT_BYTES));
-		m_LastNode->Next = newLastNode;
-		m_LastNode = newLastNode;
+		FreelistNode* newNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(freelistExtension, FREELIST_ALLOCATOR_INCREMENT_BYTES));
+		if (newNode > m_LastNode)
+		{
+			m_LastNode->Next = newNode;
+			m_LastNode = newNode;
+		}
+		else if (newNode < m_FirstNode)
+		{
+			newNode->Next = m_FirstNode;
+			m_FirstNode = newNode;
+		}
+		else
+		{
+			// It is very safe to assume that this will never happen.
+			ENGINE_CORE_FATAL("Impossible allocation in FreelistAllocator.");
+		}
+		
 		return freelistExtension;
 	}
 
@@ -91,7 +109,7 @@ namespace Engine
 		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
 
 		U8* newNodeMemoryAddress = reinterpret_cast<U8*>(node) + sizeBytes + nodeHeaderSize;
-		U8* alignedNewNodeMemoryAddress = MemoryUtils::AlignPointer(newNodeMemoryAddress, alignof(std::max_align_t));
+		U8* alignedNewNodeMemoryAddress = MemoryUtils::AlignPointer(newNodeMemoryAddress, alignof(void*));
 		U8 offset = static_cast<U8>((alignedNewNodeMemoryAddress - newNodeMemoryAddress) & 0xFF);
 
 		U32 newChunkSize = node->Size - (sizeBytes + offset);
@@ -102,77 +120,109 @@ namespace Engine
 		node->Next = newNode;
 	}
 
-	void* FreelistAllocator::FindFreeNode(U32 sizeBytes)
+	void FreelistAllocator::MergeFreeList(FreelistNode* node, FreelistNode* prevNode)
 	{
-		switch (m_FitStrategy)
+		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
+
+		// Might seem strange, but node->Next might exist in different region of memory, because of expansion.
+		if (node->IsNeighbourOf(node->Next))
 		{
-			case Engine::FreelistAllocator::FitStrategy::FirstFit: return FirstFit(sizeBytes);
-			case Engine::FreelistAllocator::FitStrategy::NextFit:  return NextFit(sizeBytes);
-			case Engine::FreelistAllocator::FitStrategy::BestFit:  return BestFit(sizeBytes);
+			node->Size += node->Next->Size + nodeHeaderSize;
+			node->Next = node->Next->Next;
+		}
+		if (prevNode)
+		{
+			if (prevNode->IsNeighbourOf(node))
+			{
+				prevNode->Size += node->Size + nodeHeaderSize;
+				prevNode->Next = node->Next;
+			}
+		}
+	}
+
+	void* FreelistAllocator::FindFreeNodeAddress(U32 sizeBytes, void** prevNodeAddress)
+	{
+		switch (m_FitPolicy)
+		{
+			case Engine::FreelistAllocator::FitPolicy::FirstFit: return FirstFit(sizeBytes, prevNodeAddress);
+			case Engine::FreelistAllocator::FitPolicy::BestFit:  return BestFit(sizeBytes, prevNodeAddress);
 		}
 		return nullptr;
 	}
 
 	// Returns first free block of sufficient size, or nullptr if no such block exists.
-	void* FreelistAllocator::FirstFit(U32 sizeBytes)
+	void* FreelistAllocator::FirstFit(U32 sizeBytes, void** prevNodeAddress)
 	{
 		FreelistNode* node = m_FirstNode;
+		FreelistNode* prevNode = nullptr;
 		while (node)
 		{
-			if (node->IsUsed || node->Size < sizeBytes)
-			{
-				node = node->Next;
-				continue;
-			}
-			return node;
+			if (node->Size >= sizeBytes) break;
+			prevNode = node;
+			node = node->Next;
+			
 		}
-		return nullptr;
-	}
-
-	// Returns first free block of sufficient size (starting from previously found block), or nullptr if no such block exists.
-	void* FreelistAllocator::NextFit(U32 sizeBytes)
-	{
-		FreelistNode* node = m_SearchStart;
-		bool isAllChecked = false;
-
-		while (!isAllChecked)
-		{
-			if (node->IsUsed || node->Size < sizeBytes)
-			{
-				node = node->Next ? node->Next : m_FirstNode;
-				if (node == m_SearchStart) isAllChecked = true;
-					
-			}
-			m_SearchStart = node->Next ? node->Next : m_FirstNode;
-			return node;
-		}
-		return nullptr;
+		*prevNodeAddress = static_cast<void*>(prevNode);
+		return node;
 	}
 
 	// Returns block of smallest size that is greater than `sizeBytes`, or nullptr if no such block exists.
-	void* FreelistAllocator::BestFit(U32 sizeBytes)
+	void* FreelistAllocator::BestFit(U32 sizeBytes, void** prevNodeAddress)
 	{
 		FreelistNode* node = m_FirstNode;
+		FreelistNode* prevNode = nullptr;
 		FreelistNode* bestFit = nullptr;
 		U32 bestFitSize = std::numeric_limits<U32>::max();
 
 		while (node)
 		{
-			if (node->IsUsed || node->Size < sizeBytes)
-			{
-				node = node->Next;
-				continue;
-			}
-			else
+			if (node->Size >= sizeBytes)
 			{
 				if (node->Size < bestFitSize)
 				{
 					bestFit = node;
-					bestFitSize = bestFit->Size;
+					bestFitSize = bestFit->Size;			
+					*prevNodeAddress = static_cast<void*>(prevNode);
 				}
 			}
+			prevNode = node;
+			node = node->Next;
 		}
+		if (bestFit == nullptr) *prevNodeAddress = static_cast<void*>(prevNode);
 		return bestFit;
+	}
+
+	void* FreelistAllocator::FindPrevNode(FreelistNode* node)
+	{
+		FreelistNode* searchNode = m_FirstNode;
+		FreelistNode* prevNode = nullptr;
+		while (searchNode && searchNode < node)
+		{
+			prevNode = searchNode;
+			searchNode = searchNode->Next;
+		}
+		if (searchNode == nullptr) return nullptr;
+		return prevNode;
+	}
+
+	void FreelistAllocator::Insert(FreelistNode* node, FreelistNode* prevNode)
+	{
+		if (prevNode == nullptr)
+		{
+			m_FirstNode = node;
+		}
+		else
+		{
+			node->Next = prevNode->Next;
+			prevNode->Next = node;
+		}
+	}
+
+	void FreelistAllocator::Remove(FreelistNode* node, FreelistNode* prevNode)
+	{
+		if (prevNode == nullptr)
+			m_FirstNode = node->Next;
+		else prevNode->Next = node->Next;
 	}
 
 	FreelistAllocator::~FreelistAllocator()

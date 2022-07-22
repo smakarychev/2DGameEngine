@@ -10,9 +10,9 @@ namespace Engine
 	// Implementation of simple freelist allocator.
 	class FreelistAllocator
 	{
-		enum class FitStrategy
+		enum class FitPolicy
 		{
-			FirstFit, NextFit, BestFit
+			FirstFit, BestFit
 		};
 	public:
 		explicit FreelistAllocator(U32 sizeBytes);
@@ -35,7 +35,7 @@ namespace Engine
 
 		void Dealloc(void* memory);
 
-		void SetFitStrategy(FitStrategy strategy);
+		void SetFitPolicy(FitPolicy strategy);
 
 	private:
 		struct FreelistNode;
@@ -49,28 +49,34 @@ namespace Engine
 		// Splits freelist in two parts: one just enought to contain `sizeBytes` and other is the rest of node.
 		void SplitFreelist(FreelistNode* node, U32 sizeBytes);
 
-		void* FindFreeNode(U32 sizeBytes);
-		void* FirstFit(U32 sizeBytes);
-		void* NextFit(U32 sizeBytes);
-		void* BestFit(U32 sizeBytes);
+		// Tries to merge two free blocks into a lagrer one.
+		void MergeFreeList(FreelistNode* node, FreelistNode* prevNode);
+
+		void* FindFreeNodeAddress(U32 sizeBytes, void** prevNodeAddress);
+
+		void* FirstFit(U32 sizeBytes, void** prevNodeAddress);
+		void* BestFit(U32 sizeBytes, void** prevNodeAddress);
+
+		void* FindPrevNode(FreelistNode* node);
+
+		void Insert(FreelistNode* node, FreelistNode* prevNode);
+		void Remove(FreelistNode* node, FreelistNode* prevNode);
 
 	private:
 		struct FreelistNode
 		{
 			FreelistNode* Next;
 			U32 Size;
-			bool IsUsed;
 			U8* Data;
-			constexpr static U32 HeaderSize() { return static_cast<U32>(sizeof Next + sizeof Size + sizeof IsUsed); }
+			constexpr static U32 HeaderSize() { return static_cast<U32>(sizeof Next + sizeof Size); }
+			bool IsNeighbourOf(FreelistNode* other) { return (reinterpret_cast<U8*>(this) + Size + HeaderSize()) == reinterpret_cast<U8*>(other); }
 		};
-
-
-		FreelistNode* m_SearchStart;
 		
 		FreelistNode* m_FirstNode;
+
 		FreelistNode* m_LastNode;
 
-		FitStrategy m_FitStrategy;
+		FitPolicy m_FitPolicy;
 
 		U8* m_FreelistMemory;
 
