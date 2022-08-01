@@ -9,12 +9,18 @@ namespace Engine
 {
 	FreelistRedBlackAllocator::FreelistRedBlackAllocator(U32 sizeBytes)
 	{
-		ENGINE_ASSERT(sizeBytes >= FreelistNode::MinSize(), "Freelist allocator must be larger.");
+		ENGINE_ASSERT(sizeBytes >= FreelistHolder::MinSize(), "Freelist allocator must be larger.");
 		void* freelistMemory = MemoryUtils::AllocAligned(sizeBytes);
 		m_FreelistMemory = reinterpret_cast<U8*>(freelistMemory);
-		m_FirstNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(freelistMemory, sizeBytes));
-		m_TreeHead = m_FirstNode->RBElement();
-		m_LastNode = m_FirstNode;
+
+		m_NullTreeElement = reinterpret_cast<RedBlackTreeElement*>(MemoryUtils::AllocAligned(sizeof(RedBlackTreeElement), alignof(RedBlackTreeElement)));
+		m_NullTreeElement->Left = m_NullTreeElement->Right = m_NullTreeElement;
+		m_NullTreeElement->Parent = nullptr;
+		m_NullTreeElement->SizeAndFlags = 0;
+
+		m_FirstFreelistHolder = reinterpret_cast<FreelistHolder*>(GetInitializedFreelistHolder(freelistMemory, sizeBytes));
+		m_TreeHead = m_NullTreeElement;
+		InsertRB(m_FirstFreelistHolder->FirstNode->RBElement());
 	}
 
 	void* FreelistRedBlackAllocator::AllocAligned(U32 sizeBytes, U16 alignment)
@@ -34,8 +40,6 @@ namespace Engine
 
 		// Subdivide memory to smaller chunks and mark used node.
 		SplitFreelist(node, actualBytes);
-		// If we have split the last node, it should change.
-		if (m_LastNode->Next) m_LastNode = m_LastNode->Next;
 		node->SetUsed();
 		DeleteRB(node->RBElement());
 
@@ -63,11 +67,24 @@ namespace Engine
 
 		FreelistNode* node = reinterpret_cast<FreelistNode*>(rawMemory - payloadOffset);
 		node->SetFree();
-
 		// Try merge free neighbour nodes.
 		MergeFreelist(node);
 	}
 	
+	void* FreelistRedBlackAllocator::GetInitializedFreelistHolder(void* memory, U32 sizeBytes)
+	{
+		constexpr static U32 holderHeader = FreelistHolder::HeaderSize();
+		FreelistHolder* holder = reinterpret_cast<FreelistHolder*>(memory);
+		holder->Next = nullptr;
+
+		U8* holderNodeAddress = static_cast<U8*>(memory) + holderHeader;
+		U32 holderNodeSize = sizeBytes - holderHeader;
+		FreelistNode* holderNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(holderNodeAddress, holderNodeSize));
+		holder->FirstNode = holderNode;
+
+		return static_cast<void*>(holder);
+	}
+
 	void* FreelistRedBlackAllocator::GetInitializedNode(void* memory, U32 sizeBytes)
 	{
 		FreelistNode* node = reinterpret_cast<FreelistNode*>(memory);
@@ -82,7 +99,7 @@ namespace Engine
 		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
 		RedBlackTreeElement* rbElement = reinterpret_cast<RedBlackTreeElement*>(node->RBElement());
 		rbElement->SizeAndFlags = sizeBytes - payloadOffset;
-		rbElement->Parent = rbElement->Left = rbElement->Right = nullptr;
+		rbElement->Parent = rbElement->Left = rbElement->Right = m_NullTreeElement;
 		rbElement->SetRedColor();
 	}
 
@@ -91,30 +108,21 @@ namespace Engine
 		// Allocate additional memory (according to config).
 		// This allocation can return address which is less than m_FirstNode.
 		sizeBytes = std::max(sizeBytes, RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
+		sizeBytes += FreelistHolder::HeaderSize() + FreelistNode::PayloadOffset() + static_cast<U32>(alignof(void*));
+
+		ENGINE_CORE_INFO("Freelist allocator: requesting {} bytes of memory from the system.", sizeBytes);
+
 		void* freelistExtension = MemoryUtils::AllocAligned(sizeBytes);
-		m_AdditionalAllocations.push_back(freelistExtension);
-		FreelistNode* newNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(freelistExtension, sizeBytes));
-		if (newNode > m_LastNode)
-		{
-			m_LastNode->Next = newNode;
-			newNode->Prev = m_LastNode;
-			m_LastNode = newNode;
-		}
-		else if (newNode < m_FirstNode)
-		{
-			newNode->Next = m_FirstNode;
-			m_FirstNode->Prev = newNode;
-			m_FirstNode = newNode;
-		}
-		else
-		{
-			// It is very safe to assume that this will never happen.
-			ENGINE_CORE_FATAL("Impossible allocation in FreelistAllocator.");
-		}
 
-		InsertRB(newNode->RBElement());
+		FreelistHolder* newHolder = reinterpret_cast<FreelistHolder*>(GetInitializedFreelistHolder(freelistExtension, sizeBytes));
+		newHolder->Next = m_FirstFreelistHolder;
+		newHolder->FirstNode->Next = m_FirstFreelistHolder->FirstNode;
+		m_FirstFreelistHolder->FirstNode->Prev = newHolder->FirstNode;
+		m_FirstFreelistHolder = newHolder;
 
-		return freelistExtension;
+		InsertRB(newHolder->FirstNode->RBElement());
+
+		return static_cast<void*>(newHolder->FirstNode);
 	}
 
 	void* FreelistRedBlackAllocator::FindFreeNodeAddress(U32 sizeBytes)
@@ -123,9 +131,8 @@ namespace Engine
 		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
 
 		RedBlackTreeElement* treeNode = m_TreeHead;
-		RedBlackTreeElement* potentialNode = nullptr;
-		if (!treeNode) return nullptr;
-		while (treeNode)
+		RedBlackTreeElement* potentialNode = m_NullTreeElement;
+		while (treeNode != m_NullTreeElement)
 		{
 			if (treeNode->SizeBytes() > sizeBytes)
 			{
@@ -138,9 +145,8 @@ namespace Engine
 			}
 			else return reinterpret_cast<U8*>(treeNode) - nodeHeaderSize;
 		}
-		if (potentialNode != nullptr) return reinterpret_cast<U8*>(potentialNode) - nodeHeaderSize;
-		// It shall never happen.
-		ENGINE_ERROR("Red Black Tree is broken.");
+		if (potentialNode != m_NullTreeElement) return reinterpret_cast<U8*>(potentialNode) - nodeHeaderSize;
+
 		return nullptr;
 	}
 
@@ -169,49 +175,40 @@ namespace Engine
 	{
 		// When this function executes, node is not free.
 		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
-		node->RBElement()->Clear();
+		ClearRB(node->RBElement());
 		// Might seem strange, but node->Next might exist in different region of memory, because of expansion.
 		if (node->Next && node->Next->IsFree() && node->IsNeighbourOf(node->Next))
 		{
 			U32 nodeChangedSize = node->RBElement()->SizeBytes() + node->Next->RBElement()->SizeBytes() + payloadOffset;
-			node->RBElement()->SetSizeBytes(nodeChangedSize);
-
 			DeleteRB(node->Next->RBElement());
+
+			node->RBElement()->SetSizeBytes(nodeChangedSize);
 			if (node->Next->Next) node->Next->Next->Prev = node;
 			node->Next = node->Next->Next;
-			InsertRB(node->RBElement());
+		}
+		if (node->Prev && node->Prev->IsFree() && node->Prev->IsNeighbourOf(node))
+		{
+			U32 nodeChangedSize = node->Prev->RBElement()->SizeBytes() + node->RBElement()->SizeBytes() + payloadOffset;
+			DeleteRB(node->Prev->RBElement());
+
+			node->Prev->RBElement()->SetSizeBytes(nodeChangedSize);
+			if (node->Next) node->Next->Prev = node->Prev;
+			node->Prev->Next = node->Next;
+			ClearRB(node->Prev->RBElement());
+			InsertRB(node->Prev->RBElement());
 		}
 		else
 		{
 			InsertRB(node->RBElement());
 		}
-		if (node->Prev && node->Prev->IsFree() && node->Prev->IsNeighbourOf(node))
-		{
-			U32 nodeChangedSize = node->Prev->RBElement()->SizeBytes() + node->RBElement()->SizeBytes() + payloadOffset;
-			node->Prev->RBElement()->SetSizeBytes(nodeChangedSize);
-
-			DeleteRB(node->RBElement());
-			if (node->Next) node->Next->Prev = node->Prev;
-			node->Prev->Next = node->Next;
-			DeleteRB(node->Prev->RBElement());
-			InsertRB(node->Prev->RBElement());
-		}
 	}
 
 	void FreelistRedBlackAllocator::InsertRB(RedBlackTreeElement* element)
 	{
-		// If nothing in the tree (probably impossible state).
-		if (m_TreeHead == nullptr)
-		{
-			element->SetBlackColor();
-			m_TreeHead = element;
-			return;
-		}
-
 		// Search to find correct position of element.
 		RedBlackTreeElement* searchElement = m_TreeHead;
-		RedBlackTreeElement* potentialParent = m_TreeHead;
-		while (searchElement != nullptr)
+		RedBlackTreeElement* potentialParent = m_NullTreeElement;
+		while (searchElement != m_NullTreeElement)
 		{
 			potentialParent = searchElement;
 			if (searchElement->SizeBytes() > element->SizeBytes())
@@ -220,31 +217,36 @@ namespace Engine
 				searchElement = searchElement->Right;
 		}
 		element->Parent = potentialParent;
-		if (element->SizeBytes() < potentialParent->SizeBytes())
+		if (potentialParent == m_NullTreeElement)
 		{
-			element->Parent->Left = element;
+			m_TreeHead = element;
+		}
+		else if (element->SizeBytes() < potentialParent->SizeBytes())
+		{
+			potentialParent->Left = element;
 		}
 		else
 		{
-			element->Parent->Right = element;
+			potentialParent->Right = element;
 		}
-		if (element->Parent->Parent == nullptr) return;
+		element->Left = element->Right = m_NullTreeElement;
+
 		FixTreeInsert(element);
 	}
 
 	void FreelistRedBlackAllocator::DeleteRB(RedBlackTreeElement* element)
 	{
 		RedBlackTreeElement* y, * x;
-		y = x = nullptr;
-
 		y = element;
+		x = m_NullTreeElement;
+
 		bool yOriginalColor = y->IsRed();
-		if (element->Left == nullptr)
+		if (element->Left == m_NullTreeElement)
 		{
 			x = element->Right;
 			TransplantRB(element, element->Right);
 		} 
-		else if (element->Right == nullptr)
+		else if (element->Right == m_NullTreeElement)
 		{
 			x = element->Left;
 			TransplantRB(element, element->Left);
@@ -267,31 +269,17 @@ namespace Engine
 			TransplantRB(element, y);
 			y->Left = element->Left;
 			y->Left->Parent = y;
-			if (!(y->IsRed() ^ element->IsRed())) y->ChangeColor();
+			if (y->IsRed() != element->IsRed()) y->ChangeColor();
 		}
 		// yOriginalColor is black.
 		if (yOriginalColor == false)
 			FixTreeDelete(x);
 	}
 
-	void FreelistRedBlackAllocator::TransplantRB(RedBlackTreeElement* U, RedBlackTreeElement* V)
-	{
-		if (U->Parent == nullptr) m_TreeHead = V;
-		else if (U == U->Parent->Left) U->Parent->Left = V;
-		else U->Parent->Right = V;
-		if (V) V->Parent = U->Parent;
-	}
-
-	void* FreelistRedBlackAllocator::MinimumRB(RedBlackTreeElement* element)
-	{
-		while (element->Left)
-			element = element->Left;
-		return element;
-	}
 
 	void FreelistRedBlackAllocator::FixTreeInsert(RedBlackTreeElement* element)
 	{
-		while (element->Parent->IsRed() && element != m_TreeHead)
+		while (element->Parent->IsRed())
 		{
 			if (element->Parent == element->Parent->Parent->Left)
 			{
@@ -369,7 +357,7 @@ namespace Engine
 						RightRotation(sibling);
 						sibling = element->Parent->Right;
 					}
-					if (!(sibling->IsRed() ^ element->Parent->IsRed())) sibling->ChangeColor();
+					(element->Parent->IsRed()) ? sibling->SetRedColor() : sibling->SetBlackColor();
 					element->Parent->SetBlackColor();
 					sibling->Right->SetBlackColor();
 					LeftRotation(element->Parent);
@@ -400,7 +388,7 @@ namespace Engine
 						LeftRotation(sibling);
 						sibling = element->Parent->Left;
 					}
-					if (!(sibling->IsRed() ^ element->Parent->IsRed())) sibling->ChangeColor();
+					(element->Parent->IsRed()) ? sibling->SetRedColor() : sibling->SetBlackColor();
 					element->Parent->SetBlackColor();
 					sibling->Left->SetBlackColor();
 					RightRotation(element->Parent);
@@ -411,16 +399,31 @@ namespace Engine
 		element->SetBlackColor();
 	}
 
+	void FreelistRedBlackAllocator::TransplantRB(RedBlackTreeElement* U, RedBlackTreeElement* V)
+	{
+		if (U->Parent == m_NullTreeElement) m_TreeHead = V;
+		else if (U == U->Parent->Left) U->Parent->Left = V;
+		else U->Parent->Right = V;
+		V->Parent = U->Parent;
+	}
+
+	void* FreelistRedBlackAllocator::MinimumRB(RedBlackTreeElement* element)
+	{
+		while (element->Left != m_NullTreeElement)
+			element = element->Left;
+		return element;
+	}
+
 	void FreelistRedBlackAllocator::LeftRotation(RedBlackTreeElement* element)
 	{
 		RedBlackTreeElement* sibling = element->Right;
 		element->Right = sibling->Left;
 
 		// Turn sibling's left subtree into element's right subtree.
-		if (sibling->Left != nullptr) sibling->Left->Parent = element;
+		if (sibling->Left != m_NullTreeElement) sibling->Left->Parent = element;
 		sibling->Parent = element->Parent;
 		
-		if (element->Parent == nullptr)	m_TreeHead = sibling; 
+		if (element->Parent == m_NullTreeElement) m_TreeHead = sibling;
 		else if (element == element->Parent->Left) element->Parent->Left = sibling;
 		else element->Parent->Right = sibling;
 
@@ -434,10 +437,10 @@ namespace Engine
 		element->Left = sibling->Right;
 		
 		// Turn sibling's right subtree into element's left subtree.
-		if (sibling->Right != nullptr) sibling->Right->Parent = element;
+		if (sibling->Right != m_NullTreeElement) sibling->Right->Parent = element;
 		sibling->Parent = element->Parent;
 
-		if (element->Parent == nullptr) m_TreeHead = sibling;
+		if (element->Parent == m_NullTreeElement) m_TreeHead = sibling;
 		else if (element == element->Parent->Right) element->Parent->Right = sibling;
 		else element->Parent->Left = sibling;
 		
@@ -445,10 +448,22 @@ namespace Engine
 		element->Parent = sibling;
 	}
 
+	void FreelistRedBlackAllocator::ClearRB(RedBlackTreeElement* element)
+	{
+		element->Left = element->Right = element->Parent = nullptr;
+		element->SetRedColor();
+	}
+
+
 	FreelistRedBlackAllocator::~FreelistRedBlackAllocator()
 	{
-		MemoryUtils::FreeAligned(static_cast<void*>(m_FreelistMemory));
-		for (auto& al : m_AdditionalAllocations)
-			MemoryUtils::FreeAligned(al);
+		FreelistHolder* toBeDeleted = m_FirstFreelistHolder;
+		while (toBeDeleted->Next)
+		{
+			void* memory = reinterpret_cast<void*>(toBeDeleted);
+			toBeDeleted = toBeDeleted->Next;
+			MemoryUtils::FreeAligned(memory);
+		}
+		MemoryUtils::FreeAligned(reinterpret_cast<void*>(m_NullTreeElement));
 	}
 }
