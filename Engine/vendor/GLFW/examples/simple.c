@@ -1,5 +1,5 @@
 //========================================================================
-// Offscreen rendering example
+// Simple GLFW example
 // Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
@@ -22,23 +22,16 @@
 //    distribution.
 //
 //========================================================================
+//! [code]
 
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#if USE_NATIVE_OSMESA
- #define GLFW_EXPOSE_NATIVE_OSMESA
- #include <GLFW/glfw3native.h>
-#endif
-
 #include "linmath.h"
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
 
 static const struct
 {
@@ -76,26 +69,25 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
 int main(void)
 {
     GLFWwindow* window;
     GLuint vertex_buffer, vertex_shader, fragment_shader, program;
     GLint mvp_location, vpos_location, vcol_location;
-    float ratio;
-    int width, height;
-    mat4x4 mvp;
-    char* buffer;
 
     glfwSetErrorCallback(error_callback);
-
-    glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
     if (!window)
@@ -104,8 +96,11 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+    glfwSetKeyCallback(window, key_callback);
+
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
+    glfwSwapInterval(1);
 
     // NOTE: OpenGL error checks have been omitted for brevity
 
@@ -137,37 +132,30 @@ int main(void)
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
                           sizeof(vertices[0]), (void*) (sizeof(float) * 2));
 
-    glfwGetFramebufferSize(window, &width, &height);
-    ratio = width / (float) height;
+    while (!glfwWindowShouldClose(window))
+    {
+        float ratio;
+        int width, height;
+        mat4x4 m, p, mvp;
 
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
+        glfwGetFramebufferSize(window, &width, &height);
+        ratio = width / (float) height;
 
-    mat4x4_ortho(mvp, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(program);
-    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) mvp);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glFinish();
+        mat4x4_identity(m);
+        mat4x4_rotate_Z(m, m, (float) glfwGetTime());
+        mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        mat4x4_mul(mvp, p, m);
 
-#if USE_NATIVE_OSMESA
-    glfwGetOSMesaColorBuffer(window, &width, &height, NULL, (void**) &buffer);
-#else
-    buffer = calloc(4, width * height);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-#endif
+        glUseProgram(program);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) mvp);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    // Write image Y-flipped because OpenGL
-    stbi_write_png("offscreen.png",
-                   width, height, 4,
-                   buffer + (width * 4 * (height - 1)),
-                   -width * 4);
-
-#if USE_NATIVE_OSMESA
-    // Here is where there's nothing
-#else
-    free(buffer);
-#endif
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
 
     glfwDestroyWindow(window);
 
@@ -175,3 +163,4 @@ int main(void)
     exit(EXIT_SUCCESS);
 }
 
+//! [code]

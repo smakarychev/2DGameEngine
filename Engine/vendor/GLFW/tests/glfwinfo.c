@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "getopt.h"
 
@@ -177,19 +176,22 @@ static const char* get_strategy_name_glfw(int strategy)
 
 static void list_context_extensions(int client, int major, int minor)
 {
+    int i;
+    GLint count;
+    const GLubyte* extensions;
+
     printf("%s context extensions:\n", get_api_name(client));
 
     if (client == GLFW_OPENGL_API && major > 2)
     {
-        GLint count;
         glGetIntegerv(GL_NUM_EXTENSIONS, &count);
 
-        for (int i = 0;  i < count;  i++)
+        for (i = 0;  i < count;  i++)
             printf(" %s\n", (const char*) glGetStringi(GL_EXTENSIONS, i));
     }
     else
     {
-        const GLubyte* extensions = glGetString(GL_EXTENSIONS);
+        extensions = glGetString(GL_EXTENSIONS);
         while (*extensions != '\0')
         {
             putchar(' ');
@@ -208,33 +210,27 @@ static void list_context_extensions(int client, int major, int minor)
     }
 }
 
-static void list_vulkan_instance_extensions(void)
-{
-    printf("Vulkan instance extensions:\n");
-
-    uint32_t ep_count;
-    vkEnumerateInstanceExtensionProperties(NULL, &ep_count, NULL);
-    VkExtensionProperties* ep = calloc(ep_count, sizeof(VkExtensionProperties));
-    vkEnumerateInstanceExtensionProperties(NULL, &ep_count, ep);
-
-    for (uint32_t i = 0;  i < ep_count;  i++)
-        printf(" %s (spec version %u)\n", ep[i].extensionName, ep[i].specVersion);
-
-    free(ep);
-}
-
 static void list_vulkan_instance_layers(void)
 {
+    uint32_t i, lp_count = 0;
+    VkLayerProperties* lp;
+
     printf("Vulkan instance layers:\n");
 
-    uint32_t lp_count;
-    vkEnumerateInstanceLayerProperties(&lp_count, NULL);
-    VkLayerProperties* lp = calloc(lp_count, sizeof(VkLayerProperties));
-    vkEnumerateInstanceLayerProperties(&lp_count, lp);
+    if (vkEnumerateInstanceLayerProperties(&lp_count, NULL) != VK_SUCCESS)
+        return;
 
-    for (uint32_t i = 0;  i < lp_count;  i++)
+    lp = calloc(lp_count, sizeof(VkLayerProperties));
+
+    if (vkEnumerateInstanceLayerProperties(&lp_count, lp) != VK_SUCCESS)
     {
-        printf(" %s (spec version %u) \"%s\"\n",
+        free(lp);
+        return;
+    }
+
+    for (i = 0;  i < lp_count;  i++)
+    {
+        printf(" %s (v%u) \"%s\"\n",
                lp[i].layerName,
                lp[i].specVersion >> 22,
                lp[i].description);
@@ -243,33 +239,27 @@ static void list_vulkan_instance_layers(void)
     free(lp);
 }
 
-static void list_vulkan_device_extensions(VkInstance instance, VkPhysicalDevice device)
-{
-    printf("Vulkan device extensions:\n");
-
-    uint32_t ep_count;
-    vkEnumerateDeviceExtensionProperties(device, NULL, &ep_count, NULL);
-    VkExtensionProperties* ep = calloc(ep_count, sizeof(VkExtensionProperties));
-    vkEnumerateDeviceExtensionProperties(device, NULL, &ep_count, ep);
-
-    for (uint32_t i = 0;  i < ep_count;  i++)
-        printf(" %s (spec version %u)\n", ep[i].extensionName, ep[i].specVersion);
-
-    free(ep);
-}
-
 static void list_vulkan_device_layers(VkInstance instance, VkPhysicalDevice device)
 {
+    uint32_t i, lp_count;
+    VkLayerProperties* lp;
+
     printf("Vulkan device layers:\n");
 
-    uint32_t lp_count;
-    vkEnumerateDeviceLayerProperties(device, &lp_count, NULL);
-    VkLayerProperties* lp = calloc(lp_count, sizeof(VkLayerProperties));
-    vkEnumerateDeviceLayerProperties(device, &lp_count, lp);
+    if (vkEnumerateDeviceLayerProperties(device, &lp_count, NULL) != VK_SUCCESS)
+        return;
 
-    for (uint32_t i = 0;  i < lp_count;  i++)
+    lp = calloc(lp_count, sizeof(VkLayerProperties));
+
+    if (vkEnumerateDeviceLayerProperties(device, &lp_count, lp) != VK_SUCCESS)
     {
-        printf(" %s (spec version %u) \"%s\"\n",
+        free(lp);
+        return;
+    }
+
+    for (i = 0;  i < lp_count;  i++)
+    {
+        printf(" %s (v%u) \"%s\"\n",
                lp[i].layerName,
                lp[i].specVersion >> 22,
                lp[i].description);
@@ -308,15 +298,13 @@ static void print_version(void)
     printf("GLFW library version string: \"%s\"\n", glfwGetVersionString());
 }
 
-static GLADapiproc glad_vulkan_callback(const char* name, void* user)
-{
-    return glfwGetInstanceProcAddress((VkInstance) user, name);
-}
-
 int main(int argc, char** argv)
 {
-    int ch;
-    bool list_extensions = false, list_layers = false;
+    int ch, client, major, minor, revision, profile;
+    GLint redbits, greenbits, bluebits, alphabits, depthbits, stencilbits;
+    int list_extensions = GLFW_FALSE, list_layers = GLFW_FALSE;
+    GLenum error;
+    GLFWwindow* window;
 
     enum { CLIENT, CONTEXT, BEHAVIOR, DEBUG_CONTEXT, FORWARD, HELP,
            EXTENSIONS, LAYERS,
@@ -584,7 +572,7 @@ int main(int argc, char** argv)
 
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    GLFWwindow* window = glfwCreateWindow(200, 200, "Version", NULL, NULL);
+    window = glfwCreateWindow(200, 200, "Version", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -594,17 +582,17 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
 
-    const GLenum error = glGetError();
+    error = glGetError();
     if (error != GL_NO_ERROR)
         printf("*** OpenGL error after make current: 0x%08x ***\n", error);
 
     // Report client API version
 
-    const int client = glfwGetWindowAttrib(window, GLFW_CLIENT_API);
-    const int major = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR);
-    const int minor = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR);
-    const int revision = glfwGetWindowAttrib(window, GLFW_CONTEXT_REVISION);
-    const int profile = glfwGetWindowAttrib(window, GLFW_OPENGL_PROFILE);
+    client = glfwGetWindowAttrib(window, GLFW_CLIENT_API);
+    major = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR);
+    minor = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR);
+    revision = glfwGetWindowAttrib(window, GLFW_CONTEXT_REVISION);
+    profile = glfwGetWindowAttrib(window, GLFW_OPENGL_PROFILE);
 
     printf("%s context version string: \"%s\"\n",
            get_api_name(client),
@@ -696,8 +684,6 @@ int main(int argc, char** argv)
 
     printf("%s framebuffer:\n", get_api_name(client));
 
-    GLint redbits, greenbits, bluebits, alphabits, depthbits, stencilbits;
-
     if (client == GLFW_OPENGL_API && profile == GLFW_OPENGL_CORE_PROFILE)
     {
         glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER,
@@ -772,9 +758,17 @@ int main(int argc, char** argv)
 
     if (glfwVulkanSupported())
     {
-        gladLoadVulkanUserPtr(NULL, glad_vulkan_callback, NULL);
-
         uint32_t loader_version = VK_API_VERSION_1_0;
+        int portability_enumeration = GLFW_FALSE;
+        uint32_t i, j, glfw_re_count, re_count, pd_count, ep_count;
+        const char** glfw_re;
+        const char** re;
+        VkApplicationInfo ai = {0};
+        VkInstanceCreateInfo ici = {0};
+        VkInstance instance;
+        VkPhysicalDevice* pd;
+
+        gladLoadVulkanUserPtr(NULL, (GLADuserptrloadfunc) glfwGetInstanceProcAddress, NULL);
 
         if (vkEnumerateInstanceVersion)
         {
@@ -787,26 +781,52 @@ int main(int argc, char** argv)
                VK_VERSION_MAJOR(loader_version),
                VK_VERSION_MINOR(loader_version));
 
-        uint32_t re_count;
-        const char** re = glfwGetRequiredInstanceExtensions(&re_count);
+        glfw_re = glfwGetRequiredInstanceExtensions(&glfw_re_count);
 
-        printf("Vulkan required instance extensions:");
-        if (re)
+        re_count = glfw_re_count;
+        re = calloc(glfw_re_count, sizeof(char*));
+
+        printf("Vulkan window surface required instance extensions:\n");
+        if (glfw_re)
         {
-            for (uint32_t i = 0;  i < re_count;  i++)
-                printf(" %s", re[i]);
-            putchar('\n');
+            for (i = 0;  i < glfw_re_count;  i++)
+            {
+                printf(" %s\n", glfw_re[i]);
+                re[i] = glfw_re[i];
+            }
         }
         else
             printf(" missing\n");
 
+        vkEnumerateInstanceExtensionProperties(NULL, &ep_count, NULL);
+        VkExtensionProperties* ep = calloc(ep_count, sizeof(VkExtensionProperties));
+        vkEnumerateInstanceExtensionProperties(NULL, &ep_count, ep);
+
         if (list_extensions)
-            list_vulkan_instance_extensions();
+        {
+            printf("Vulkan instance extensions:\n");
+
+            for (i = 0;  i < ep_count;  i++)
+                printf(" %s (spec version %u)\n", ep[i].extensionName, ep[i].specVersion);
+        }
+
+        for (i = 0;  i < ep_count;  i++)
+        {
+            if (strcmp(ep[i].extensionName, "VK_KHR_portability_enumeration") != 0)
+                continue;
+
+            re_count++;
+            re = realloc((void*) re, sizeof(char*) * re_count);
+            re[re_count - 1] = "VK_KHR_portability_enumeration";
+            portability_enumeration = GLFW_TRUE;
+        }
+
+        free(ep);
 
         if (list_layers)
             list_vulkan_instance_layers();
 
-        VkApplicationInfo ai = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+        ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         ai.pApplicationName = "glfwinfo";
         ai.applicationVersion = VK_MAKE_VERSION(GLFW_VERSION_MAJOR,
                                                 GLFW_VERSION_MINOR,
@@ -817,12 +837,13 @@ int main(int argc, char** argv)
         else
             ai.apiVersion = VK_API_VERSION_1_0;
 
-        VkInstanceCreateInfo ici = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+        ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         ici.pApplicationInfo = &ai;
         ici.enabledExtensionCount = re_count;
         ici.ppEnabledExtensionNames = re;
 
-        VkInstance instance = VK_NULL_HANDLE;
+        if (portability_enumeration)
+            ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
         if (vkCreateInstance(&ici, NULL, &instance) != VK_SUCCESS)
         {
@@ -830,27 +851,83 @@ int main(int argc, char** argv)
             exit(EXIT_FAILURE);
         }
 
-        gladLoadVulkanUserPtr(NULL, glad_vulkan_callback, instance);
+        free((void*) re);
 
-        uint32_t pd_count;
+        gladLoadVulkanUserPtr(NULL, (GLADuserptrloadfunc) glfwGetInstanceProcAddress, instance);
+
         vkEnumeratePhysicalDevices(instance, &pd_count, NULL);
-        VkPhysicalDevice* pd = calloc(pd_count, sizeof(VkPhysicalDevice));
+        pd = calloc(pd_count, sizeof(VkPhysicalDevice));
         vkEnumeratePhysicalDevices(instance, &pd_count, pd);
 
-        for (uint32_t i = 0;  i < pd_count;  i++)
+        for (i = 0;  i < pd_count;  i++)
         {
             VkPhysicalDeviceProperties pdp;
+            uint32_t qfp_count, ep_count;
 
             vkGetPhysicalDeviceProperties(pd[i], &pdp);
 
-            printf("Vulkan %s device: \"%s\" (API version %i.%i)\n",
+            printf("Vulkan %s device: \"%s\" API version %i.%i\n",
                    get_device_type_name(pdp.deviceType),
                    pdp.deviceName,
                    VK_VERSION_MAJOR(pdp.apiVersion),
                    VK_VERSION_MINOR(pdp.apiVersion));
 
+            vkGetPhysicalDeviceQueueFamilyProperties(pd[i], &qfp_count, NULL);
+
+            vkEnumerateDeviceExtensionProperties(pd[i], NULL, &ep_count, NULL);
+            VkExtensionProperties* ep = calloc(ep_count, sizeof(VkExtensionProperties));
+            vkEnumerateDeviceExtensionProperties(pd[i], NULL, &ep_count, ep);
+
+            if (portability_enumeration)
+            {
+                int conformant = GLFW_TRUE;
+
+                for (j = 0; j < ep_count; j++)
+                {
+                    if (strcmp(ep[j].extensionName, "VK_KHR_portability_subset") == 0)
+                    {
+                        conformant = GLFW_FALSE;
+                        break;
+                    }
+                }
+
+                printf("Vulkan %s %s device: \"%s\" (API version %i.%i)\n",
+                       conformant ? "conformant" : "non-conformant",
+                       get_device_type_name(pdp.deviceType),
+                       pdp.deviceName,
+                       VK_VERSION_MAJOR(pdp.apiVersion),
+                       VK_VERSION_MINOR(pdp.apiVersion));
+            }
+            else
+            {
+                printf("Vulkan %s device: \"%s\" (API version %i.%i)\n",
+                       get_device_type_name(pdp.deviceType),
+                       pdp.deviceName,
+                       VK_VERSION_MAJOR(pdp.apiVersion),
+                       VK_VERSION_MINOR(pdp.apiVersion));
+            }
+
+            if (glfw_re_count)
+            {
+                printf("Vulkan device queue family presentation support:\n");
+                for (j = 0;  j < qfp_count;  j++)
+                {
+                    printf(" %u: ", j);
+                    if (glfwGetPhysicalDevicePresentationSupport(instance, pd[i], j))
+                        printf("supported\n");
+                    else
+                        printf("no\n");
+                }
+            }
+
             if (list_extensions)
-                list_vulkan_device_extensions(instance, pd[i]);
+            {
+                printf("Vulkan device extensions:\n");
+                for (j = 0;  j < ep_count;  j++)
+                    printf(" %s (spec version %u)\n", ep[j].extensionName, ep[j].specVersion);
+            }
+
+            free(ep);
 
             if (list_layers)
                 list_vulkan_device_layers(instance, pd[i]);

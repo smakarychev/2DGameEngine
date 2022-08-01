@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.4 Win32 - www.glfw.org
+// GLFW 3.3 Win32 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
 // Copyright (c) 2006-2019 Camilla Löwy <elmindreda@glfw.org>
@@ -33,6 +33,7 @@
 #include <string.h>
 #include <limits.h>
 #include <malloc.h>
+#include <wchar.h>
 
 
 // Callback for EnumDisplayMonitors in createMonitor
@@ -184,6 +185,8 @@ void _glfwPollMonitorsWin32(void)
                            display.DeviceName) == 0)
                 {
                     disconnected[i] = NULL;
+                    // handle may have changed, update
+                    EnumDisplayMonitors(NULL, NULL, monitorCallback, (LPARAM) _glfw.monitors[i]);
                     break;
                 }
             }
@@ -315,8 +318,19 @@ void _glfwGetMonitorContentScaleWin32(HMONITOR handle, float* xscale, float* ysc
 {
     UINT xdpi, ydpi;
 
+    if (xscale)
+        *xscale = 0.f;
+    if (yscale)
+        *yscale = 0.f;
+
     if (IsWindows8Point1OrGreater())
-        GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
+    {
+        if (GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &xdpi, &ydpi) != S_OK)
+        {
+            _glfwInputError(GLFW_PLATFORM_ERROR, "Win32: Failed to query monitor DPI");
+            return;
+        }
+    }
     else
     {
         const HDC dc = GetDC(NULL);
@@ -368,7 +382,7 @@ void _glfwPlatformGetMonitorWorkarea(_GLFWmonitor* monitor,
                                      int* width, int* height)
 {
     MONITORINFO mi = { sizeof(mi) };
-    GetMonitorInfo(monitor->win32.handle, &mi);
+    GetMonitorInfoW(monitor->win32.handle, &mi);
 
     if (xpos)
         *xpos = mi.rcWork.left;
@@ -477,7 +491,7 @@ void _glfwPlatformGetVideoMode(_GLFWmonitor* monitor, GLFWvidmode* mode)
 GLFWbool _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 {
     HDC dc;
-    WORD values[768];
+    WORD values[3][256];
 
     dc = CreateDCW(L"DISPLAY", monitor->win32.adapterName, NULL, NULL);
     GetDeviceGammaRamp(dc, values);
@@ -485,9 +499,9 @@ GLFWbool _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 
     _glfwAllocGammaArrays(ramp, 256);
 
-    memcpy(ramp->red,   values +   0, 256 * sizeof(unsigned short));
-    memcpy(ramp->green, values + 256, 256 * sizeof(unsigned short));
-    memcpy(ramp->blue,  values + 512, 256 * sizeof(unsigned short));
+    memcpy(ramp->red,   values[0], sizeof(values[0]));
+    memcpy(ramp->green, values[1], sizeof(values[1]));
+    memcpy(ramp->blue,  values[2], sizeof(values[2]));
 
     return GLFW_TRUE;
 }
@@ -495,7 +509,7 @@ GLFWbool _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
 {
     HDC dc;
-    WORD values[768];
+    WORD values[3][256];
 
     if (ramp->size != 256)
     {
@@ -504,9 +518,9 @@ void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
         return;
     }
 
-    memcpy(values +   0, ramp->red,   256 * sizeof(unsigned short));
-    memcpy(values + 256, ramp->green, 256 * sizeof(unsigned short));
-    memcpy(values + 512, ramp->blue,  256 * sizeof(unsigned short));
+    memcpy(values[0], ramp->red,   sizeof(values[0]));
+    memcpy(values[1], ramp->green, sizeof(values[1]));
+    memcpy(values[2], ramp->blue,  sizeof(values[2]));
 
     dc = CreateDCW(L"DISPLAY", monitor->win32.adapterName, NULL, NULL);
     SetDeviceGammaRamp(dc, values);

@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.4 X11 - www.glfw.org
+// GLFW 3.3 X11 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
 // Copyright (c) 2006-2019 Camilla Löwy <elmindreda@glfw.org>
@@ -180,6 +180,7 @@ typedef struct _GLFWwindowX11
 {
     Colormap        colormap;
     Window          handle;
+    Window          parent;
     XIC             ic;
 
     GLFWbool        overrideRedirect;
@@ -198,9 +199,9 @@ typedef struct _GLFWwindowX11
     // The last position the cursor was warped to by GLFW
     int             warpCursorPosX, warpCursorPosY;
 
-    // The time of the last KeyPress event
-    Time            lastKeyTime;
-
+    // The time of the last KeyPress event per keycode, for discarding
+    // duplicate key events generated for some keys by ibus
+    Time            keyPressTimes[256];
 } _GLFWwindowX11;
 
 // X11-specific global data
@@ -221,6 +222,8 @@ typedef struct _GLFWlibraryX11
     XContext        context;
     // XIM input method
     XIM             im;
+    // The previous X error handler, to be restored later
+    XErrorHandler   errorHandler;
     // Most recent error code received by X error handler
     int             errorCode;
     // Primary selection string (while the primary selection is owned)
@@ -228,7 +231,7 @@ typedef struct _GLFWlibraryX11
     // Clipboard string (while the selection is owned)
     char*           clipboardString;
     // Key name string
-    char            keyName[5];
+    char            keynames[GLFW_KEY_LAST + 1][5];
     // X11 keycode to GLFW key LUT
     short int       keycodes[256];
     // GLFW key to X11 keycode LUT
@@ -237,6 +240,7 @@ typedef struct _GLFWlibraryX11
     double          restoreCursorPosX, restoreCursorPosY;
     // The window whose disabled cursor mode is active
     _GLFWwindow*    disabledCursorWindow;
+    int             emptyEventPipe[2];
 
     // Window manager atoms
     Atom            NET_SUPPORTED;
@@ -403,7 +407,6 @@ typedef struct _GLFWlibraryX11
         PFN_XRenderQueryVersion QueryVersion;
         PFN_XRenderFindVisualFormat FindVisualFormat;
     } xrender;
-
 } _GLFWlibraryX11;
 
 // X11-specific per-monitor data
@@ -417,7 +420,6 @@ typedef struct _GLFWmonitorX11
     // Index of corresponding Xinerama screen,
     // for EWMH full screen window placement
     int             index;
-
 } _GLFWmonitorX11;
 
 // X11-specific per-cursor data
@@ -425,7 +427,6 @@ typedef struct _GLFWmonitorX11
 typedef struct _GLFWcursorX11
 {
     Cursor handle;
-
 } _GLFWcursorX11;
 
 
