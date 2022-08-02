@@ -22,4 +22,5 @@
 #include "Engine/Memory/StackAllocator.h"
 #include "Engine/Memory/DequeAllocator.h"
 #include "Engine/Memory/PoolAllocator.h"
-#include "Engine/Memory/FreelistAllocator.h"
+#include "Engine/Memory/FreelistRedBlackTreeAllocator.h"
+#include "Engine/Memory/BuddyAllocator.h"

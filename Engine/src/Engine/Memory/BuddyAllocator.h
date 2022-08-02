@@ -19,6 +19,17 @@ namespace Engine
 
 		void* Alloc(U32 sizeBytes);
 
+		void* AllocAligned(U32 sizeBytes, U16 alignment) { return Alloc(sizeBytes); }
+
+		template <typename T>
+		T* Alloc(U32 count = 1) { return reinterpret_cast<T*>(Alloc(count * sizeof(T))); }
+
+		template <typename T>
+		T* AllocAligned(U32 count, U16 alignment) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignment)); }
+
+		template <typename T>
+		T* AllocAligned(U32 count = 1) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignof(T))); }
+
 		void Dealloc(void* memory);
 
 	private:
