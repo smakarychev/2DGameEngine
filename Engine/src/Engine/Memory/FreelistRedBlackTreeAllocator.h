@@ -5,7 +5,7 @@
 namespace Engine
 {
 	// TODO: move to config.
-	const U32 RBFREELIST_ALLOCATOR_INCREMENT_BYTES = static_cast<U32>(100_MiB);
+	static const U32 RBFREELIST_ALLOCATOR_INCREMENT_BYTES = static_cast<U32>(100_MiB);
 
 	class FreelistRedBlackAllocator
 	{
@@ -102,6 +102,7 @@ namespace Engine
 			}
 		};
 
+		// Struct for each memory request from os (in ExpandFreelist()).
 		struct FreelistHolder
 		{
 			FreelistHolder* Next;
@@ -114,7 +115,5 @@ namespace Engine
 		RedBlackTreeElement* m_NullTreeElement;
 
 		FreelistHolder* m_FirstFreelistHolder;
-
-		U8* m_FreelistMemory;
 	};
 }

@@ -11,7 +11,6 @@ namespace Engine
 	{
 		ENGINE_ASSERT(sizeBytes >= FreelistHolder::MinSize(), "Freelist allocator must be larger.");
 		void* freelistMemory = MemoryUtils::AllocAligned(sizeBytes);
-		m_FreelistMemory = reinterpret_cast<U8*>(freelistMemory);
 
 		m_NullTreeElement = reinterpret_cast<RedBlackTreeElement*>(MemoryUtils::AllocAligned(sizeof(RedBlackTreeElement), alignof(RedBlackTreeElement)));
 		m_NullTreeElement->Left = m_NullTreeElement->Right = m_NullTreeElement;
@@ -271,7 +270,7 @@ namespace Engine
 			y->Left->Parent = y;
 			if (y->IsRed() != element->IsRed()) y->ChangeColor();
 		}
-		// yOriginalColor is black.
+		// if yOriginalColor is black.
 		if (yOriginalColor == false)
 			FixTreeDelete(x);
 	}

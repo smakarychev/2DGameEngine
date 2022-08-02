@@ -5,7 +5,7 @@
 namespace Engine
 {
 	// TODO: move to config.
-	const U32 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 32;
+	static const U32 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 32;
 	class PoolAllocator
 	{
 	public:
