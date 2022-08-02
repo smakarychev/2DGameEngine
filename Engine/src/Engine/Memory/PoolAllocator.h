@@ -5,11 +5,11 @@
 namespace Engine
 {
 	// TODO: move to config.
-	static const U32 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 32;
+	static const U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 32;
 	class PoolAllocator
 	{
 	public:
-		PoolAllocator(U32 typeSizeBytes, U32 count);
+		PoolAllocator(U64 typeSizeBytes, U64 count);
 		~PoolAllocator();
 
 		// Get new element from the pull of free elements.
@@ -25,7 +25,7 @@ namespace Engine
 		void* ExpandPool();
 	
 	private:
-		void InitializePool(void* memory, U32 count);
+		void InitializePool(void* memory, U64 count);
 	private:
 		struct PoolElement
 		{
@@ -34,10 +34,10 @@ namespace Engine
 		};
 
 		U8* m_PoolMemory;
-		U32 m_TypeSizeBytes;
+		U64 m_TypeSizeBytes;
 
-		U32 m_AllocatedPoolElements;
-		U32 m_TotalPoolElements;
+		U64 m_AllocatedPoolElements;
+		U64 m_TotalPoolElements;
 
 		// A pointer to the element to be taken from the pool.
 		PoolElement* m_FreePoolElement;

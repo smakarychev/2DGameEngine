@@ -8,40 +8,40 @@ namespace Engine
 	class DequeAllocator
 	{
 	public:
-		explicit DequeAllocator(U32 dequeSizeBytes);
+		explicit DequeAllocator(U64 dequeSizeBytes);
 		~DequeAllocator();
 
 		// Allocate a new block of memory.
 
-		void* AllocTop(U32 sizeBytes);
-		void* AllocBottom(U32 sizeBytes);
+		void* AllocTop(U64 sizeBytes);
+		void* AllocBottom(U64 sizeBytes);
 
-		void* AllocTopAligned(U32 sizeBytes, U16 alignment);
-		void* AllocBottomAligned(U32 sizeBytes, U16 alignment);
+		void* AllocTopAligned(U64 sizeBytes, U16 alignment);
+		void* AllocBottomAligned(U64 sizeBytes, U16 alignment);
 
 		template <typename T>
-		T* AllocTop(U32 count = 1) { return static_cast<T*>(AllocTop(count * sizeof(T))); }
+		T* AllocTop(U64 count = 1) { return static_cast<T*>(AllocTop(count * sizeof(T))); }
 		template <typename T>
-		T* AllocBottom(U32 count = 1) { return static_cast<T*>(AllocBottom(count * sizeof(T))); }
+		T* AllocBottom(U64 count = 1) { return static_cast<T*>(AllocBottom(count * sizeof(T))); }
 		
 		template <typename T>
-		T* AllocTopAligned(U32 count, U16 alignment) { return static_cast<T*>(AllocTopAligned(count * sizeof(T), alignment)); }
+		T* AllocTopAligned(U64 count, U16 alignment) { return static_cast<T*>(AllocTopAligned(count * sizeof(T), alignment)); }
 		template <typename T>
-		T* AllocBottomAligned(U32 count, U16 alignment) { return static_cast<T*>(AllocBottomAligned(count * sizeof(T), alignment)); }
+		T* AllocBottomAligned(U64 count, U16 alignment) { return static_cast<T*>(AllocBottomAligned(count * sizeof(T), alignment)); }
 
 		template <typename T>
-		T* AllocTopAligned(U32 count = 1) { return static_cast<T*>(AllocTopAligned(count * sizeof(T), alignof(T))); }
+		T* AllocTopAligned(U64 count = 1) { return static_cast<T*>(AllocTopAligned(count * sizeof(T), alignof(T))); }
 		template <typename T>
-		T* AllocBottomAligned(U32 count = 1) { return static_cast<T*>(AllocBottomAligned(count * sizeof(T), alignof(T))); }
+		T* AllocBottomAligned(U64 count = 1) { return static_cast<T*>(AllocBottomAligned(count * sizeof(T), alignof(T))); }
 
 
 		// Get the current stack top.
 
-		U32 GetTopMarker() const;
-		U32 GetBottomMarker() const;
+		U64 GetTopMarker() const;
+		U64 GetBottomMarker() const;
 
 		// Rolls the deque back to a previous marker.
-		void FreeToMarker(U32 marker);
+		void FreeToMarker(U64 marker);
 
 		// Clears the top part of the deque (no memory dealoc).
 		void ClearTop();
@@ -56,9 +56,9 @@ namespace Engine
 		U8* m_DequeMemory;
 
 		// Relative offsets from bottom.
-		U32 m_TopMarker, m_BottomMarker;
+		U64 m_TopMarker, m_BottomMarker;
 
 		// Total size of stack.
-		U32 m_DequeSize;
+		U64 m_DequeSize;
 	};
 }

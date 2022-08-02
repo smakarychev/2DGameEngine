@@ -6,12 +6,12 @@
 
 namespace Engine
 {
-	StackAllocator::StackAllocator(U32 stackSizeBytes) : m_Marker(0), m_StackSize(stackSizeBytes)
+	StackAllocator::StackAllocator(U64 stackSizeBytes) : m_Marker(0), m_StackSize(stackSizeBytes)
 	{
 		m_StackMemory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(stackSizeBytes));
 	}
 
-	void* StackAllocator::Alloc(U32 sizeBytes)
+	void* StackAllocator::Alloc(U64 sizeBytes)
 	{
 		U32 newMarker = m_Marker + sizeBytes;
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
@@ -25,12 +25,12 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	void* StackAllocator::AllocAligned(U32 sizeBytes, U16 alignment)
+	void* StackAllocator::AllocAligned(U64 sizeBytes, U16 alignment)
 	{
 		U16 mask = alignment - 1;
-		U32 actualBytes = sizeBytes + mask;
+		U64 actualBytes = sizeBytes + mask;
 
-		U32 newMarker = m_Marker + actualBytes;
+		U64 newMarker = m_Marker + actualBytes;
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newMarker > m_StackSize) 
 		{
@@ -45,9 +45,9 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	U32 StackAllocator::GetMarker() const {	return m_Marker; }
+	U64 StackAllocator::GetMarker() const {	return m_Marker; }
 
-	void StackAllocator::FreeToMarker(U32 marker)
+	void StackAllocator::FreeToMarker(U64 marker)
 	{
 		if (marker <= m_Marker) m_Marker = marker;
 		else ENGINE_ERROR("{} is greater than the current stack top ({}).", marker, m_Marker);

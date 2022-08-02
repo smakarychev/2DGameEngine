@@ -18,7 +18,7 @@ namespace Engine
 			return reinterpret_cast<T*>(addressAligned);
 		}
 
-		static void* AllocAligned(U32 bytes, U16 alignment = alignof(std::max_align_t));
+		static void* AllocAligned(U64 bytes, U16 alignment = alignof(std::max_align_t));
 		static void FreeAligned(void* memory);
 	};
 }

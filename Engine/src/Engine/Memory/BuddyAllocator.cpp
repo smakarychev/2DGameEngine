@@ -9,13 +9,13 @@
 
 namespace Engine
 {
-	BuddyAllocator::BuddyAllocator(U32 sizeBytes, U32 leafSizeBytes) : m_TotalSizeBytes(sizeBytes),
+	BuddyAllocator::BuddyAllocator(U64 sizeBytes, U64 leafSizeBytes) : m_TotalSizeBytes(sizeBytes),
 		m_LeafSizeBytes(leafSizeBytes), m_NextBuddyAllocator(nullptr)
 	{
 		sizeBytes = Math::CeilToPower2(sizeBytes);
 		ENGINE_ASSERT((sizeBytes & (sizeBytes - 1)) == 0 && (leafSizeBytes & (leafSizeBytes - 1)) == 0,
 			"Buddy allocator size and leafsize have to be the power of 2.");
-		m_Levels = Math::Log2(sizeBytes / leafSizeBytes);
+		m_Levels = static_cast<U32>(Math::Log2(sizeBytes / leafSizeBytes));
 		m_Memory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(sizeBytes, 256));
 		m_LevelsMap = std::vector<U64>((U64(1) << (m_Levels + 1)) / 12, 0);
 
@@ -23,14 +23,14 @@ namespace Engine
 		m_IsFree = std::vector<bool>(U64(1) << (m_Levels + 1), true);
 
 		// First, we have only one block of level 0.
-		m_FreeBlocksLevelList[0] = reinterpret_cast<BuddyAllocatorBlock*>(GetInitializedBlock(m_Memory, sizeBytes));
+		m_FreeBlocksLevelList[0] = reinterpret_cast<BuddyAllocatorBlock*>(GetInitializedBlock(m_Memory));
 		for (U32 level = 1; level < BUDDY_ALLOCATOR_MAX_LEVELS; level++)
 			m_FreeBlocksLevelList[level] = &m_NullNode;
 
 		m_NullNode.Next = m_NullNode.Prev = &m_NullNode;
 	}
 
-	void* BuddyAllocator::Alloc(U32 sizeBytes)
+	void* BuddyAllocator::Alloc(U64 sizeBytes)
 	{
 		sizeBytes = Math::CeilToPower2(sizeBytes);
 		sizeBytes = std::max(sizeBytes, BuddyAllocatorBlock::MinSize());
@@ -42,9 +42,9 @@ namespace Engine
 			if (m_NextBuddyAllocator == nullptr) ExpandBuddyAllocator(sizeBytes);
 			return m_NextBuddyAllocator->Alloc(sizeBytes);
 		}
-		U32 relativeSize = sizeBytes / m_LeafSizeBytes;
+		U64 relativeSize = sizeBytes / m_LeafSizeBytes;
 
-		U32 level = m_Levels - Math::Log2(relativeSize);
+		U32 level = static_cast<U32>(m_Levels - Math::Log2(relativeSize));
 		BuddyAllocatorBlock* block = reinterpret_cast<BuddyAllocatorBlock*>(AllocBlock(level));
 		// If we do not have enough memory, just create new buddy allocator.
 		if (block == nullptr) 
@@ -68,13 +68,12 @@ namespace Engine
 			}
 			ENGINE_ERROR("Buddy allocator: unidentified memory address: {0:x}", reinterpret_cast<U64>(memory));
 		}
-		//U32 level = GetBlockLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));
 		U32 level = GetLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));
 
-		U32 sizeOfBlockInLevel = m_TotalSizeBytes >> level;
-		U32 indexInLevel = (reinterpret_cast<U8*>(memory) - m_Memory) / sizeOfBlockInLevel;
-		U32 globalBlockIndex = GetGlobalBlockIndex(indexInLevel, level);
-		U32 globalBuddyIndex = globalBlockIndex;
+		U64 sizeOfBlockInLevel = m_TotalSizeBytes >> level;
+		U64 indexInLevel = (reinterpret_cast<U8*>(memory) - m_Memory) / sizeOfBlockInLevel;
+		U64 globalBlockIndex = GetGlobalBlockIndex(indexInLevel, level);
+		U64 globalBuddyIndex = globalBlockIndex;
 		BuddyAllocatorBlock* block = reinterpret_cast<BuddyAllocatorBlock*>(memory);
 		BuddyAllocatorBlock* buddy = nullptr;
 		// The buddy is to the right.
@@ -127,7 +126,7 @@ namespace Engine
 		}
 	}
 
-	void BuddyAllocator::ExpandBuddyAllocator(U32 sizeBytes)
+	void BuddyAllocator::ExpandBuddyAllocator(U64 sizeBytes)
 	{
 		sizeBytes = std::max(sizeBytes, BUDDY_ALLOCATOR_INCREMENT_BYTES);
 		ENGINE_CORE_INFO("Buddy allocator: requesting {} bytes of memory from the system.", sizeBytes);
@@ -141,12 +140,12 @@ namespace Engine
 			if (level == 0) return nullptr;
 			BuddyAllocatorBlock* higherBlock = reinterpret_cast<BuddyAllocatorBlock*>(AllocBlock(level - 1));
 			if (higherBlock == nullptr) return nullptr;
-			U32 globalIndex = GetGlobalBlockIndex(higherBlock, level - 1);
+			U64 globalIndex = GetGlobalBlockIndex(higherBlock, level - 1);
 			SetBlockFreeStatus(globalIndex, false);
-			U32 levelSizeBytes = m_TotalSizeBytes >> level;
+			U64 levelSizeBytes = m_TotalSizeBytes >> level;
 			BuddyAllocatorBlock* newBlock = higherBlock;
 
-			newBlock->Next = reinterpret_cast<BuddyAllocatorBlock*>(GetInitializedBlock(reinterpret_cast<U8*>(newBlock) + levelSizeBytes, levelSizeBytes));
+			newBlock->Next = reinterpret_cast<BuddyAllocatorBlock*>(GetInitializedBlock(reinterpret_cast<U8*>(newBlock) + levelSizeBytes));
 			newBlock->Next->Prev = newBlock;
 			m_FreeBlocksLevelList[level] = newBlock;
 		}
@@ -157,20 +156,20 @@ namespace Engine
 		return blockAddress;
 	}
 
-	U32 BuddyAllocator::GetBlockIndexInLevel(BuddyAllocatorBlock* block, U32 level)
+	U64 BuddyAllocator::GetBlockIndexInLevel(BuddyAllocatorBlock* block, U32 level)
 	{
-		U32 sizeOfBlockInLevel = m_TotalSizeBytes >> level;
+		U64 sizeOfBlockInLevel = m_TotalSizeBytes >> level;
 		return (reinterpret_cast<U8*>(block) - m_Memory) / sizeOfBlockInLevel;
 	}
 
-	U32 BuddyAllocator::GetGlobalBlockIndex(BuddyAllocatorBlock* block, U32 level)
+	U64 BuddyAllocator::GetGlobalBlockIndex(BuddyAllocatorBlock* block, U32 level)
 	{
-		return GetBlockIndexInLevel(block, level) + (1 << level) - 1;
+		return GetBlockIndexInLevel(block, level) + (U64(1) << level) - 1;
 	}
 
-	U32 BuddyAllocator::GetGlobalBlockIndex(U32 localIndex, U32 level)
+	U64 BuddyAllocator::GetGlobalBlockIndex(U64 localIndex, U32 level)
 	{
-		return localIndex + (1 << level) - 1;
+		return localIndex + (U64(1) << level) - 1;
 	}
 
 	void BuddyAllocator::RemoveBlockFromLevel(BuddyAllocatorBlock* block, U32 level)
@@ -207,7 +206,7 @@ namespace Engine
 		return m_IsFree[GetGlobalBlockIndex(block, level)];
 	}
 
-	bool BuddyAllocator::IsBlockFree(U32 globalIndex)
+	bool BuddyAllocator::IsBlockFree(U64 globalIndex)
 	{
 		return m_IsFree[globalIndex];
 	}
@@ -217,7 +216,7 @@ namespace Engine
 		m_IsFree[GetGlobalBlockIndex(block, level)] = status;
 	}
 
-	void BuddyAllocator::SetBlockFreeStatus(U32 globalIndex, bool status)
+	void BuddyAllocator::SetBlockFreeStatus(U64 globalIndex, bool status)
 	{
 		m_IsFree[globalIndex] = status;
 	}
@@ -230,10 +229,10 @@ namespace Engine
 
 	void BuddyAllocator::SetLevel(BuddyAllocatorBlock* block, U32 level)
 	{
-		U32 leafLikeBlockAddress = (reinterpret_cast<U8*>(block) - m_Memory) / m_LeafSizeBytes;
+		U64 leafLikeBlockAddress = (reinterpret_cast<U8*>(block) - m_Memory) / m_LeafSizeBytes;
 		// Should be optimized, since integer division does 2 at the same time.
-		U32 indexMajor = leafLikeBlockAddress / 12;
-		U32 indexMinor = leafLikeBlockAddress % 12;
+		U32 indexMajor = static_cast<U32>(leafLikeBlockAddress / 12);
+		U32 indexMinor = static_cast<U32>(leafLikeBlockAddress % 12);
 		U32 shift = indexMinor * 5;
 		U64 mask = ((U64(1) << 5) - 1) << shift;
 		m_LevelsMap[indexMajor] &= ~mask;
@@ -242,16 +241,16 @@ namespace Engine
 
 	U32 BuddyAllocator::GetLevel(BuddyAllocatorBlock* block)
 	{
-		U32 leafLikeBlockAddress = (reinterpret_cast<U8*>(block) - m_Memory) / m_LeafSizeBytes;
+		U64 leafLikeBlockAddress = (reinterpret_cast<U8*>(block) - m_Memory) / m_LeafSizeBytes;
 		// Should be optimized, since integer division does 2 at the same time.
-		U32 indexMajor = leafLikeBlockAddress / 12;
-		U32 indexMinor = leafLikeBlockAddress % 12;
+		U32 indexMajor = static_cast<U32>(leafLikeBlockAddress / 12);
+		U32 indexMinor = static_cast<U32>(leafLikeBlockAddress % 12);
 		U32 shift = indexMinor * 5;
 		U64 mask = ((U64(1) << 5) - 1) << shift;
 		return static_cast<U32>((m_LevelsMap[indexMajor] & mask) >> shift);
 	}
 
-	void* BuddyAllocator::GetInitializedBlock(void* memory, U32 sizeBytes)
+	void* BuddyAllocator::GetInitializedBlock(void* memory)
 	{
 		BuddyAllocatorBlock* block = reinterpret_cast<BuddyAllocatorBlock*>(memory);
 		block->Next = block->Prev = &m_NullNode;

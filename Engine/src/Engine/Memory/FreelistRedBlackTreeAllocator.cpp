@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	FreelistRedBlackAllocator::FreelistRedBlackAllocator(U32 sizeBytes)
+	FreelistRedBlackAllocator::FreelistRedBlackAllocator(U64 sizeBytes)
 	{
 		ENGINE_ASSERT(sizeBytes >= FreelistHolder::MinSize(), "Freelist allocator must be larger.");
 		void* freelistMemory = MemoryUtils::AllocAligned(sizeBytes);
@@ -22,14 +22,14 @@ namespace Engine
 		InsertRB(m_FirstFreelistHolder->FirstNode->RBElement());
 	}
 
-	void* FreelistRedBlackAllocator::AllocAligned(U32 sizeBytes, U16 alignment)
+	void* FreelistRedBlackAllocator::AllocAligned(U64 sizeBytes, U16 alignment)
 	{
-		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
-		constexpr static U32 treeElementHeader = RedBlackTreeElement::HeaderSize();
+		constexpr static U64 payloadOffset = FreelistNode::PayloadOffset();
+		constexpr static U64 treeElementHeader = RedBlackTreeElement::HeaderSize();
 
 		// Since at some point we want to "return" node, 
 		// we have to make sure, that essencial tree data will fit.
-		U32 actualBytes = std::max(sizeBytes, treeElementHeader) + alignment;
+		U64 actualBytes = std::max(sizeBytes, treeElementHeader) + alignment;
 		// Find free node with sufficient size. 
 		FreelistNode* node = reinterpret_cast<FreelistNode*>(FindFreeNodeAddress(actualBytes));
 
@@ -57,7 +57,7 @@ namespace Engine
 
 	void FreelistRedBlackAllocator::Dealloc(void* memory)
 	{
-		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
+		constexpr static U64 payloadOffset = FreelistNode::PayloadOffset();
 
 		// Get actual address
 		U8* alignedMemory = reinterpret_cast<U8*>(memory);
@@ -70,21 +70,21 @@ namespace Engine
 		MergeFreelist(node);
 	}
 	
-	void* FreelistRedBlackAllocator::GetInitializedFreelistHolder(void* memory, U32 sizeBytes)
+	void* FreelistRedBlackAllocator::GetInitializedFreelistHolder(void* memory, U64 sizeBytes)
 	{
-		constexpr static U32 holderHeader = FreelistHolder::HeaderSize();
+		constexpr static U64 holderHeader = FreelistHolder::HeaderSize();
 		FreelistHolder* holder = reinterpret_cast<FreelistHolder*>(memory);
 		holder->Next = nullptr;
 
 		U8* holderNodeAddress = static_cast<U8*>(memory) + holderHeader;
-		U32 holderNodeSize = sizeBytes - holderHeader;
+		U64 holderNodeSize = sizeBytes - holderHeader;
 		FreelistNode* holderNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(holderNodeAddress, holderNodeSize));
 		holder->FirstNode = holderNode;
 
 		return static_cast<void*>(holder);
 	}
 
-	void* FreelistRedBlackAllocator::GetInitializedNode(void* memory, U32 sizeBytes)
+	void* FreelistRedBlackAllocator::GetInitializedNode(void* memory, U64 sizeBytes)
 	{
 		FreelistNode* node = reinterpret_cast<FreelistNode*>(memory);
 		node->Next = node->Prev = nullptr;
@@ -93,21 +93,21 @@ namespace Engine
 		return node;
 	}
 
-	void FreelistRedBlackAllocator::InitializeRBElement(FreelistNode* node, U32 sizeBytes)
+	void FreelistRedBlackAllocator::InitializeRBElement(FreelistNode* node, U64 sizeBytes)
 	{
-		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
+		constexpr static U64 payloadOffset = FreelistNode::PayloadOffset();
 		RedBlackTreeElement* rbElement = reinterpret_cast<RedBlackTreeElement*>(node->RBElement());
 		rbElement->SizeAndFlags = sizeBytes - payloadOffset;
 		rbElement->Parent = rbElement->Left = rbElement->Right = m_NullTreeElement;
 		rbElement->SetRedColor();
 	}
 
-	void* FreelistRedBlackAllocator::ExpandFreelist(U32 sizeBytes)
+	void* FreelistRedBlackAllocator::ExpandFreelist(U64 sizeBytes)
 	{
 		// Allocate additional memory (according to config).
 		// This allocation can return address which is less than m_FirstNode.
 		sizeBytes = std::max(sizeBytes, RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
-		sizeBytes += FreelistHolder::HeaderSize() + FreelistNode::PayloadOffset() + static_cast<U32>(alignof(void*));
+		sizeBytes += FreelistHolder::HeaderSize() + FreelistNode::PayloadOffset() + static_cast<U64>(alignof(void*));
 
 		ENGINE_CORE_INFO("Freelist allocator: requesting {} bytes of memory from the system.", sizeBytes);
 
@@ -124,10 +124,10 @@ namespace Engine
 		return static_cast<void*>(newHolder->FirstNode);
 	}
 
-	void* FreelistRedBlackAllocator::FindFreeNodeAddress(U32 sizeBytes)
+	void* FreelistRedBlackAllocator::FindFreeNodeAddress(U64 sizeBytes)
 	{
 		// Find fitting node using Red Black Tree (this is best fit).
-		constexpr static U32 nodeHeaderSize = FreelistNode::HeaderSize();
+		constexpr static U64 nodeHeaderSize = FreelistNode::HeaderSize();
 
 		RedBlackTreeElement* treeNode = m_TreeHead;
 		RedBlackTreeElement* potentialNode = m_NullTreeElement;
@@ -149,19 +149,19 @@ namespace Engine
 		return nullptr;
 	}
 
-	void FreelistRedBlackAllocator::SplitFreelist(FreelistNode* node, U32 sizeBytes)
+	void FreelistRedBlackAllocator::SplitFreelist(FreelistNode* node, U64 sizeBytes)
 	{
-		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
-		constexpr static U32 minNodeSize = FreelistNode::MinSize();
+		constexpr static U64 payloadOffset = FreelistNode::PayloadOffset();
+		constexpr static U64 minNodeSize = FreelistNode::MinSize();
 
 		U8* newNodeMemoryAddress = reinterpret_cast<U8*>(node) + payloadOffset + sizeBytes;
 		U8* alignedNewNodeMemoryAddress = MemoryUtils::AlignPointer(newNodeMemoryAddress, alignof(void*));
 		U8 offset = static_cast<U8>((alignedNewNodeMemoryAddress - newNodeMemoryAddress) & 0xFF);
 
-		U32 newChunkSize = node->RBElement()->SizeBytes() - (sizeBytes + offset);
+		U64 newChunkSize = node->RBElement()->SizeBytes() - (sizeBytes + offset);
 		if (newChunkSize <= minNodeSize) return;
 		FreelistNode* newNode = reinterpret_cast<FreelistNode*>(GetInitializedNode(alignedNewNodeMemoryAddress, newChunkSize));
-		U32 nodeChangedSize = node->RBElement()->SizeBytes() - newChunkSize;
+		U64 nodeChangedSize = node->RBElement()->SizeBytes() - newChunkSize;
 		node->RBElement()->SetSizeBytes(nodeChangedSize);
 		newNode->Next = node->Next;
 		if (newNode->Next) newNode->Next->Prev = newNode;
@@ -173,12 +173,12 @@ namespace Engine
 	void FreelistRedBlackAllocator::MergeFreelist(FreelistNode* node)
 	{
 		// When this function executes, node is not free.
-		constexpr static U32 payloadOffset = FreelistNode::PayloadOffset();
+		constexpr static U64 payloadOffset = FreelistNode::PayloadOffset();
 		ClearRB(node->RBElement());
 		// Might seem strange, but node->Next might exist in different region of memory, because of expansion.
 		if (node->Next && node->Next->IsFree() && node->IsNeighbourOf(node->Next))
 		{
-			U32 nodeChangedSize = node->RBElement()->SizeBytes() + node->Next->RBElement()->SizeBytes() + payloadOffset;
+			U64 nodeChangedSize = node->RBElement()->SizeBytes() + node->Next->RBElement()->SizeBytes() + payloadOffset;
 			DeleteRB(node->Next->RBElement());
 
 			node->RBElement()->SetSizeBytes(nodeChangedSize);
@@ -187,7 +187,7 @@ namespace Engine
 		}
 		if (node->Prev && node->Prev->IsFree() && node->Prev->IsNeighbourOf(node))
 		{
-			U32 nodeChangedSize = node->Prev->RBElement()->SizeBytes() + node->RBElement()->SizeBytes() + payloadOffset;
+			U64 nodeChangedSize = node->Prev->RBElement()->SizeBytes() + node->RBElement()->SizeBytes() + payloadOffset;
 			DeleteRB(node->Prev->RBElement());
 
 			node->Prev->RBElement()->SetSizeBytes(nodeChangedSize);

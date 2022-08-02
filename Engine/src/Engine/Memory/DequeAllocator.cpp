@@ -7,12 +7,12 @@
 
 namespace Engine
 {
-	DequeAllocator::DequeAllocator(U32 dequeSizeBytes) : m_TopMarker(dequeSizeBytes), m_BottomMarker(0), m_DequeSize(dequeSizeBytes)
+	DequeAllocator::DequeAllocator(U64 dequeSizeBytes) : m_TopMarker(dequeSizeBytes), m_BottomMarker(0), m_DequeSize(dequeSizeBytes)
 	{
 		m_DequeMemory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(dequeSizeBytes));
 	}
 
-	void* DequeAllocator::AllocTop(U32 sizeBytes)
+	void* DequeAllocator::AllocTop(U64 sizeBytes)
 	{
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (sizeBytes > m_TopMarker)
@@ -20,7 +20,7 @@ namespace Engine
 			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
-		U32 newTopMarker = m_TopMarker - sizeBytes;
+		U64 newTopMarker = m_TopMarker - sizeBytes;
 
 		// If requested block cannot be allocated, return nullptr
 		if (newTopMarker < m_BottomMarker)
@@ -33,9 +33,9 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	void* DequeAllocator::AllocBottom(U32 sizeBytes)
+	void* DequeAllocator::AllocBottom(U64 sizeBytes)
 	{
-		U32 newBottomMarker = m_BottomMarker + sizeBytes;
+		U64 newBottomMarker = m_BottomMarker + sizeBytes;
 
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newBottomMarker > m_TopMarker)
@@ -48,10 +48,10 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	void* DequeAllocator::AllocTopAligned(U32 sizeBytes, U16 alignment)
+	void* DequeAllocator::AllocTopAligned(U64 sizeBytes, U16 alignment)
 	{
 		U16 mask = alignment - 1;
-		U32 actualBytes = sizeBytes + mask;
+		U64 actualBytes = sizeBytes + mask;
 
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (actualBytes > m_TopMarker)
@@ -59,7 +59,7 @@ namespace Engine
 			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
-		U32 newTopMarker = m_TopMarker - actualBytes;
+		U64 newTopMarker = m_TopMarker - actualBytes;
 
 		// If requested block cannot be allocated, return nullptr
 		if (newTopMarker < m_BottomMarker)
@@ -72,12 +72,12 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	void* DequeAllocator::AllocBottomAligned(U32 sizeBytes, U16 alignment)
+	void* DequeAllocator::AllocBottomAligned(U64 sizeBytes, U16 alignment)
 	{
 		U16 mask = alignment - 1;
-		U32 actualBytes = sizeBytes + mask;
+		U64 actualBytes = sizeBytes + mask;
 
-		U32 newBottomMarker = m_BottomMarker + actualBytes;
+		U64 newBottomMarker = m_BottomMarker + actualBytes;
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newBottomMarker > m_TopMarker)
 		{
@@ -89,11 +89,11 @@ namespace Engine
 		return static_cast<void*>(address);
 	}
 
-	U32 DequeAllocator::GetTopMarker() const { return m_TopMarker; }
+	U64 DequeAllocator::GetTopMarker() const { return m_TopMarker; }
 
-	U32 DequeAllocator::GetBottomMarker() const { return m_BottomMarker; }
+	U64 DequeAllocator::GetBottomMarker() const { return m_BottomMarker; }
 
-	void DequeAllocator::FreeToMarker(U32 marker)
+	void DequeAllocator::FreeToMarker(U64 marker)
 	{
 		if (marker <= m_BottomMarker)
 			m_BottomMarker = marker;

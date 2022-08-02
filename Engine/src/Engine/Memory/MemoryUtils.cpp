@@ -11,10 +11,10 @@ namespace Engine
 		return (address + mask) & ~mask;
 	}
 
-	void* MemoryUtils::AllocAligned(U32 bytes, U16 alignment)
+	void* MemoryUtils::AllocAligned(U64 bytes, U16 alignment)
 	{
 		// Extra bytes to ensure proper alignment.
-		U32 actualBytes = bytes + alignment;
+		U64 actualBytes = bytes + alignment;
 
 		// Allocate unaligned block.
 		U8* rawMemory = new U8[actualBytes];

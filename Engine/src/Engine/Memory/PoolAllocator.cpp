@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	PoolAllocator::PoolAllocator(U32 typeSizeBytes, U32 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0), m_TotalPoolElements(count)
+	PoolAllocator::PoolAllocator(U64 typeSizeBytes, U64 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0), m_TotalPoolElements(count)
 	{
 		ENGINE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
 		void* poolMemory = MemoryUtils::AllocAligned(typeSizeBytes * count);
@@ -56,11 +56,11 @@ namespace Engine
 		return poolExtension;
 	}
 
-	void PoolAllocator::InitializePool(void* memory, U32 count)
+	void PoolAllocator::InitializePool(void* memory, U64 count)
 	{
 		PoolElement* poolElement = reinterpret_cast<PoolElement*>(memory);
 		U8* nextPoolElementAddress = reinterpret_cast<U8*>(memory);
-		for (U32 i = 1; i < count; i++)
+		for (U64 i = 1; i < count; i++)
 		{
 			nextPoolElementAddress += m_TypeSizeBytes;
 			PoolElement* nextPoolElement = reinterpret_cast<PoolElement*>(nextPoolElementAddress);
