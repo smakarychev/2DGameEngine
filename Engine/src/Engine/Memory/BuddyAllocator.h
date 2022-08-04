@@ -9,7 +9,7 @@ namespace Engine
 	// TODO: Move to config.
 	static const U64 BUDDY_ALLOCATOR_MAX_LEVELS = 32;
 	static const U64 BUDDY_ALLOCATOR_DEFAULT_LEAF_SIZE_BYTES = 16_B;
-	static const U64 BUDDY_ALLOCATOR_INCREMENT_BYTES = 128_MiB;
+	static const U64 BUDDY_ALLOCATOR_INCREMENT_BYTES = 1024_MiB;
 
 	class BuddyAllocator
 	{
@@ -34,9 +34,22 @@ namespace Engine
 
 		void Dealloc(void* memory);
 
+		// Recursive version of BelongsLocal.
+		bool Belongs(void* memory) const;
+
+		void SetDebugName(const std::string& name) { m_DebugName = name; }
+		const std::string& GetDebugName() const { return m_DebugName; }
+
+		// TODO: custom container
+		std::vector<U64> GetMemoryBounds() const;
+		void SetExpandCallback(void (*callbackFn)()) { m_CallbackFn = callbackFn; }
 	private:
 		struct BuddyAllocatorBlock;
 		
+		// Not the greatest name.
+		// Checks if memory was allocated here.
+		bool BelongsLocal(void* memory) const;
+
 		// Allocate new buddy allocator, if not enough memory.
 		void ExpandBuddyAllocator(U64 sizeBytes);
 		
@@ -57,10 +70,6 @@ namespace Engine
 
 		void SetBlockFreeStatus(BuddyAllocatorBlock* block, U32 level, bool status);
 		void SetBlockFreeStatus(U64 globalIndex, bool status);
-
-		// Not the greatest name.
-		// Checks if block was allocated here.
-		bool DoesBlockBelongsToAllocator(BuddyAllocatorBlock* block);
 
 		void SetLevel(BuddyAllocatorBlock* block, U32 level);
 		U32 GetLevel(BuddyAllocatorBlock* block);
@@ -89,5 +98,10 @@ namespace Engine
 
 		// Extension if ran out of memory.
 		BuddyAllocator* m_NextBuddyAllocator;
+
+		std::string m_DebugName;
+		
+		// This is my favourite line.
+		void (*m_CallbackFn)() = [](){};
 	};
 }

@@ -10,7 +10,8 @@
 namespace Engine
 {
 	BuddyAllocator::BuddyAllocator(U64 sizeBytes, U64 leafSizeBytes) : m_TotalSizeBytes(sizeBytes),
-		m_LeafSizeBytes(leafSizeBytes), m_NextBuddyAllocator(nullptr)
+		m_LeafSizeBytes(leafSizeBytes), m_NextBuddyAllocator(nullptr),
+		m_DebugName("Buddy allocator")
 	{
 		sizeBytes = Math::CeilToPower2(sizeBytes);
 		ENGINE_ASSERT((sizeBytes & (sizeBytes - 1)) == 0 && (leafSizeBytes & (leafSizeBytes - 1)) == 0,
@@ -59,14 +60,15 @@ namespace Engine
 	void BuddyAllocator::Dealloc(void* memory)
 	{
 		// If block wasn't allocated here, delegate it to next allocator.
-		if (!DoesBlockBelongsToAllocator(reinterpret_cast<BuddyAllocatorBlock*>(memory)))
+		if (!BelongsLocal(reinterpret_cast<BuddyAllocatorBlock*>(memory)))
 		{
 			if (m_NextBuddyAllocator != nullptr)
 			{
 				m_NextBuddyAllocator->Dealloc(memory);
 				return;
 			}
-			ENGINE_ERROR("Buddy allocator: unidentified memory address: {0:x}", reinterpret_cast<U64>(memory));
+			ENGINE_ERROR("{}: unidentified memory address: {:x}", m_DebugName, reinterpret_cast<U64>(memory));
+			return;
 		}
 		U32 level = GetLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));
 
@@ -126,11 +128,20 @@ namespace Engine
 		}
 	}
 
+	bool BuddyAllocator::Belongs(void* memory) const
+	{
+		if (BelongsLocal(memory)) return true;
+		if (m_NextBuddyAllocator) return m_NextBuddyAllocator->Belongs(memory);
+		return false;
+	}
+
 	void BuddyAllocator::ExpandBuddyAllocator(U64 sizeBytes)
 	{
 		sizeBytes = std::max(sizeBytes, BUDDY_ALLOCATOR_INCREMENT_BYTES);
-		ENGINE_CORE_INFO("Buddy allocator: requesting {} bytes of memory from the system.", sizeBytes);
+		ENGINE_CORE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, sizeBytes);
 		m_NextBuddyAllocator = new (MemoryUtils::AllocAligned(sizeof(BuddyAllocator), 256)) BuddyAllocator(sizeBytes, m_LeafSizeBytes);
+		// Callback is defined in memory manager.
+		m_CallbackFn();
 	}
 
 	void* BuddyAllocator::AllocBlock(U32 level)
@@ -221,10 +232,10 @@ namespace Engine
 		m_IsFree[globalIndex] = status;
 	}
 
-	bool BuddyAllocator::DoesBlockBelongsToAllocator(BuddyAllocatorBlock* block)
+	bool BuddyAllocator::BelongsLocal(void* memory) const
 	{
-		U8* memory = reinterpret_cast<U8*>(block);
-		return (memory >= m_Memory && memory < (m_Memory + m_TotalSizeBytes));
+		U8* address = reinterpret_cast<U8*>(memory);
+		return (address >= m_Memory && address < (m_Memory + m_TotalSizeBytes));
 	}
 
 	void BuddyAllocator::SetLevel(BuddyAllocatorBlock* block, U32 level)
@@ -257,6 +268,18 @@ namespace Engine
 		return static_cast<void*>(block);
 	}
 
+	std::vector<U64> BuddyAllocator::GetMemoryBounds() const
+	{
+		std::vector<U64> bounds;
+		bounds.push_back(reinterpret_cast<U64>(m_Memory));
+		bounds.push_back(reinterpret_cast<U64>(m_Memory + m_TotalSizeBytes));
+		if (m_NextBuddyAllocator)
+		{
+			auto nextBounds = m_NextBuddyAllocator->GetMemoryBounds();
+			bounds.insert(bounds.end(), nextBounds.begin(), nextBounds.end());
+		}
+		return bounds;
+	}
 
 	BuddyAllocator::~BuddyAllocator()
 	{

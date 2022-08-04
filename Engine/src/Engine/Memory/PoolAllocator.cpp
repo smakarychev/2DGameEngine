@@ -7,7 +7,9 @@
 
 namespace Engine
 {
-	PoolAllocator::PoolAllocator(U64 typeSizeBytes, U64 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0), m_TotalPoolElements(count)
+	PoolAllocator::PoolAllocator(U64 typeSizeBytes, U64 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0),
+		m_TotalPoolElements(count), m_InitialPoolElements(count),
+		m_DebugName("Pool Allocator")
 	{
 		ENGINE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
 		void* poolMemory = MemoryUtils::AllocAligned(typeSizeBytes * count);
@@ -42,7 +44,7 @@ namespace Engine
 		}
 		else
 		{
-			ENGINE_ERROR("Cannot deallocate: pull is full.");
+			ENGINE_ERROR("{}: cannot deallocate: pull is full.", m_DebugName);
 		}
 	}
 
@@ -50,10 +52,41 @@ namespace Engine
 	{
 		// Allocate additional memory (according to config).
 		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+		ENGINE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT_ELEMENTS);
 		m_AdditionalAllocations.push_back(poolExtension);
 		m_TotalPoolElements += POOL_ALLOCATOR_INCREMENT_ELEMENTS;
 		InitializePool(poolExtension, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+
+		// Callback is defined in memory manager.
+		m_CallbackFn();
+
 		return poolExtension;
+	}
+
+	bool PoolAllocator::Belongs(void* memory) const
+	{
+		U8* address = reinterpret_cast<U8*>(memory);
+		if (address >= m_PoolMemory && address < m_PoolMemory + m_InitialPoolElements * m_TypeSizeBytes) return true;
+		for (const auto& al : m_AdditionalAllocations)
+		{
+			U8* alAddress = reinterpret_cast<U8*>(al);
+			if (address >= alAddress && address < alAddress + POOL_ALLOCATOR_INCREMENT_ELEMENTS * m_TypeSizeBytes) return true;
+		}
+		return false;
+	}
+
+	std::vector<U64> PoolAllocator::GetMemoryBounds() const
+	{
+		std::vector<U64> bounds;
+		bounds.push_back(reinterpret_cast<U64>(m_PoolMemory));
+		bounds.push_back(reinterpret_cast<U64>(m_PoolMemory + m_InitialPoolElements * m_TypeSizeBytes));
+		for (const auto& al : m_AdditionalAllocations)
+		{
+			U8* alAddress = reinterpret_cast<U8*>(al);
+			bounds.push_back(reinterpret_cast<U64>(alAddress));
+			bounds.push_back(reinterpret_cast<U64>(alAddress + POOL_ALLOCATOR_INCREMENT_ELEMENTS * m_TypeSizeBytes));
+		}
+		return bounds;	
 	}
 
 	void PoolAllocator::InitializePool(void* memory, U64 count)

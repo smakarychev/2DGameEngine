@@ -29,6 +29,15 @@ namespace Engine
 
 		void Dealloc(void* memory);
 
+		// Checks if memory was allocated here.
+		bool Belongs(void* memory);
+
+		void SetDebugName(const std::string& name) { m_DebugName = name; }
+		const std::string& GetDebugName() const { return m_DebugName; }
+
+		// TODO: custom container
+		std::vector<U64> GetMemoryBounds() const;
+		void SetExpandCallback(void (*callbackFn)()) { m_CallbackFn = callbackFn; }
 	private:
 		struct FreelistNode;
 		struct RedBlackTreeElement;
@@ -102,9 +111,10 @@ namespace Engine
 		// Struct for each memory request from os (in ExpandFreelist()).
 		struct FreelistHolder
 		{
+			U64 SizeBytes;
 			FreelistHolder* Next;
 			FreelistNode* FirstNode;
-			constexpr static U64 HeaderSize() { return sizeof Next + sizeof FirstNode; }
+			constexpr static U64 HeaderSize() { return sizeof SizeBytes + sizeof Next + sizeof FirstNode; }
 			constexpr static U64 MinSize() { return sizeof HeaderSize() + sizeof FirstNode + FreelistNode::MinSize(); }
 		};
 
@@ -112,5 +122,10 @@ namespace Engine
 		RedBlackTreeElement* m_NullTreeElement;
 
 		FreelistHolder* m_FirstFreelistHolder;
+
+		std::string m_DebugName;
+
+		// This is my favourite line.
+		void (*m_CallbackFn)() = [](){};
 	};
 }

@@ -7,7 +7,8 @@
 
 namespace Engine
 {
-	FreelistRedBlackAllocator::FreelistRedBlackAllocator(U64 sizeBytes)
+	FreelistRedBlackAllocator::FreelistRedBlackAllocator(U64 sizeBytes) :
+		m_DebugName("Freelist allocator")
 	{
 		ENGINE_ASSERT(sizeBytes >= FreelistHolder::MinSize(), "Freelist allocator must be larger.");
 		void* freelistMemory = MemoryUtils::AllocAligned(sizeBytes);
@@ -69,11 +70,47 @@ namespace Engine
 		// Try merge free neighbour nodes.
 		MergeFreelist(node);
 	}
+
+	bool FreelistRedBlackAllocator::Belongs(void* memory)
+	{
+		U8* address = reinterpret_cast<U8*>(memory);
+		FreelistHolder* holder = m_FirstFreelistHolder;
+		U8* holderAddress = reinterpret_cast<U8*>(holder);
+		if (address >= holderAddress && address < holderAddress + holder->SizeBytes) return true;
+		while (holder->Next)
+		{
+			holder = holder->Next;
+			holderAddress = reinterpret_cast<U8*>(holder);
+			if (address >= holderAddress && address < holderAddress + holder->SizeBytes) return true;
+		}
+		return false;
+	}
 	
+	std::vector<U64> FreelistRedBlackAllocator::GetMemoryBounds() const
+	{
+
+		std::vector<U64> bounds;
+
+		FreelistHolder* holder = m_FirstFreelistHolder;
+		U8* holderAddress = reinterpret_cast<U8*>(holder);
+
+		bounds.push_back(reinterpret_cast<U64>(holderAddress));
+		bounds.push_back(reinterpret_cast<U64>(holderAddress + holder->SizeBytes));
+		while (holder->Next)
+		{
+			holder = holder->Next;
+			holderAddress = reinterpret_cast<U8*>(holder);
+			bounds.push_back(reinterpret_cast<U64>(holderAddress));
+			bounds.push_back(reinterpret_cast<U64>(holderAddress + holder->SizeBytes));
+		}
+		return bounds;
+	}
+
 	void* FreelistRedBlackAllocator::GetInitializedFreelistHolder(void* memory, U64 sizeBytes)
 	{
 		constexpr static U64 holderHeader = FreelistHolder::HeaderSize();
 		FreelistHolder* holder = reinterpret_cast<FreelistHolder*>(memory);
+		holder->SizeBytes = sizeBytes;
 		holder->Next = nullptr;
 
 		U8* holderNodeAddress = static_cast<U8*>(memory) + holderHeader;
@@ -109,7 +146,7 @@ namespace Engine
 		sizeBytes = std::max(sizeBytes, RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
 		sizeBytes += FreelistHolder::HeaderSize() + FreelistNode::PayloadOffset() + static_cast<U64>(alignof(void*));
 
-		ENGINE_CORE_INFO("Freelist allocator: requesting {} bytes of memory from the system.", sizeBytes);
+		ENGINE_CORE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, sizeBytes);
 
 		void* freelistExtension = MemoryUtils::AllocAligned(sizeBytes);
 
@@ -120,6 +157,9 @@ namespace Engine
 		m_FirstFreelistHolder = newHolder;
 
 		InsertRB(newHolder->FirstNode->RBElement());
+
+		// Callback is defined in memory manager.
+		m_CallbackFn();
 
 		return static_cast<void*>(newHolder->FirstNode);
 	}
