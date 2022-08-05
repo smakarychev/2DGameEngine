@@ -5,15 +5,17 @@
 namespace Engine
 {
 	// TODO: move to config.
-	static const U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 2048;
+	static const U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 4096;
 	class PoolAllocator
 	{
 	public:
-		PoolAllocator(U64 typeSizeBytes, U64 count);
+		PoolAllocator(U64 typeSizeBytes, U64 count, U64 incrementElements = POOL_ALLOCATOR_INCREMENT_ELEMENTS);
 		~PoolAllocator();
 
 		// Get new element from the pull of free elements.
 		void* Alloc();
+
+		void* Alloc([[maybe_unused]] U64 sizeBytes) { return Alloc(); }
 
 		template <typename T>
 		T* Alloc() { return static_cast<T*>(Alloc()); }
@@ -48,6 +50,8 @@ namespace Engine
 		U64 m_AllocatedPoolElements;
 		U64 m_TotalPoolElements;
 		U64 m_InitialPoolElements;
+
+		U64 m_IncrementElements;
 
 		// A pointer to the element to be taken from the pool.
 		PoolElement* m_FreePoolElement;

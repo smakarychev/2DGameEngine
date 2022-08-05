@@ -5,56 +5,71 @@
 
 namespace Engine
 {
-	FreelistRedBlackAllocator MemoryManager::s_FreeTreeAllocator(RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
-	BuddyAllocator MemoryManager::s_BuddyAllocator(BUDDY_DEFAULT_SIZE, BUDDY_ALLOCATOR_DEFAULT_LEAF_SIZE_BYTES);
-	PoolAllocator MemoryManager::s_TinyPool(TINY_POOL_SIZE, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
-	PoolAllocator MemoryManager::s_SmallPool(SMALL_POOL_SIZE, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
-	PoolAllocator MemoryManager::s_MediumPool(MEDIUM_POOL_SIZE, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
-	PoolAllocator MemoryManager::s_BigPool(BIG_POOL_SIZE, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+	std::vector<MemoryManager::MarkedAllocator> MemoryManager::s_Allocators;
 
-	U64 MemoryManager::s_LowestAllocation;
-	U64 MemoryManager::s_HighestAllocation;
 	std::vector<MarkedInterval> MemoryManager::s_MarkedIntervals;
 	bool MemoryManager::s_IsPendingProbe;
 
 	void MemoryManager::Init()
 	{
-		s_LowestAllocation = std::numeric_limits<U64>::max();
-		s_HighestAllocation = 0;
 		s_IsPendingProbe = true;
 
-		s_TinyPool.SetDebugName("Tiny pool");
-		s_SmallPool.SetDebugName("Small pool");
-		s_MediumPool.SetDebugName("Medium pool");
-		s_BigPool.SetDebugName("Big pool");
-		s_BuddyAllocator.SetDebugName("Buddy allocator");
-		s_FreeTreeAllocator.SetDebugName("Free tree allocator");
+		U64 allocatorId = 0;
+		BuddyAllocator* buddyAlloc = new BuddyAllocator(BUDDY_DEFAULT_SIZE_BYTES, BUDDY_ALLOCATOR_DEFAULT_LEAF_SIZE_BYTES);
+		s_Allocators.push_back({ buddyAlloc, allocatorId++, 128_MiB });
+		FreelistRedBlackAllocator* freeTreeAlloc = new FreelistRedBlackAllocator(RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
+		s_Allocators.push_back({ freeTreeAlloc, allocatorId++, std::numeric_limits<U64>::max() });
 
-		s_TinyPool.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
-		s_SmallPool.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
-		s_MediumPool.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
-		s_BigPool.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
-		s_BuddyAllocator.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
-		s_FreeTreeAllocator.SetExpandCallback([]() {MemoryManager::s_IsPendingProbe = true; });
+		for (U32 pow = 3; pow <= 10; pow++)
+		{
+			U64 poolSize = U64(1) << pow;
+			PoolAllocator* allocator = nullptr;
+			if (pow == 3)
+			{
+				allocator = new PoolAllocator(poolSize, POOL_ALLOCATOR_INCREMENT_ELEMENTS, 100000);
+			}
+			else
+			{
+				allocator = new PoolAllocator(poolSize, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+			}
+			allocator->SetDebugName("Pool" + std::to_string(poolSize));
+
+			s_Allocators.push_back({ allocator, allocatorId++, poolSize });
+		}
+
+		std::sort(s_Allocators.begin(), s_Allocators.end(), [](auto& a, auto& b) { return a.HigherBound < b.HigherBound; });
+
+		for (auto&& markAlloc : s_Allocators)
+		{
+			std::visit([](auto&& alloc) {
+				alloc->SetExpandCallback([]() { MemoryManager::s_IsPendingProbe = true; });
+			}, markAlloc.Allocator);
+		}
+	}
+
+	void MemoryManager::ShutDown()
+	{
+
+		// Delete all allocators.
+		for (auto&& markAlloc : s_Allocators)
+		{
+			std::visit([](auto&& alloc) {
+				delete alloc;
+			}, markAlloc.Allocator);
+		}
 	}
 
 	void* MemoryManager::Alloc(U64 sizeBytes)
 	{
-		void* address = nullptr;
-		if (sizeBytes <= TINY_POOL_SIZE) address = s_TinyPool.Alloc();
-		else if (sizeBytes <= SMALL_POOL_SIZE) address = s_SmallPool.Alloc();
-		else if (sizeBytes <= MEDIUM_POOL_SIZE) address = s_MediumPool.Alloc();
-		else if (sizeBytes <= BIG_POOL_SIZE) address = s_BigPool.Alloc();
-		else if (sizeBytes <= 128_MiB) address = s_BuddyAllocator.Alloc(sizeBytes);
-		else address = s_FreeTreeAllocator.Alloc(sizeBytes);
-		if (reinterpret_cast<U64>(address) < s_LowestAllocation)
+		AllocationDispatcher dispatcher(sizeBytes);
+		for (auto&& markAlloc : s_Allocators)
 		{
-			s_LowestAllocation = reinterpret_cast<U64>(address);
+			std::visit([&dispatcher, &markAlloc](auto&& alloc) {
+				dispatcher.Dispatch(markAlloc.HigherBound, [&alloc](U64 sizeBytes) -> void* { return alloc->Alloc(sizeBytes); });
+			}, markAlloc.Allocator);
+			if (dispatcher.GetAddress() != nullptr) break;
 		}
-		else if (reinterpret_cast<U64>(address) > s_HighestAllocation)
-		{
-			s_HighestAllocation = reinterpret_cast<U64>(address);
-		}
+		void* address = dispatcher.GetAddress();
 		return address;
 	}
 	
@@ -63,32 +78,27 @@ namespace Engine
 		if (s_IsPendingProbe) ProbeAll();
 		MarkedInterval* interval = GetContainingInterval(memory);
 		DeallocationDispatcher dispatcher(*interval, memory);
-		dispatcher.Dispatch<0>([](void* address) { return MemoryManager::s_BuddyAllocator.Dealloc(address); });
-		dispatcher.Dispatch<1>([](void* address) { return MemoryManager::s_FreeTreeAllocator.Dealloc(address); });
-		dispatcher.Dispatch<2>([](void* address) { return MemoryManager::s_BigPool.Dealloc(address); });
-		dispatcher.Dispatch<3>([](void* address) { return MemoryManager::s_MediumPool.Dealloc(address); });
-		dispatcher.Dispatch<4>([](void* address) { return MemoryManager::s_SmallPool.Dealloc(address); });
-		dispatcher.Dispatch<5>([](void* address) { return MemoryManager::s_TinyPool.Dealloc(address); });
+		for (auto&& markAlloc : s_Allocators)
+		{
+			std::visit([&dispatcher, &markAlloc](auto&& alloc) {
+				dispatcher.Dispatch(markAlloc.Mark, [&alloc](void* address) { return alloc->Dealloc(address); });
+			}, markAlloc.Allocator);
+		}
 	}
 
 	void MemoryManager::ProbeAll()
 	{
 		// Best oop solid practices right here.
-		std::vector<MemoryInterval> searchIntervals{ {s_LowestAllocation, s_HighestAllocation} };
 		std::vector<MemoryInterval> coveredIntervals{};
 		std::vector<MarkedInterval> markedIntervals{};
 
-		ENGINE_WARN("Probe: lowest: {} highest: {}", s_LowestAllocation, s_HighestAllocation);
+		for (auto&& markAlloc : s_Allocators)
+		{
+			std::visit([&markAlloc, &coveredIntervals, &markedIntervals](auto&& alloc) {
+				PerformProbeTask(alloc, markAlloc.Mark, coveredIntervals, markedIntervals);
+			}, markAlloc.Allocator);
+		}
 
-		PerformProbeTask(&s_BuddyAllocator, 0, searchIntervals, coveredIntervals, markedIntervals);
-		PerformProbeTask(&s_FreeTreeAllocator, 1, searchIntervals, coveredIntervals, markedIntervals);
-		PerformProbeTask(&s_BigPool, 2, searchIntervals, coveredIntervals, markedIntervals);
-		PerformProbeTask(&s_MediumPool, 3, searchIntervals, coveredIntervals, markedIntervals);
-		PerformProbeTask(&s_SmallPool, 4, searchIntervals, coveredIntervals, markedIntervals);
-		PerformProbeTask(&s_TinyPool, 5, searchIntervals, coveredIntervals, markedIntervals);
-
-			
-			
 		std::sort(markedIntervals.begin(), markedIntervals.end(), [](auto& a, auto& b) { return a.Interval.Begin < b.Interval.Begin; });
 		s_MarkedIntervals = MergeIntervals(markedIntervals);	
 
@@ -157,9 +167,13 @@ namespace Engine
 	MarkedInterval* MemoryManager::GetContainingInterval(void* address)
 	{
 		U64 addressU64 = reinterpret_cast<U64>(address);
+
 		for (auto& mi : s_MarkedIntervals)
 		{
-			if (addressU64 >= mi.Interval.Begin && addressU64 < mi.Interval.End) return &mi;
+			if (addressU64 >= mi.Interval.Begin && addressU64 < mi.Interval.End)
+			{
+				return &mi;
+			}
 		}
 		return nullptr;
 	}

@@ -7,8 +7,10 @@
 
 namespace Engine
 {
-	PoolAllocator::PoolAllocator(U64 typeSizeBytes, U64 count) : m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0),
+	PoolAllocator::PoolAllocator(U64 typeSizeBytes, U64 count, U64 incrementElements) :
+		m_TypeSizeBytes(typeSizeBytes), m_AllocatedPoolElements(0),
 		m_TotalPoolElements(count), m_InitialPoolElements(count),
+		m_IncrementElements(incrementElements),
 		m_DebugName("Pool Allocator")
 	{
 		ENGINE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
@@ -51,11 +53,11 @@ namespace Engine
 	void* PoolAllocator::ExpandPool()
 	{
 		// Allocate additional memory (according to config).
-		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT_ELEMENTS);
-		ENGINE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, m_TypeSizeBytes * POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * m_IncrementElements);
+		ENGINE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, m_TypeSizeBytes * m_IncrementElements);
 		m_AdditionalAllocations.push_back(poolExtension);
-		m_TotalPoolElements += POOL_ALLOCATOR_INCREMENT_ELEMENTS;
-		InitializePool(poolExtension, POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+		m_TotalPoolElements += m_IncrementElements;
+		InitializePool(poolExtension, m_IncrementElements);
 
 		// Callback is defined in memory manager.
 		m_CallbackFn();
@@ -70,7 +72,7 @@ namespace Engine
 		for (const auto& al : m_AdditionalAllocations)
 		{
 			U8* alAddress = reinterpret_cast<U8*>(al);
-			if (address >= alAddress && address < alAddress + POOL_ALLOCATOR_INCREMENT_ELEMENTS * m_TypeSizeBytes) return true;
+			if (address >= alAddress && address < alAddress + m_IncrementElements * m_TypeSizeBytes) return true;
 		}
 		return false;
 	}
@@ -84,7 +86,7 @@ namespace Engine
 		{
 			U8* alAddress = reinterpret_cast<U8*>(al);
 			bounds.push_back(reinterpret_cast<U64>(alAddress));
-			bounds.push_back(reinterpret_cast<U64>(alAddress + POOL_ALLOCATOR_INCREMENT_ELEMENTS * m_TypeSizeBytes));
+			bounds.push_back(reinterpret_cast<U64>(alAddress + m_IncrementElements * m_TypeSizeBytes));
 		}
 		return bounds;	
 	}
