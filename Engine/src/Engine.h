@@ -24,3 +24,9 @@
 #include "Engine/Memory/PoolAllocator.h"
 #include "Engine/Memory/FreelistRedBlackTreeAllocator.h"
 #include "Engine/Memory/BuddyAllocator.h"
+#include "Engine/Memory/MemoryManager.h"
+
+/* All ECS related */
+#include "Engine/ECS/Entity.h"
+#include "Engine/ECS/Components.h"
+#include "Engine/ECS/EntityManager.h"
