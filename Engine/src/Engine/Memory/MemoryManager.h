@@ -73,15 +73,19 @@ namespace Engine
 		using AllocatorPolyType = std::variant<Ts...>;
 
 	public:
+		// Shall be called in entry point.
 		static void Init();
 
+		// Shall be called in entry point (frees memory).
 		static void ShutDown();
 
+		// Dispaches and allocates memory.
 		static void* Alloc(U64 sizeBytes);
 
 		template <typename T>
 		static T* Alloc(U64 count = 1) { return reinterpret_cast<T*>(Alloc(sizeof(T) * count)); }
 
+		// Dispaches and deallocates memory.
 		static void Dealloc(void* memory);
 
 	private:
@@ -144,7 +148,7 @@ namespace Engine
 	}
 
 	template <typename T, U64 Count, typename ... Args>
-	T* NewArray(Args&&... args)
+	T* New(Args&&... args)
 	{
 		void* memory = static_cast<void*>(MemoryManager::Alloc<T>(Count));
 		U8* memoryBytes = reinterpret_cast<U8*>(memory);
@@ -160,7 +164,7 @@ namespace Engine
 	}
 
 	template <typename T, U64 Count>
-	void DeleteArray(T* obj)
+	void Delete(T* obj)
 	{
 		U8* memoryBytes = reinterpret_cast<U8*>(obj);
 		for (U64 i = 0; i < Count; i++)
