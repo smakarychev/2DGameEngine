@@ -82,31 +82,35 @@ namespace Engine
 
 	bool Input::SetKeyPressed(KeyPressedEvent& event)
 	{
-		if (event.IsRepeat()) return true;
+		if (event.IsRepeat()) return false;
 		auto keycode = event.GetKeyCode();
 		s_PressedKeys[keycode] = true;
-		return true;
+		// Returns false to propagate event.
+		return false;
 	}
 
 	bool Input::SetKeyReleased(KeyReleasedEvent& event)
 	{
 		auto keycode = event.GetKeyCode();
 		s_ReleasedKeys[keycode] = true;
-		return true;
+		// Returns false to propagate event.
+		return false;
 	}
 
 	bool Input::SetButtonPressed(MouseButtonPressedEvent& event)
 	{
 		auto mouseButton = event.GetMouseButton();
 		s_PressedButtons[mouseButton] = true;
-		return true;
+		// Returns false to propagate event.
+		return false;
 	}
 
 	bool Input::SetButtonReleased(MouseButtonReleasedEvent& event)
 	{
 		auto mouseButton = event.GetMouseButton();
 		s_ReleasedButtons[mouseButton] = true;
-		return true;
+		// Returns false to propagate event.
+		return false;
 	}
 
 }

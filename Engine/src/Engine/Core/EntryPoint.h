@@ -10,7 +10,11 @@ int main(int argc, char** argv)
 {
 	Engine::Log::Init();
 	Engine::MemoryManager::Init();
-	auto app = Engine::CreateApplication();
-	app->Run();
+	// Scope, so app gets destroyed before MemoryManager.
+	{
+		auto app = Engine::CreateApplication();
+		app->Run();
+	}
+
 	Engine::MemoryManager::ShutDown();
 }
