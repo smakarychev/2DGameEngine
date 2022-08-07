@@ -6,9 +6,6 @@
 /* Application */
 #include "Engine/Core/Application.h"
 
-/* Entry point */
-#include "Engine/Core/EntryPoint.h"
-
 /* Custom types */
 #include "Engine/Core/Types.h"
 

@@ -11,6 +11,8 @@
 // TODO: wrapper of glm?
 #include <glm/glm.hpp>
 
+#include <map>
+
 namespace Engine
 {
 	class Input
