@@ -11,6 +11,8 @@ workspace "2DGameEngine"
 group "Dependencies"
 	include "Engine/vendor/GLFW"
 	include "Engine/vendor/glad"
+
+
 group""
 
 	include "Engine"

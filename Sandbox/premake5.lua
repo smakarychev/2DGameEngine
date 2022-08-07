@@ -18,6 +18,7 @@ project "Sandbox"
 
 		"%{wks.location}/Engine/src",
 		"%{wks.location}/Engine/vendor/**/include",
+		"%{wks.location}/Engine/vendor/glm",
 	}
 
 	links
