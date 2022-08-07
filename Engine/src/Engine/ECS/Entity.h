@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-	// Everything is probably will change.
+	// Everything will probably change.
 	struct Entity
 	{
 		Entity(const std::string& tag, U64 id) :
