@@ -2,7 +2,7 @@
 
 #include "StackAllocator.h"
 #include "MemoryUtils.h"
-#include "Engine/Log.h"
+#include "Engine/Core/Log.h"
 
 namespace Engine
 {
@@ -13,7 +13,7 @@ namespace Engine
 
 	void* StackAllocator::Alloc(U64 sizeBytes)
 	{
-		U32 newMarker = m_Marker + sizeBytes;
+		U64 newMarker = m_Marker + sizeBytes;
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newMarker > m_StackSize)
 		{

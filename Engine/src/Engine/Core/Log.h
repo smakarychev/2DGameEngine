@@ -34,7 +34,7 @@ namespace Engine {
 		static void ClientError(Fmt<Ts...> fmt, Ts&&... args) {	s_ClientLogger->error(fmt, std::forward<Ts>(args)...); }
 		template<typename ...Ts>
 		static void ClientFatal(Fmt<Ts...> fmt, Ts&&... args) { s_ClientLogger->critical(fmt, std::forward<Ts>(args)...); }
-
+		
 
 	private:
 		static std::shared_ptr<spdlog::logger> s_CoreLogger;

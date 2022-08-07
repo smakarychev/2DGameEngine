@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Types.h"
+#include "Engine/Core/Types.h"
 
 #ifdef _MSC_VER
 #include <intrin.h>

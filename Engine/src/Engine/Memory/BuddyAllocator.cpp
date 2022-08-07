@@ -3,8 +3,8 @@
 #include "BuddyAllocator.h"
 
 #include "MemoryUtils.h"
-#include "Engine/Log.h"
-#include "Engine/Core.h"
+#include "Engine/Core/Log.h"
+#include "Engine/Core/Core.h"
 #include "Engine/Math/MathUtils.h"
 
 namespace Engine

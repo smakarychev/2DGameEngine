@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Engine/Types.h"
-
-#include <sstream>
+#include "Engine/Core/Types.h"
+#include "Engine/Events/Event.h"
 
 namespace Engine
 {
@@ -21,6 +20,8 @@ namespace Engine
 	class Window
 	{
 	public:
+		using EventCallbackFn = std::function<void(Event&)>;
+
 		virtual ~Window() = default;
 
 		// Create an actual implementation
@@ -30,7 +31,11 @@ namespace Engine
 		virtual U32 GetWidth() const = 0;
 		virtual U32 GetHeight() const = 0;
 
+		virtual void SetEventCallbackFunction(EventCallbackFn fn) = 0;
 		virtual void SetVSync(bool enabled) = 0;
 		virtual bool IsVSync() const = 0;
+
+		// Get platform specific window implementation.
+		virtual void* GetNativeWindow() = 0;
 	};
 }

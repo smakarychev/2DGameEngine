@@ -1,22 +1,25 @@
 #pragma once
 
 /* Core */
-#include "Engine/Core.h"
+#include "Engine/Core/Core.h"
 
 /* Application */
-#include "Engine/Application.h"
+#include "Engine/Core/Application.h"
 
 /* Entry point */
-#include "Engine/EntryPoint.h"
+#include "Engine/Core/EntryPoint.h"
 
 /* Custom types */
-#include "Engine/Types.h"
+#include "Engine/Core/Types.h"
 
 /* Logger */
-#include "Engine/Log.h"
+#include "Engine/Core/Log.h"
 
 /* Window */
-#include "Engine/Window.h"
+#include "Engine/Core/Window.h"
+
+/* Input */
+#include "Engine/Core/Input.h"
 
 /* Custom heap allocators */
 #include "Engine/Memory/StackAllocator.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Window.h"
+#include "Engine/Core/Window.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -17,8 +17,11 @@ namespace Engine
 		U32 GetWidth() const override { return m_Data.Width; }
 		U32 GetHeight() const override { return m_Data.Height; }
 
+		void SetEventCallbackFunction(EventCallbackFn fn) override { m_Data.EventCallbackFn = fn; }
 		void SetVSync(bool enabled) override;
 		bool IsVSync() const override { return m_Data.VSync; }
+
+		void* GetNativeWindow() override { return static_cast<void*>(m_Window); }
 	private:
 		void Init(const WindowProps& props);
 		void Shutdown();
@@ -29,6 +32,8 @@ namespace Engine
 			U32 Width = 1600, Height = 900;
 			std::string Title;
 			bool VSync = true;
+
+			EventCallbackFn EventCallbackFn;
 		};
 
 		WindowData m_Data;
