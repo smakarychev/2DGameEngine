@@ -5,6 +5,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	class MemoryUtils
 	{
 	public:

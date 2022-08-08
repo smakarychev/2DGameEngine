@@ -10,7 +10,7 @@ namespace Engine
 	public:
 		MouseCode GetMouseButton() const { return m_Button; }
 
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
+		EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton)
 	protected:
 		MouseButtonEvent(MouseCode button)
 			: m_Button(button) {}
@@ -57,7 +57,7 @@ namespace Engine
 			: m_MouseX(x), m_MouseY(y) {}
 
 		EVENT_CLASS_TYPE(MouseMoved)
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+		EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input)
 		
 		F32 GetX() const { return m_MouseX; }
 		F32 GetY() const { return m_MouseY; }
@@ -90,7 +90,7 @@ namespace Engine
 		}
 
 		EVENT_CLASS_TYPE(MouseScrolled)
-			EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+			EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input)
 	private:
 		F32 m_XOffset, m_YOffset;
 	};

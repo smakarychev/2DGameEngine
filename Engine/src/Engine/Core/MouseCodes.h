@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	using MouseCode = U16;
 
 	namespace Mouse

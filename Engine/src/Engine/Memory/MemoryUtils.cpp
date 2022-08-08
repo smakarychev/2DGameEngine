@@ -7,7 +7,7 @@ namespace Engine
 	uintptr_t MemoryUtils::AlignAdress(uintptr_t address, U16 alignment)
 	{
 		const U16 mask = alignment - 1;
-		ENGINE_ASSERT((alignment & mask) == 0, "Alignment have to be the power of 2.");
+		ENGINE_CORE_ASSERT((alignment & mask) == 0, "Alignment have to be the power of 2.");
 		return (address + mask) & ~mask;
 	}
 

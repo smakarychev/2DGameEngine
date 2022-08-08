@@ -9,7 +9,7 @@ namespace Engine
 	public:
 		WindowCloseEvent() = default;
 		EVENT_CLASS_TYPE(WindowClose)
-		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategory::Application)
 	};
 
 	class WindowResizeEvent : public Event
@@ -19,7 +19,7 @@ namespace Engine
 		{}
 
 		EVENT_CLASS_TYPE(WindowResize)
-		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategory::Application)
 
 		U32 GetWidth() const { return m_Width; }
 		U32 GetHeight() const { return m_Height; }

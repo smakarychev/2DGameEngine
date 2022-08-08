@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	using KeyCode = U16;
 	namespace Key 
 	{

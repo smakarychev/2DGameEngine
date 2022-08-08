@@ -30,3 +30,6 @@
 #include "Engine/ECS/Entity.h"
 #include "Engine/ECS/Components.h"
 #include "Engine/ECS/EntityManager.h"
+
+/* All rendering related */
+#include "Engine/Rendering/Buffer.h"

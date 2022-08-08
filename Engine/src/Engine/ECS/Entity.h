@@ -8,6 +8,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// Everything will probably change.
 	struct Entity
 	{

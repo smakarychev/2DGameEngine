@@ -6,6 +6,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// TODO: Move to config.
 	static const U64 BUDDY_ALLOCATOR_MAX_LEVELS = 32;
 	static const U64 BUDDY_ALLOCATOR_DEFAULT_LEAF_SIZE_BYTES = 16_B;

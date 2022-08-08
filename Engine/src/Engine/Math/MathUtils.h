@@ -8,6 +8,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	namespace Math
 	{
 		inline U32 CLZ(U32 number)
@@ -41,14 +42,14 @@ namespace Engine
 		// Returns the ceil(log2(number));
 		inline U32 Log2(U32 number)
 		{
-			ENGINE_ASSERT(number != 0, "Log2 of 0 is undefined.");
+			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.");
 			return 31 - CLZ(number);
 		}
 
 		// Returns the ceil(log2(number));
 		inline U64 Log2(U64 number)
 		{
-			ENGINE_ASSERT(number != 0, "Log2 of 0 is undefined.");
+			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.");
 			return 63 - CLZ(number);
 		}
 	}

@@ -9,7 +9,7 @@ namespace Engine {
 
 	Application::Application() : m_IsRunning(true)
 	{
-		ENGINE_ASSERT(s_Instance == nullptr, "Application already exists.");
+		ENGINE_CORE_ASSERT(s_Instance == nullptr, "Application already exists.");
 		s_Instance = this;
 		OnCreate();
 	}
@@ -35,8 +35,8 @@ namespace Engine {
 
 	void Application::OnUpdate()
 	{
-		m_Window->OnUpdate();
 
+		m_Window->OnUpdate();
 		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
 		{
 			(*it)->OnUpdate();

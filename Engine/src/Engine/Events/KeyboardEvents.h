@@ -8,7 +8,7 @@ namespace Engine
 	class KeyEvent : public Event
 	{
 	public:
-		EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryKeyboard)
+		EVENT_CLASS_CATEGORY(EventCategory::Input | EventCategory::Keyboard)
 		
 		KeyCode GetKeyCode() const { return m_KeyCode; }
 	protected:

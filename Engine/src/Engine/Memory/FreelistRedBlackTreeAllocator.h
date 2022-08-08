@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// TODO: move to config.
 	static const U64 RBFREELIST_ALLOCATOR_INCREMENT_BYTES = 100_MiB;
 

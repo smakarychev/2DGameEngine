@@ -17,7 +17,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newMarker > m_StackSize)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_StackSize - m_Marker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_StackSize - m_Marker);
 			return nullptr;
 		}
 		U8* address = m_StackMemory + m_Marker;
@@ -34,7 +34,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newMarker > m_StackSize) 
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_StackSize - m_Marker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_StackSize - m_Marker);
 			return nullptr;
 		}
 

@@ -14,7 +14,7 @@ namespace Engine
 		m_DebugName("Buddy allocator")
 	{
 		sizeBytes = Math::CeilToPower2(sizeBytes);
-		ENGINE_ASSERT((sizeBytes & (sizeBytes - 1)) == 0 && (leafSizeBytes & (leafSizeBytes - 1)) == 0,
+		ENGINE_CORE_ASSERT((sizeBytes & (sizeBytes - 1)) == 0 && (leafSizeBytes & (leafSizeBytes - 1)) == 0,
 			"Buddy allocator size and leafsize have to be the power of 2.");
 		m_Levels = static_cast<U32>(Math::Log2(sizeBytes / leafSizeBytes));
 		m_Memory = reinterpret_cast<U8*>(MemoryUtils::AllocAligned(sizeBytes, 256));
@@ -67,7 +67,7 @@ namespace Engine
 				m_NextBuddyAllocator->Dealloc(memory);
 				return;
 			}
-			ENGINE_ERROR("{}: unidentified memory address: {:x}", m_DebugName, reinterpret_cast<U64>(memory));
+			ENGINE_CORE_ERROR("{}: unidentified memory address: {:x}", m_DebugName, reinterpret_cast<U64>(memory));
 			return;
 		}
 		U32 level = GetLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));

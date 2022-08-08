@@ -13,7 +13,7 @@ namespace Engine
 		m_IncrementElements(incrementElements),
 		m_DebugName("Pool Allocator")
 	{
-		ENGINE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
+		ENGINE_CORE_ASSERT(typeSizeBytes >= sizeof(void*), "Pool allocator only supports types that are at least as large as {}.", sizeof(void*));
 		void* poolMemory = MemoryUtils::AllocAligned(typeSizeBytes * count);
 		m_PoolMemory = reinterpret_cast<U8*>(poolMemory);
 		m_FreePoolElement = reinterpret_cast<PoolElement*>(poolMemory);
@@ -54,7 +54,7 @@ namespace Engine
 	{
 		// Allocate additional memory (according to config).
 		void* poolExtension = MemoryUtils::AllocAligned(m_TypeSizeBytes * m_IncrementElements);
-		ENGINE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, m_TypeSizeBytes * m_IncrementElements);
+		ENGINE_CORE_INFO("{}: requesting {} bytes of memory from the system.", m_DebugName, m_TypeSizeBytes * m_IncrementElements);
 		m_AdditionalAllocations.push_back(poolExtension);
 		m_TotalPoolElements += m_IncrementElements;
 		InitializePool(poolExtension, m_IncrementElements);

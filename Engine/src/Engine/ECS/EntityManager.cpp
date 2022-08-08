@@ -11,18 +11,10 @@ namespace Engine
 	void EntityManager::Update()
 	{
 		// Delete all aliven't entities.
-		for (auto it = m_Entities.begin(); it != m_Entities.end();)
+		std::erase_if(m_Entities, [](auto ent) { return !ent->IsAlive; });
+		for (auto&& [tag, entityList] : m_EntityMap)
 		{
-			auto& ent = *it;
-			if (!ent->IsAlive)
-			{
-				m_EntityMap[ent->Tag].erase(std::find(m_EntityMap[ent->Tag].begin(), m_EntityMap[ent->Tag].end(), ent));
-				it = m_Entities.erase(it);
-			}
-			else
-			{
-				it++;
-			}
+			std::erase_if(entityList, [](auto ent) { return !ent->IsAlive; });
 		}
 
 		// Add all new entities.
@@ -53,7 +45,7 @@ namespace Engine
 	{
 		if (m_EntityMap.find(tag) == m_EntityMap.end())
 		{
-			ENGINE_ERROR("EntityManager: unknown tag {}", tag);
+			ENGINE_CORE_ERROR("EntityManager: unknown tag {}", tag);
 			// Here we add empty vector for that tag to map, and return it.
 			m_EntityMap.insert({ tag, {} });
 		}

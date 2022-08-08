@@ -12,6 +12,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// TODO: Move to config.
 	static U64 TINY_POOL_SIZE = 8_B;
 	static U64 SMALL_POOL_SIZE = 32_B;

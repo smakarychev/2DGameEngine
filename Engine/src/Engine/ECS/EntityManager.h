@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	using EntityVector = std::vector<std::shared_ptr<Entity>>;
 	using EntityMap = std::unordered_map<std::string, EntityVector>;
 	

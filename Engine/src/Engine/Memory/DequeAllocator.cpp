@@ -25,7 +25,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr
 		if (newTopMarker < m_BottomMarker)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
 		m_TopMarker = newTopMarker;
@@ -40,7 +40,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newBottomMarker > m_TopMarker)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", sizeBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
 		U8* address = m_DequeMemory + m_BottomMarker;
@@ -56,7 +56,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (actualBytes > m_TopMarker)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
 		U64 newTopMarker = m_TopMarker - actualBytes;
@@ -64,7 +64,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr
 		if (newTopMarker < m_BottomMarker)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
 		m_TopMarker = newTopMarker;
@@ -81,7 +81,7 @@ namespace Engine
 		// If requested block cannot be allocated, return nullptr (alloc, new (std::nothrow) style).
 		if (newBottomMarker > m_TopMarker)
 		{
-			ENGINE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
+			ENGINE_CORE_ERROR("Failed to allocate {} bytes: not enough memory ({} bytes)", actualBytes, m_TopMarker - m_BottomMarker);
 			return nullptr;
 		}
 		U8* address = MemoryUtils::AlignPointer(m_DequeMemory + m_BottomMarker, alignment);
@@ -99,7 +99,7 @@ namespace Engine
 			m_BottomMarker = marker;
 		else if (marker >= m_TopMarker && marker <= m_DequeSize)
 			m_TopMarker = marker;
-		else ENGINE_ERROR("{} is outside of allocated region ([0; {}] - [{}; {}]).", marker, m_BottomMarker, m_TopMarker, m_DequeSize);
+		else ENGINE_CORE_ERROR("{} is outside of allocated region ([0; {}] - [{}; {}]).", marker, m_BottomMarker, m_TopMarker, m_DequeSize);
 	}
 
 	void DequeAllocator::ClearTop()

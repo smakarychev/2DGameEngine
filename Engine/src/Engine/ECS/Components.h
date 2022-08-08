@@ -7,6 +7,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	struct TransformComponent
 	{
 		glm::vec3 Position;

@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// TODO: move to config.
 	static const U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 4096;
 	class PoolAllocator

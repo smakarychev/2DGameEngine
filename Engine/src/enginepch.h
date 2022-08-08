@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <ostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <stack>

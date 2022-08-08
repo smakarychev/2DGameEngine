@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	// Implementation of double-ended stack allocator.
 	class DequeAllocator
 	{

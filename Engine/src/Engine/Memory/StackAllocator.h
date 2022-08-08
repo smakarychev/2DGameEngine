@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	class StackAllocator
 	{
 	public:
