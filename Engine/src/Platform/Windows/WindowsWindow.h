@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Engine/Core/Window.h"
+#include "Engine/Rendering/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
 
 namespace Engine
 {
+	using namespace Types;
 	class WindowsWindow : public Window
 	{
 	public:
@@ -40,5 +41,7 @@ namespace Engine
 
 		// Would be better to use unique_ptr, but need to supply deleter
 		GLFWwindow* m_Window;
+
+		GraphicsContext* m_Context;
 	};
 }

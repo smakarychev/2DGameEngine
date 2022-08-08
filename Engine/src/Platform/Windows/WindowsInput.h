@@ -6,6 +6,7 @@
 
 namespace Engine
 {
+	using namespace Types;
 	bool Input::GetKey(KeyCode keycode)
 	{
 		auto* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
