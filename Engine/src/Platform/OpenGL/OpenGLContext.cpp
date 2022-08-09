@@ -1,8 +1,9 @@
 #include "enginepch.h"
 
+#include "Engine/Core/Core.h"
+
 #include "OpenGLContext.h"
 
-#include "Engine/Core/Core.h"
 
 namespace Engine
 {

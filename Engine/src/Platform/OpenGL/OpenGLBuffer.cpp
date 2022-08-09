@@ -50,14 +50,13 @@ namespace Engine
 
 	OpenGLVertexArray::OpenGLVertexArray() : m_VertexBufferIndex(0), m_AttributeIndex(0)
 	{
-		glGenVertexArrays(1, &m_Id);
+		glCreateVertexArrays(1, &m_Id);
 	}
 
 	void OpenGLVertexArray::AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer)
 	{
 		m_VertexBuffers.push_back(buffer);
-		glBindVertexArray(m_Id);
-		glVertexArrayVertexBuffer(m_Id, m_VertexBufferIndex, buffer->GetId(), 0, buffer->GetVertexLayout().Stride);
+		glVertexArrayVertexBuffer(m_Id, m_VertexBufferIndex, buffer->GetId(), 0, (GLsizei)buffer->GetVertexLayout().Stride);
 
 		for (auto& layoutElement : buffer->GetVertexLayout())
 		{
@@ -78,7 +77,6 @@ namespace Engine
 	void OpenGLVertexArray::SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer)
 	{
 		m_IndexBuffer = buffer;
-		glBindVertexArray(m_Id);
 		glVertexArrayElementBuffer(m_Id, buffer->GetId());
 	}
 	

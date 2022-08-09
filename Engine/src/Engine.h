@@ -33,3 +33,4 @@
 
 /* All rendering related */
 #include "Engine/Rendering/Buffer.h"
+#include "Engine/Rendering/Shader.h"

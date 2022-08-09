@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "Log.h"
 #include "Engine/Memory/MemoryManager.h"
+#include "Engine/Resource/ResourceManager.h"
 
 extern std::unique_ptr<Engine::Application> Engine::CreateApplication();
 
@@ -15,6 +16,6 @@ int main(int argc, char** argv)
 		auto app = Engine::CreateApplication();
 		app->Run();
 	}
-
+	Engine::ShaderLoader::ShutDown();
 	Engine::MemoryManager::ShutDown();
 }

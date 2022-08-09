@@ -89,7 +89,7 @@ namespace Engine
 
 	struct VertexLayout
 	{
-		VertexLayout() {}
+		VertexLayout() : Stride(0) {}
 		VertexLayout(const std::vector<VertexLayoutElement>& elements) : Elements(elements)
 		{
 			U32 offset = 0;

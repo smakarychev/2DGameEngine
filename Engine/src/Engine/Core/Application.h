@@ -17,7 +17,6 @@ namespace Engine {
 		Application();
 		~Application();
 		void Run();
-		void OnEvent(Event& event);
 
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
@@ -28,6 +27,7 @@ namespace Engine {
 	private:
 		void OnCreate();
 		void OnUpdate();
+		void OnEvent(Event& event);
 		bool OnApplicationClose(WindowCloseEvent& event);
 	private:
 		std::unique_ptr<Window> m_Window;
