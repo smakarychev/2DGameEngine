@@ -154,6 +154,7 @@ namespace Engine
 		if (it != m_UniformLocations.end()) return it->second;
 		
 		GLint uniformLocation = glGetUniformLocation(m_Id, uniformName.c_str());
+		if (uniformLocation == -1) ENGINE_CORE_ERROR("Unknown uniform name: {}", uniformName);
 		m_UniformLocations.emplace(uniformName, uniformLocation);
 		return uniformLocation;
 	}

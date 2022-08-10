@@ -22,12 +22,13 @@ project "Engine"
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glad}",
+		"%{IncludeDir.glm}",
 	}
 
 	links
 	{
 		"GLFW",
-		"glad"
+		"glad",
 	}
 
 	defines
