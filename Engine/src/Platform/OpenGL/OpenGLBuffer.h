@@ -25,11 +25,15 @@ namespace Engine
 	class OpenGLIndexBuffer : public IndexBuffer
 	{
 	public:
-		OpenGLIndexBuffer(void* data, U32 size);
+		OpenGLIndexBuffer(void* data, U32 count, U32 size);
 		U32 GetId() const override { return m_Id; }
+
+		U32 GetCount() const override{ return m_Count; }
+
 	private:
 		void* m_Data;
 		U32 m_Size;
+		U32 m_Count;
 		U32 m_Id;
 	};
 
@@ -40,6 +44,8 @@ namespace Engine
 
 		void AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer) override;
 		void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) override;
+		
+		std::shared_ptr<IndexBuffer> GetIndexBuffer() override { return m_IndexBuffer; };
 
 		void Bind() override;
 		U32 GetId() const override { return m_Id; }

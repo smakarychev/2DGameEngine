@@ -12,9 +12,9 @@ namespace Engine
         return std::make_shared<OpenGLVertexBuffer>(data, size);
     }
 
-    std::shared_ptr<IndexBuffer> IndexBuffer::Create(void* data, U32 size)
+    std::shared_ptr<IndexBuffer> IndexBuffer::Create(void* data, U32 count, U32 size)
     {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
+        return std::make_shared<OpenGLIndexBuffer>(data, count, size);
     }
 
     std::shared_ptr<VertexArray> VertexArray::Create()

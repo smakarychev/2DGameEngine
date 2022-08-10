@@ -1,13 +1,9 @@
 #include "GameLayer.h"
 
-#include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
 void GameLayer::OnAttach()
 {
-    // TODO: Move to renderer.
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_Shader = Shader::ReadShaderFromFile("julia", "assets/shaders/test.glsl");
 
@@ -25,7 +21,7 @@ void GameLayer::OnAttach()
         2, 0, 3,
     };
 
-    auto ibo = IndexBuffer::Create(indices, sizeof(indices));
+    auto ibo = IndexBuffer::Create(indices, 6, sizeof(indices));
     auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
     VertexLayout bufferLayout{ {
         { LayoutElement::Float3, "a_position"},
@@ -36,12 +32,13 @@ void GameLayer::OnAttach()
     m_VAO = VertexArray::Create();
     m_VAO->SetIndexBuffer(ibo);
     m_VAO->AddVertexBuffer(vbo);
+
+    RenderCommand::SetClearColor(glm::vec3(0.1f, 0.1f, 0.1f));
 }
 
 void GameLayer::OnUpdate()
 {
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+    RenderCommand::ClearScreen();
 
     static F32 angleStep = 0.005f;
     static F32 juliaAngle = 0.0f;
@@ -54,12 +51,16 @@ void GameLayer::OnUpdate()
     if (Input::GetKey(Key::Minus)) zoom -= zoomStep;
     if (Input::GetKey(Key::Equal)) zoom += zoomStep;
 
+    U32 renderResX = Application::Get().GetWindow().GetWidth() * 4;
+    U32 renderResY = Application::Get().GetWindow().GetHeight() * 4;
+
     m_Shader->Bind();
     m_Shader->SetUniformFloat("u_zoom", zoom);
     m_Shader->SetUniformFloat2("u_c", glm::vec2(0.7885f * glm::cos(juliaAngle), 0.7885f * glm::sin(juliaAngle)));
-    m_Shader->SetUniformFloat2("u_screenDims", glm::vec2(Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight()));
-    m_Shader->SetUniformFloat2("u_offset", glm::vec2(-(F32)Application::Get().GetWindow().GetWidth() / 2.0, -(F32)Application::Get().GetWindow().GetHeight() / 2.0));
+    m_Shader->SetUniformFloat2("u_screenDims", glm::vec2(renderResX, renderResY));
+    m_Shader->SetUniformFloat2("u_offset", glm::vec2(-(F32)renderResX / 2.0, -(F32)renderResY / 2.0));
 
-    m_VAO->Bind();
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    Renderer::BeginScene();
+    Renderer::Submit(m_Shader, m_VAO, {});
+    Renderer::EndScene();
 }

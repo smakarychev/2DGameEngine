@@ -14,8 +14,8 @@ namespace Engine
 		glNamedBufferData(m_Id, size, data, usage);
 	}
 
-	OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, U32 size) :
-		m_Data(data), m_Size(size)
+	OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, U32 count, U32 size) :
+		m_Data(data), m_Count(count), m_Size(size)
 	{
 		glCreateBuffers(1, &m_Id);
 		// I guess I saw this in bgfx.

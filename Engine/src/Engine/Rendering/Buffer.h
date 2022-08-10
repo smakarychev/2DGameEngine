@@ -126,7 +126,9 @@ namespace Engine
 		virtual ~IndexBuffer() {}
 		virtual U32 GetId() const = 0;
 	
-		static std::shared_ptr<IndexBuffer> Create(void* data, U32 size);
+		virtual U32 GetCount() const = 0;
+
+		static std::shared_ptr<IndexBuffer> Create(void* data, U32 count, U32 size);
 	};
 
 	// TODO: see how bgfx avoids this in api.
@@ -138,6 +140,8 @@ namespace Engine
 
 		virtual void AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer) = 0;
 		virtual void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) = 0;
+
+		virtual std::shared_ptr<IndexBuffer> GetIndexBuffer() = 0;
 
 		virtual void Bind() = 0;
 

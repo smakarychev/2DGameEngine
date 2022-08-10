@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include "Engine/Core/Input.h"
+#include "Engine/Rendering/Renderer.h"
 
 namespace Engine {
 
@@ -23,6 +24,8 @@ namespace Engine {
 	{
 		m_Window = Window::Create();
 		m_Window->SetEventCallbackFunction(BIND_FN(Application::OnEvent));
+
+		Renderer::Init();
 	}
 
 	void Application::Run()
