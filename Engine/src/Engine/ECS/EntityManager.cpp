@@ -11,10 +11,10 @@ namespace Engine
 	void EntityManager::Update()
 	{
 		// Delete all aliven't entities.
-		std::erase_if(m_Entities, [](auto ent) { return !ent->IsAlive; });
+		std::erase_if(m_Entities, [](auto ent) { return !ent->IsActive; });
 		for (auto&& [tag, entityList] : m_EntityMap)
 		{
-			std::erase_if(entityList, [](auto ent) { return !ent->IsAlive; });
+			std::erase_if(entityList, [](auto ent) { return !ent->IsActive; });
 		}
 
 		// Add all new entities.

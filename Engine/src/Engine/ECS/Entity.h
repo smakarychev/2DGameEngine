@@ -15,11 +15,11 @@ namespace Engine
 		Entity(const std::string& tag, U64 id) :
 			Tag(tag), Id(id) {}
 
-		void Destroy() { IsAlive = false; }
+		void Destroy() { IsActive = false; }
 		
 		U64 Id = 0;
 		std::string Tag = "Default";
-		bool IsAlive = true;
+		bool IsActive = true;
 
 		// All possible components (remember, it is testing).
 		std::shared_ptr<TransformComponent> Transform;
