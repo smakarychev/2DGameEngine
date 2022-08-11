@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Engine/Core/Types.h"
-
+#include "Engine/Rendering/Shader.h"
+#include "Engine/Rendering/Texture.h"
 
 #include <filesystem>
 
@@ -12,16 +13,25 @@ namespace Engine
 	class ResourceManager
 	{
 	public:
-		static std::string ReadFile(const std::string& path);
+		static std::string ReadFile(const std::filesystem::path& path);
+		static void ShutDown();
 	};
 
-	class Shader;
 	class ShaderLoader
 	{
 	public:
-		static std::shared_ptr<Shader> LoadShaderFromFile(const std::string name, const std::string& path);
+		static std::shared_ptr<Shader> LoadShaderFromFile(const std::filesystem::path& path);
 		static void ShutDown();
 	private:
 		static std::unordered_map<std::string, std::shared_ptr<Shader>> s_LoadedShaders;
+	};
+
+	class TextureLoader
+	{
+	public:
+		static std::shared_ptr<Texture> LoadTextureFromFile(const std::filesystem::path& path);
+		static void ShutDown();
+	private:
+		static std::unordered_map<std::string, std::shared_ptr<Texture>> s_LoadedTextures;
 	};
 }
