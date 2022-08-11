@@ -34,3 +34,9 @@
 /* All rendering related */
 #include "Engine/Rendering/Buffer.h"
 #include "Engine/Rendering/Shader.h"
+#include "Engine/Rendering/Texture.h"
+#include "Engine/Rendering/Renderer.h"
+#include "Engine/Rendering/RenderCommand.h"
+
+/* All camera related */
+#include "Engine/Core/Camera.h"

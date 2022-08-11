@@ -60,7 +60,6 @@ namespace Engine {
 			(*it)->OnEvent(event);
 			if (event.Handled) break;
 		}
-
 	}
 
 	void Application::PushLayer(Layer* layer)
