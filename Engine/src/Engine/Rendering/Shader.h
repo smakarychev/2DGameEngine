@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <filesystem>
 
 namespace Engine
 {
@@ -27,8 +28,8 @@ namespace Engine
 	class Shader
 	{
 	public:
-		static std::shared_ptr<Shader> CreateShaderFromSource(const std::string name, const std::string& source);
-		static std::shared_ptr<Shader> ReadShaderFromFile(const std::string name, const std::string& path);
+		static std::shared_ptr<Shader> ReadShaderFromFile(const std::filesystem::path& path);
+		static std::shared_ptr<Shader> CreateShaderFromSource(const std::string& name, const std::string& source);
 
 		virtual U32 GetId() const = 0;
 

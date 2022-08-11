@@ -33,7 +33,7 @@ namespace Engine
 	{
 
 	public:
-		OpenGLShader(const std::string name, const std::string& source);
+		OpenGLShader(const std::string& name, const std::string& source);
 
 		U32 GetId() const override { return m_Id; };
 

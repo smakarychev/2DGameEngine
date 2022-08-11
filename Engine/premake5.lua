@@ -23,6 +23,7 @@ project "Engine"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glad}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}",
 	}
 
 	links
@@ -34,7 +35,8 @@ project "Engine"
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+		"STB_IMAGE_IMPLEMENTATION",
 	}
 
 	filter "system:windows"

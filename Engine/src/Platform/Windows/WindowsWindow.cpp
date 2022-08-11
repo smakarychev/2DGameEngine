@@ -142,6 +142,9 @@ namespace Engine
 				data.EventCallbackFn(event);
 			});
 
+		// Lock cursor.
+		//glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
 		SetVSync(true);
 	}
 	
