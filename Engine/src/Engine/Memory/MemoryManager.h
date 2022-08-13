@@ -157,6 +157,16 @@ namespace Engine
 		return reinterpret_cast<T*>(memory);
 	}
 
+	template <typename T, typename ... Args>
+	T* NewArr(U64 count, Args&&... args)
+	{
+		void* memory = static_cast<void*>(MemoryManager::Alloc<T>(count));
+		U8* memoryBytes = reinterpret_cast<U8*>(memory);
+		for (U64 i = 0; i < count; i++) new (memoryBytes + i * sizeof(T)) T(std::forward<Args>(args)...);
+		return reinterpret_cast<T*>(memory);
+	}
+
+
 	template <typename T>
 	void Delete(T* obj)
 	{
@@ -169,6 +179,18 @@ namespace Engine
 	{
 		U8* memoryBytes = reinterpret_cast<U8*>(obj);
 		for (U64 i = 0; i < Count; i++)
+		{
+			reinterpret_cast<T*>(memoryBytes + sizeof obj)->~T();
+			memoryBytes += sizeof obj;
+		}
+		MemoryManager::Dealloc(static_cast<void*>(obj));
+	}
+
+	template <typename T>
+	void DeleteArr(T* obj, U64 count)
+	{
+		U8* memoryBytes = reinterpret_cast<U8*>(obj);
+		for (U64 i = 0; i < count; i++)
 		{
 			reinterpret_cast<T*>(memoryBytes + sizeof obj)->~T();
 			memoryBytes += sizeof obj;
