@@ -14,13 +14,23 @@ namespace Engine
 		glNamedBufferData(m_Id, size, data, usage);
 	}
 
-	OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, U32 count, U32 size) :
-		m_Data(data), m_Count(count), m_Size(size)
+	void OpenGLVertexBuffer::SetData(void* data, U32 size, U32 offset)
+	{
+		glNamedBufferSubData(m_Id, offset, size, data);
+	}
+
+	OpenGLIndexBuffer::OpenGLIndexBuffer(U32* data, U32 count) :
+		m_Data(data), m_Count(count)
 	{
 		glCreateBuffers(1, &m_Id);
 		// I guess I saw this in bgfx.
 		GLenum usage = (data == nullptr) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
-		glNamedBufferData(m_Id, size, data, usage);
+		glNamedBufferData(m_Id, sizeof(U32) * count, data, usage);
+	}
+
+	void OpenGLIndexBuffer::SetData(U32* data, U32 count, U32 offset)
+	{
+		glNamedBufferSubData(m_Id, offset, sizeof(U32) * count, data);
 	}
 
 	U32 GetOpenGLAPIType(LayoutElement type)

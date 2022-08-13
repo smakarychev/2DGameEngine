@@ -2,31 +2,40 @@
 #include "Renderer.h"
 
 #include "RenderCommand.h"
+#include "Renderer2D.h"
 
 namespace Engine
 {
-	void Engine::Renderer::Init()
+	void Renderer::Init()
 	{
 		RenderCommand::Init();
+		Renderer2D::Init();
 	}
 
-	void Engine::Renderer::Submit(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray, const glm::mat3& transform)
+	void Renderer::Submit(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray, const glm::mat4& transform)
 	{
-		RenderCommand::DrawIndexed(shader, vertexArray);
+		shader->Bind();
+		shader->SetUniformMat4("u_modelViewProjection", transform);
+		RenderCommand::DrawIndexed(vertexArray);
 	}
 
-	void Engine::Renderer::BeginScene()
+	void Renderer::BeginScene()
 	{
 		
 	}
 
-	void Engine::Renderer::EndScene()
+	void Renderer::EndScene()
 	{
 	}
 
 	RendererAPI::APIType Engine::Renderer::GetAPI()
 	{
 		return RendererAPI::Get();
+	}
+
+	void Renderer::ShutDown()
+	{
+		Renderer2D::ShutDown();
 	}
 }
 

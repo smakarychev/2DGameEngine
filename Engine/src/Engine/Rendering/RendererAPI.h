@@ -20,7 +20,8 @@ namespace Engine
 		virtual void ClearScreen() = 0;
 		virtual void SetClearColor(const glm::vec3& color) = 0;
 
-		virtual void DrawIndexed(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray) = 0;
+		virtual void DrawIndexed(std::shared_ptr<VertexArray> vertexArray) = 0;
+		virtual void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count) = 0;
 
 		static APIType Get() { return s_APIType; };
 

@@ -31,11 +31,16 @@ namespace Engine
 		glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, 1.0f);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray)
+	void OpenGLRendererAPI::DrawIndexed(std::shared_ptr<VertexArray> vertexArray)
 	{
-		shader->Bind();
 		vertexArray->Bind();
 		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+	}
+
+	void OpenGLRendererAPI::DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count)
+	{
+		vertexArray->Bind();
+		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
 	}
 
 	void errorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)

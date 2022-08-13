@@ -8,7 +8,8 @@ namespace Engine
 	{
 	public:
 		static void Init();
-		static void Submit(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray, const glm::mat3& transform);
+		static void ShutDown();
+		static void Submit(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray, const glm::mat4& transform = glm::mat4(1.0f));
 		static void BeginScene();
 		static void EndScene();
 

@@ -116,6 +116,8 @@ namespace Engine
 		virtual U32 GetId() const = 0;
 		virtual void SetVertexLayout(const VertexLayout& layout) = 0;
 		virtual VertexLayout& GetVertexLayout() = 0;
+		virtual void SetData(void* data, U32 size, U32 offset = 0) = 0;
+
 
 		static std::shared_ptr<VertexBuffer> Create(void* data, U32 size);
 	};
@@ -128,7 +130,9 @@ namespace Engine
 	
 		virtual U32 GetCount() const = 0;
 
-		static std::shared_ptr<IndexBuffer> Create(void* data, U32 count, U32 size);
+		virtual void SetData(U32* data, U32 count, U32 offset = 0) = 0;
+
+		static std::shared_ptr<IndexBuffer> Create(U32* data, U32 count);
 	};
 
 	// TODO: see how bgfx avoids this in api.
@@ -142,6 +146,7 @@ namespace Engine
 		virtual void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) = 0;
 
 		virtual std::shared_ptr<IndexBuffer> GetIndexBuffer() = 0;
+		virtual std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() = 0;
 
 		virtual void Bind() = 0;
 

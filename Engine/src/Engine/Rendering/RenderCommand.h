@@ -9,7 +9,8 @@ namespace Engine
 	{
 	public:
 		static void Init();
-		static void DrawIndexed(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray);
+		static void DrawIndexed(std::shared_ptr<VertexArray> vertexArray);
+		static void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count);
 		static void SetClearColor(const glm::vec3& color);
 		static void ClearScreen();
 	private:
