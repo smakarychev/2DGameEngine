@@ -16,6 +16,7 @@ int main(int argc, char** argv)
 		auto app = Engine::CreateApplication();
 		app->Run();
 	}
+	Engine::Renderer::ShutDown();
 	Engine::ResourceManager::ShutDown();
 	Engine::MemoryManager::ShutDown();
 }
