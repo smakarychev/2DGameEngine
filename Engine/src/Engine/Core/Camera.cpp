@@ -7,18 +7,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 namespace Engine
 {
 	const glm::vec3 Camera::DEFAULT_POSITION						= glm::vec3(0.0f);
-	const glm::vec3 Camera::DEFAULT_UP								= glm::vec3(0.0f, 1.0f, 0.0f);
-	const glm::vec3 Camera::DEFAULT_FRONT							= glm::vec3(0.0f, 0.0f, -1.0f);
-	const glm::vec3 Camera::DEFAULT_RIGHT							= glm::vec3(1.0f, 1.0f, 0.0f);
+	const glm::quat Camera::DEFAULT_ORIENTATION						= glm::angleAxis(0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 	const F32  Camera::DEFAULT_FOV									= 45.0f;
 	const F32  Camera::DEFAULT_ASPECT								= 16.0f / 9.0f;
 	const F32  Camera::DEFAULT_NEAR									= 0.03f;
 	const F32  Camera::DEFAULT_FAR									= 1000.0f;
 	const Camera::ProjectionType Camera::DEFAULT_PROJECTION_TYPE	= Camera::ProjectionType::Perspective;
-
 
 
 	std::shared_ptr<Camera> Camera::Create()
@@ -33,16 +31,16 @@ namespace Engine
 
 	Camera::Camera() : m_FieldOfView(DEFAULT_FOV), m_Aspect(DEFAULT_ASPECT),
 		m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR), m_ProjectionType(DEFAULT_PROJECTION_TYPE),
-		m_Position(DEFAULT_POSITION), m_Up(DEFAULT_UP), m_Right(DEFAULT_RIGHT), m_Front(DEFAULT_FRONT)
+		m_Position(DEFAULT_POSITION), m_Orientation(DEFAULT_ORIENTATION)
 	{
-		m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Front, m_Up);
 		UpdateViewMatrix();
-		m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
+		UpdateProjectionMatrix();
+		UpdateViewProjection();
 	}
 
 	Camera::Camera(const glm::vec3& position, F32 fov, F32 aspect) : m_FieldOfView(fov), m_Aspect(aspect),
 		m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR), m_ProjectionType(DEFAULT_PROJECTION_TYPE),
-		m_Position(position), m_Up(DEFAULT_UP), m_Right(DEFAULT_RIGHT), m_Front(DEFAULT_FRONT)
+		m_Position(position), m_Orientation(DEFAULT_ORIENTATION)
 	{
 		UpdateViewMatrix();
 		UpdateProjectionMatrix();
@@ -54,22 +52,36 @@ namespace Engine
 		m_Position = position;
 	}
 
-	void Camera::SetFrontDirection(const glm::vec3 direction)
+	void Camera::SetOrientation(const glm::quat& orientation)
 	{
-		m_Front = direction;
-		UpdateOrientationVectors();
+		m_Orientation = orientation;
 	}
 
 	void Camera::SetProjection(ProjectionType type)
 	{
 		m_ProjectionType = type;
 		UpdateProjectionMatrix();
-		m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
+		UpdateViewProjection();
+	}
+
+	glm::vec3 Camera::GetForward() const
+	{
+		return glm::rotate(m_Orientation, glm::vec3(0.0f, 0.0f, -1.0f));
+	}
+
+	glm::vec3 Camera::GetUp() const
+	{
+		return glm::rotate(m_Orientation, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	glm::vec3 Camera::GetRight() const
+	{
+		return glm::rotate(m_Orientation, glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 
 	void Camera::UpdateViewMatrix()
 	{
-		m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Front, m_Up);
+		m_ViewMatrix = glm::toMat4(glm::inverse(m_Orientation)) * glm::translate(glm::mat4(1.0f), -m_Position);
 	}
 
 	void Camera::UpdateProjectionMatrix()
@@ -94,13 +106,6 @@ namespace Engine
 		m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
 	}
 
-	void Camera::UpdateOrientationVectors()
-	{
-		// Default up is world up.
-		m_Right = glm::normalize(glm::cross(m_Front, DEFAULT_UP));
-		m_Up = glm::normalize(glm::cross(m_Right, m_Front));
-	}
-
 	std::shared_ptr<CameraController> CameraController::Create(ControllerType type, std::shared_ptr<Camera> camera)
 	{
 		switch (type)
@@ -115,8 +120,8 @@ namespace Engine
 	}
 
 	const F32 FPSCameraController::DEFAULT_TRANSLATION_SPEED		= 1.0f;
-	const F32 FPSCameraController::DEFAULT_SENSITIVITY				= 0.01f;
-	const F32 FPSCameraController::DEFAULT_E_YAW					= glm::radians(-90.0f);
+	const F32 FPSCameraController::DEFAULT_SENSITIVITY				= 0.005f;
+	const F32 FPSCameraController::DEFAULT_E_YAW					= 0.0f;
 	const F32 FPSCameraController::DEFAULT_E_PITCH					= 0.0f;
 
 	FPSCameraController::FPSCameraController(std::shared_ptr<Camera> camera) : m_Camera(camera),
@@ -124,7 +129,6 @@ namespace Engine
 		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH)
 	{ 
 		m_MouseCoords = Input::MousePosition();
-		m_Camera->SetFrontDirection(GetNewFrontVector(0.0f, 0.0f));
 		m_Camera->UpdateViewMatrix();
 		m_Camera->UpdateViewProjection();
 	}
@@ -133,19 +137,19 @@ namespace Engine
 	{		
 		if (Input::GetKey(Key::W))
 		{
-			m_Camera->SetPosition(m_Camera->GetPostion() + m_TranslationSpeed * dt * m_Camera->m_Front);
+			m_Camera->SetPosition(m_Camera->GetPosition() + m_TranslationSpeed * dt * m_Camera->GetForward());
 		}
 		if (Input::GetKey(Key::S))
 		{
-			m_Camera->SetPosition(m_Camera->GetPostion() - m_TranslationSpeed * dt * m_Camera->m_Front);
+			m_Camera->SetPosition(m_Camera->GetPosition() - m_TranslationSpeed * dt * m_Camera->GetForward());
 		}
 		if (Input::GetKey(Key::A))
 		{
-			m_Camera->SetPosition(m_Camera->GetPostion() - m_TranslationSpeed * dt * m_Camera->m_Right);
+			m_Camera->SetPosition(m_Camera->GetPosition() - m_TranslationSpeed * dt * m_Camera->GetRight());
 		}
 		if (Input::GetKey(Key::D))
 		{
-			m_Camera->SetPosition(m_Camera->GetPostion() + m_TranslationSpeed * dt * m_Camera->m_Right);
+			m_Camera->SetPosition(m_Camera->GetPosition() + m_TranslationSpeed * dt * m_Camera->GetRight());
 		}
 		m_Camera->UpdateViewMatrix();
 		m_Camera->UpdateViewProjection();
@@ -164,35 +168,26 @@ namespace Engine
 			F32 xOffset = m_MouseCoords.x - prevMouseX;
 			F32 yOffset = m_MouseCoords.y - prevMouseY;
 
-			xOffset *= m_MouseSensitivity; yOffset *= -m_MouseSensitivity;
+			xOffset *= m_MouseSensitivity; yOffset *= m_MouseSensitivity;
 
-			glm::vec3 newFrontDirection = GetNewFrontVector(xOffset, yOffset);
-			m_Camera->SetFrontDirection(newFrontDirection);
+			m_Yaw += xOffset;
+			m_Pitch += yOffset;
+
+			if (m_Pitch > glm::radians(89.99f)) m_Pitch = glm::radians(89.99f);
+			else if (m_Pitch < glm::radians(-89.99f)) m_Pitch = glm::radians(-89.99f);
+
+			glm::quat newOrientation = glm::quat(glm::vec3(-m_Pitch, -m_Yaw, 0.0f));
+			m_Camera->SetOrientation(newOrientation);
+			m_Camera->UpdateViewMatrix();
+
 			return false;
 		});
 		return false;
 	}
 
-	glm::vec3 FPSCameraController::GetNewFrontVector(F32 xOffset, F32 yOffset)
-	{
-		m_Yaw += xOffset;
-		m_Pitch += yOffset;
-
-		if (m_Pitch > 89.99f) m_Pitch = 89.99f;
-		else if (m_Pitch < -89.99f) m_Pitch = -89.99f;
-
-		glm::vec3 newFrontDirection;
-		newFrontDirection.x = cos(m_Yaw) * cos(m_Pitch);
-		newFrontDirection.y = sin(m_Pitch);
-		newFrontDirection.z = sin(m_Yaw) * cos(m_Pitch);
-		newFrontDirection = glm::normalize(newFrontDirection);
-		return newFrontDirection;
-	}
-
-
 	const F32 EditorCameraController::DEFAULT_TRANSLATION_SPEED			= 0.1f;
 	const F32 EditorCameraController::DEFAULT_ROTATION_SPEED			= 0.5f;
-	const F32 EditorCameraController::DEFAULT_E_YAW						= glm::radians(-90.0f);
+	const F32 EditorCameraController::DEFAULT_E_YAW						= 0.0f;
 	const F32 EditorCameraController::DEFAULT_E_PITCH					= 0.0f;
 	const F32 EditorCameraController::DEFAULT_DISTANCE					= 1.0f;
 	const glm::vec3 EditorCameraController::DEFAULT_FOCAL_POINT			= glm::vec3(0.0);
@@ -203,8 +198,8 @@ namespace Engine
 		m_Distance(DEFAULT_DISTANCE), m_FocalPoint(DEFAULT_FOCAL_POINT)
 	{
 		m_MouseCoords = Input::MousePosition();
-		m_Camera->SetFrontDirection(GetNewFrontVector(0.0f, 0.0f));
-		m_Camera->SetPosition(m_FocalPoint - m_Distance * m_Camera->m_Front);
+		m_Camera->SetPosition(m_FocalPoint - m_Distance * m_Camera->GetForward());
+		m_Camera->UpdateViewMatrix();
 	}
 
 	void EditorCameraController::OnUpdate(F32 dt)
@@ -224,7 +219,7 @@ namespace Engine
 				{
 					xOffset *= -m_TranslationSpeed * dt * m_Distance, yOffset *= m_TranslationSpeed * dt * m_Distance;
 					m_FocalPoint += glm::vec3(xOffset, yOffset, 0.0f);
-					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->m_Front;
+					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->SetPosition(newCameraPosition);
 					m_Camera->UpdateViewMatrix();
 					m_Camera->UpdateViewProjection();
@@ -235,12 +230,15 @@ namespace Engine
 				if (Input::GetMouseButton(Mouse::Button0))
 				{
 					xOffset *= m_RotationSpeed * dt, yOffset *= -m_RotationSpeed * dt;
+					F32 yawSign = m_Camera->GetUp().y < 0 ? 1.0f : -1.0f;
+					m_Yaw += xOffset * yawSign * m_RotationSpeed;
+					m_Pitch += yOffset * m_RotationSpeed;
 
-					glm::vec3 newFrontDirection = GetNewFrontVector(xOffset, yOffset);
-					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * newFrontDirection;
+					glm::quat newOrientation = glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
+					m_Camera->SetOrientation(newOrientation);
+					glm::vec3 newPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
+					m_Camera->SetPosition(newPosition);
 
-					m_Camera->SetFrontDirection(newFrontDirection);
-					m_Camera->SetPosition(newCameraPosition);
 					m_Camera->UpdateViewMatrix();
 					m_Camera->UpdateViewProjection();
 				}
@@ -248,7 +246,7 @@ namespace Engine
 				if (Input::GetMouseButton(Mouse::Button1))
 				{
 					m_Distance += yOffset * ZoomSpeed() * dt;
-					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->m_Front;
+					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->m_OrthoZoom = m_Distance;
 					m_Camera->SetPosition(newCameraPosition);
 					m_Camera->UpdateViewMatrix();
@@ -264,21 +262,6 @@ namespace Engine
 		return false;
 	}
 
-	glm::vec3 EditorCameraController::GetNewFrontVector(F32 xOffset, F32 yOffset)
-	{
-		m_Yaw += xOffset;
-		m_Pitch += yOffset;
-
-		if (m_Pitch > 89.99f) m_Pitch = 89.99f;
-		else if (m_Pitch < -89.99f) m_Pitch = -89.99f;
-
-		glm::vec3 newFrontDirection;
-		newFrontDirection.x = cos(m_Yaw) * cos(m_Pitch);
-		newFrontDirection.y = sin(m_Pitch);
-		newFrontDirection.z = sin(m_Yaw) * cos(m_Pitch);
-		newFrontDirection = glm::normalize(newFrontDirection);
-		return newFrontDirection;
-	}
 	F32 EditorCameraController::ZoomSpeed()
 	{
 		F32 dist = std::max(m_Distance * 0.2f, 0.0f);
