@@ -18,4 +18,8 @@ namespace Engine
 	{
 		return std::shared_ptr<OpenGLTexture>(New<OpenGLTexture>(textureData), Delete<OpenGLTexture>);
 	}
+	std::shared_ptr<Texture> Texture::GetSubTexture(Texture& texture, const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	{
+		return texture.GetSubTexture(tileSize, subtexCoords, subtexSize);
+	}
 }

@@ -54,6 +54,38 @@ namespace Engine
 		glTextureSubImage2D(m_Id, 0, 0, 0, width, height, GetOpenGLPixelFormat(format), GL_UNSIGNED_BYTE, data);
 	}
 
+	std::shared_ptr<Texture> OpenGLTexture::GetSubTexture(const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	{
+		TextureData data;
+		data.Channels = m_Data.Channels;
+		data.Name = m_Data.Name + std::string("sub");
+		data.Data = nullptr;
+		data.Width = U32(tileSize.x  * subtexSize.x);
+		data.Height = U32(tileSize.y * subtexSize.y);
+		std::shared_ptr<Texture> subTexture = Texture::Create(data);
+
+		glCopyImageSubData(
+			m_Id, GL_TEXTURE_2D, 0, GLint(tileSize.x * subtexCoords.x), GLint(tileSize.y * subtexCoords.y), 0,
+			subTexture->GetId(), GL_TEXTURE_2D, 0, 0, 0, 0,
+			GLsizei(tileSize.x * subtexSize.x), GLsizei(tileSize.y * subtexSize.y), 1
+		);
+		return subTexture;
+	}
+
+	std::vector<glm::vec2> OpenGLTexture::GetSubTextureUV(const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	{
+		// Normalize tilesize to get uv.
+		glm::vec2 normalizedTile = glm::vec2(tileSize.x / m_Data.Width, tileSize.y / m_Data.Height);
+		glm::vec2 begin = glm::vec2(subtexCoords.x * normalizedTile.x, subtexCoords.y * normalizedTile.y);
+		glm::vec2 end = begin + glm::vec2(subtexSize.x * normalizedTile.x, subtexSize.y * normalizedTile.y);
+		return { {
+			{ begin.x,	begin.y },
+			{ end.x,	begin.y },
+			{ end.x,	end.y	},
+			{ begin.x,	end.y	}
+		} };
+	}
+
 	OpenGLTexture::~OpenGLTexture()
 	{
 		glDeleteTextures(1, &m_Id);
