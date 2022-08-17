@@ -114,6 +114,8 @@ namespace Engine
 			return std::shared_ptr<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
 		case Engine::CameraController::ControllerType::Editor:
 			return std::shared_ptr<EditorCameraController>(New<EditorCameraController>(camera), Delete<EditorCameraController>);
+		case Engine::CameraController::ControllerType::Editor2D:
+			return std::shared_ptr<Editor2DCameraController>(New<Editor2DCameraController>(camera), Delete<Editor2DCameraController>);
 		default:
 			return std::shared_ptr<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
 		}
@@ -227,7 +229,7 @@ namespace Engine
 			}
 			else
 			{
-				if (Input::GetMouseButton(Mouse::Button0))
+				if (!m_AnglesConstrained && Input::GetMouseButton(Mouse::Button0))
 				{
 					xOffset *= m_RotationSpeed * dt, yOffset *= -m_RotationSpeed * dt;
 					F32 yawSign = m_Camera->GetUp().y < 0 ? 1.0f : -1.0f;
@@ -245,7 +247,9 @@ namespace Engine
 
 				if (Input::GetMouseButton(Mouse::Button1))
 				{
+					F32 deltaDistance = yOffset * ZoomSpeed() * dt;
 					m_Distance += yOffset * ZoomSpeed() * dt;
+					if (m_Distance < 0.0) m_Distance = 1;
 					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->m_OrthoZoom = m_Distance;
 					m_Camera->SetPosition(newCameraPosition);

@@ -9,7 +9,7 @@ namespace Engine
 
     F32 Random::Float()
     {
-        return m_UniformNormalizedReal(m_Mt);
+        return static_cast<F32>(m_UniformNormalizedReal(m_Mt));
     }
 
     F32 Random::Float(F32 left, F32 right)

@@ -19,6 +19,7 @@ namespace Engine
 	class Camera
 	{
 		friend class EditorCameraController;
+		friend class Editor2DCameraController;
 		friend class FPSCameraController;
 	public:
 		enum class ProjectionType
@@ -79,7 +80,7 @@ namespace Engine
 	public:
 		enum class ControllerType
 		{
-			FPS, Editor
+			FPS, Editor, Editor2D
 		};
 	public:
 		static std::shared_ptr<CameraController> Create(ControllerType type, std::shared_ptr<Camera> camera);
@@ -126,9 +127,9 @@ namespace Engine
 
 		void SetTranslationSpeed(F32 speed) { m_TranslationSpeed = speed; }
 		void SetRotationSpeed(F32 speed) { m_RotationSpeed = speed; }
-	private:
+	protected:
 		F32 ZoomSpeed();
-	private:
+	protected:
 		std::shared_ptr<Camera> m_Camera;
 
 		F32 m_TranslationSpeed, m_RotationSpeed;
@@ -138,6 +139,8 @@ namespace Engine
 		glm::vec3 m_FocalPoint;
 		F32 m_Distance;
 
+		bool m_AnglesConstrained = false;
+
 		// TODO: Move to config.
 		static const F32 DEFAULT_TRANSLATION_SPEED, DEFAULT_ROTATION_SPEED;
 		// E for Euler (DEFAULT_PITCH is some microsoft macro).
@@ -145,5 +148,13 @@ namespace Engine
 		static const F32 DEFAULT_DISTANCE;
 		static const glm::vec3 DEFAULT_FOCAL_POINT;
 	};
-
+	class Editor2DCameraController : public EditorCameraController
+	{
+	public:
+		Editor2DCameraController(std::shared_ptr<Camera> camera) : EditorCameraController(camera)
+		{
+			m_AnglesConstrained = true;
+			camera->SetProjection(Camera::ProjectionType::Orthographic);
+		}
+	};
 }
