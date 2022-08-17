@@ -6,9 +6,11 @@ layout (location = 1) in vec2 a_texcoord;
 
 out vec2 texCoord;
 
+uniform mat4 u_modelViewProjection;
+
 void main()
 {
-    gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);
+    gl_Position = u_modelViewProjection * vec4(a_position, 1.0);
     texCoord = a_texcoord;
 }
 
@@ -46,6 +48,19 @@ vec3 Hsv2rgb(vec3 c)
     return vec3(truecolor.y, truecolor.z, truecolor.x);
 }
 
+float saturate( float x ) { return clamp( x, 0.0, 1.0 ); }
+
+vec3 inferno_quintic( float x )
+{
+	x = saturate( x );
+	vec4 x1 = vec4( 1.0, x, x * x, x * x * x ); // 1 x x2 x3
+	vec4 x2 = x1 * x1.w * x; // x4 x5 x6 x7
+	return vec3(
+		dot( x1.xyzw, vec4( -0.027780558, +1.228188385, +0.278906882, +3.892783760 ) ) + dot( x2.xy, vec2( -8.490712758, +4.069046086 ) ),
+		dot( x1.xyzw, vec4( +0.014065206, +0.015360518, +1.605395918, -4.821108251 ) ) + dot( x2.xy, vec2( +8.389314011, -4.193858954 ) ),
+		dot( x1.xyzw, vec4( -0.019628385, +3.122510347, -5.893222355, +2.798380308 ) ) + dot( x2.xy, vec2( -3.608884658, +4.324996022 ) ) );
+}
+
 void main()
 {
     vec2 fragTexCoord = texCoord;
@@ -56,7 +71,6 @@ void main()
     for (iterations = 0; iterations < MAX_ITERATIONS; iterations++)
     {
         z = ComplexSquare(z) + u_c;  // Iterate function
-
         if (dot(z, z) > 4.0) break;
     }
 
@@ -71,5 +85,6 @@ void main()
 
     // If in set, color black. 0.999 allows for some float accuracy error.
     if (norm > 0.999) finalColor = vec4(0.0, 0.0, 0.0, 1.0);
-    else finalColor = vec4(Hsv2rgb(vec3(norm, 0.8, 1.0)), 1.0);
+    //else finalColor = vec4(Hsv2rgb(vec3(norm, 0.8, 1.0)), 1.0);
+    else finalColor = vec4(inferno_quintic(norm), 1.0);
 }
