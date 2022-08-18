@@ -26,6 +26,10 @@
 #include "Engine/Memory/BuddyAllocator.h"
 #include "Engine/Memory/MemoryManager.h"
 
+/* All math related */
+#include "Engine/Math/MathUtils.h"
+#include "Engine/Math/Random.h"
+
 /* All ECS related */
 #include "Engine/ECS/Entity.h"
 #include "Engine/ECS/Components.h"
@@ -36,7 +40,11 @@
 #include "Engine/Rendering/Shader.h"
 #include "Engine/Rendering/Texture.h"
 #include "Engine/Rendering/Renderer.h"
+#include "Engine/Rendering/Renderer2D.h"
 #include "Engine/Rendering/RenderCommand.h"
 
 /* All camera related */
 #include "Engine/Core/Camera.h"
+
+/* All shape related */
+#include "Engine/Primitives/2D/RegularPolygon.h"

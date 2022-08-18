@@ -10,6 +10,7 @@ namespace Engine
 	class RegularPolygon
 	{
 	public:
+		RegularPolygon() = default;
 		RegularPolygon(U32 angles, bool genUV = true);
 
 		const std::vector<glm::vec2>& GetVertices() const { return m_Vertices; }

@@ -47,6 +47,14 @@ namespace Engine
 		UpdateViewProjection();
 	}
 
+	void Camera::SetViewport(U32 width, U32 height)
+	{
+		m_ViewportWidth = width;
+		m_ViewportHeight = height;
+		UpdateProjectionMatrix();
+		UpdateViewProjection();
+	}
+
 	void Camera::SetPosition(const glm::vec3& position)
 	{
 		m_Position = position;
@@ -86,6 +94,7 @@ namespace Engine
 
 	void Camera::UpdateProjectionMatrix()
 	{
+		m_Aspect = F32(m_ViewportWidth) / F32(m_ViewportHeight);
 		switch (m_ProjectionType)
 		{
 		case ProjectionType::Perspective:
@@ -104,6 +113,20 @@ namespace Engine
 	void Camera::UpdateViewProjection()
 	{
 		m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
+		m_ViewProjectionInverse = glm::inverse(m_ViewProjection);
+	}
+
+	glm::vec2 Camera::ScreenToWorldPoint(const glm::vec2& screenPosition) const
+	{
+		ENGINE_CORE_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "Use raycast instead");
+		glm::vec2 modified;
+		modified.x = screenPosition.x * 2.0f / F32(m_ViewportWidth) - 1;
+		modified.y = -(screenPosition.y * 2.0f / F32(m_ViewportHeight) - 1);
+
+		glm::vec4 augmented = glm::vec4(modified, 0, 1.0f);
+		glm::vec4 worldCoords = m_ViewProjectionInverse * augmented;
+
+		return glm::vec2(worldCoords);
 	}
 
 	std::shared_ptr<CameraController> CameraController::Create(ControllerType type, std::shared_ptr<Camera> camera)
@@ -191,7 +214,7 @@ namespace Engine
 	const F32 EditorCameraController::DEFAULT_ROTATION_SPEED			= 0.5f;
 	const F32 EditorCameraController::DEFAULT_E_YAW						= 0.0f;
 	const F32 EditorCameraController::DEFAULT_E_PITCH					= 0.0f;
-	const F32 EditorCameraController::DEFAULT_DISTANCE					= 1.0f;
+	const F32 EditorCameraController::DEFAULT_DISTANCE					= 3.0f;
 	const glm::vec3 EditorCameraController::DEFAULT_FOCAL_POINT			= glm::vec3(0.0);
 
 	EditorCameraController::EditorCameraController(std::shared_ptr<Camera> camera) : m_Camera(camera),
@@ -200,6 +223,7 @@ namespace Engine
 		m_Distance(DEFAULT_DISTANCE), m_FocalPoint(DEFAULT_FOCAL_POINT)
 	{
 		m_MouseCoords = Input::MousePosition();
+		m_Camera->m_OrthoZoom = m_Distance;
 		m_Camera->SetPosition(m_FocalPoint - m_Distance * m_Camera->GetForward());
 		m_Camera->UpdateViewMatrix();
 	}

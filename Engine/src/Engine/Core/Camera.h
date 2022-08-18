@@ -42,10 +42,13 @@ namespace Engine
 		glm::mat4& GetViewProjection() { return m_ViewProjection; }
 
 		void SetProjection(ProjectionType type);
+		void SetViewport(U32 width, U32 height);
 
 		glm::vec3 GetForward() const;
 		glm::vec3 GetUp() const;
 		glm::vec3 GetRight() const;
+
+		glm::vec2 ScreenToWorldPoint(const glm::vec2& screenPosition) const;
 
 	private:
 		void UpdateViewMatrix();
@@ -56,10 +59,14 @@ namespace Engine
 		F32 m_Aspect;
 		F32 m_NearClipPlane, m_FarClipPlane;
 		F32 m_FieldOfView;
+
+		U32 m_ViewportWidth, m_ViewportHeight;
+
 		glm::vec3 m_Position;
 		glm::quat m_Orientation;
 
 		glm::mat4 m_ViewProjection;
+		glm::mat4 m_ViewProjectionInverse;
 		glm::mat4 m_ViewMatrix;
 		glm::mat4 m_ProjectionMatrix;
 

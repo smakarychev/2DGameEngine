@@ -46,6 +46,31 @@ namespace Engine
     {
         return glm::vec4(Float(left, right), Float(left, right), Float(left, right), Float(left, right));
     }
+
+    I32 Random::Int()
+    {
+        std::uniform_int_distribution<I32> distrib(std::numeric_limits<I32>::min(), std::numeric_limits<I32>::max());
+        return distrib(m_Mt);
+    }
+
+    U32 Random::UInt()
+    {
+        std::uniform_int_distribution<U32> distrib(std::numeric_limits<U32>::min(), std::numeric_limits<U32>::max());
+        return distrib(m_Mt);
+    }
+
+    I32 Random::Int(I32 left, I32 right)
+    {
+        std::uniform_int_distribution<I32> distrib(left, right);
+        return distrib(m_Mt);
+    }
+
+    U32 Random::UInt(U32 left, U32 right)
+    {
+        std::uniform_int_distribution<U32> distrib(left, right);
+        return distrib(m_Mt);
+    }
+
 }
 
 

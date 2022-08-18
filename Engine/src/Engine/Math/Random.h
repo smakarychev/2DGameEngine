@@ -19,6 +19,12 @@ namespace Engine
 		static glm::vec3 Float3(F32 left, F32 right);
 		static glm::vec4 Float4();
 		static glm::vec4 Float4(F32 left, F32 right);
+
+		static I32 Int();
+		static I32 Int(I32 left, I32 right);
+		static U32 UInt();
+		static U32 UInt(U32 left, U32 right);
+
 	private:
 		static std::random_device m_Device;
 		static std::mt19937 m_Mt;

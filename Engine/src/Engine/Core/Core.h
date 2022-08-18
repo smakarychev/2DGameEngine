@@ -10,3 +10,21 @@
 #define BIND_FN_STATIC(fn) [](auto&&... args) -> decltype(auto) { return fn(std::forward<decltype(args)>(args)...); }
 
 constexpr Engine::Types::U64 Bit(Engine::Types::U64 pos) { return Engine::Types::U64(1) << pos; }
+
+namespace Engine
+{
+	template <typename T, typename ... Args>
+	T* New(Args&&... args);
+	template <typename T>
+	void Delete(T* obj);
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+
+	template <typename T, typename ... Args>
+	constexpr Ref<T> CreateRef(Args&&... args)
+	{
+		return std::shared_ptr<T>(New<T>(std::forward<Args>(args)...), Delete<T>);
+	}
+}
+
