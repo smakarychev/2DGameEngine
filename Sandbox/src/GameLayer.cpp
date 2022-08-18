@@ -23,17 +23,17 @@ void GameLayer::OnUpdate()
     RenderCommand::ClearScreen();
     F32 dt = 1.0f / 60.0f;
     m_CameraController->OnUpdate(dt);
-    m_Manager.Update();
 
 
     sUserInput();
     if (m_IsRunning)
     {
+        m_Manager.Update();
+        sCollision();
         sMovement(dt);
         sEnemySpawner();
         sParticleUpdate();
         sSpecialAbility();
-        sCollision();
         // Let's hope player doesn't play for more than 35 trillion years.
         m_CurrentFrame++;
     }
@@ -55,6 +55,14 @@ void GameLayer::SpawnPlayer()
     entity->Input = CreateRef<Component::Input>();
     entity->SpecialAbility = CreateRef<Component::SpecialAbility>(120);
     m_Player = entity;
+    for (auto& e : m_Manager.GetEntities("enemy"))
+    {
+        e->Destroy();
+    }
+    for (auto& e : m_Manager.GetEntities("particle"))
+    {
+        e->Destroy();
+    }
 }
 
 void GameLayer::sEnemySpawner()
@@ -181,6 +189,7 @@ void GameLayer::sCollision()
         {
             m_Player->Destroy();
             SpawnPlayer();
+            SetPaused(m_IsRunning);
         }
     }
     for (auto& entity : m_Manager.GetEntities("particle"))
@@ -189,6 +198,7 @@ void GameLayer::sCollision()
         {
             m_Player->Destroy();
             SpawnPlayer();
+            SetPaused(m_IsRunning);
         }
     }
 
