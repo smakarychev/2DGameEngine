@@ -1,6 +1,7 @@
 #include "enginepch.h"
 
 #include "Engine/ECS/EntityManager.h"
+#include "Engine/Memory/MemoryManager.h"
 
 namespace Engine
 {
@@ -31,7 +32,7 @@ namespace Engine
 	
 	Entity& EntityManager::AddEntity(const std::string& tag)
 	{
-		auto entity = std::make_shared<Entity>(tag, m_TotalEntites++);
+		auto entity = std::shared_ptr<Entity>(New<Entity>(tag, m_TotalEntites++), Delete<Entity>);
 		m_ToAdd.push_back(entity);
 		return *entity;
 	}
@@ -45,7 +46,6 @@ namespace Engine
 	{
 		if (m_EntityMap.find(tag) == m_EntityMap.end())
 		{
-			ENGINE_CORE_ERROR("EntityManager: unknown tag {}", tag);
 			// Here we add empty vector for that tag to map, and return it.
 			m_EntityMap.insert({ tag, {} });
 		}
