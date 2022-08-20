@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Engine/Core/Core.h"
 #include "Engine/Core/Types.h"
+#include "Engine/Rendering/Font.h"
 #include "Engine/Rendering/Shader.h"
 #include "Engine/Rendering/Texture.h"
 
@@ -20,18 +22,27 @@ namespace Engine
 	class ShaderLoader
 	{
 	public:
-		static std::shared_ptr<Shader> LoadShaderFromFile(const std::filesystem::path& path);
+		static Ref<Shader> LoadShaderFromFile(const std::filesystem::path& path);
 		static void ShutDown();
 	private:
-		static std::unordered_map<std::string, std::shared_ptr<Shader>> s_LoadedShaders;
+		static std::unordered_map<std::string, Ref<Shader>> s_LoadedShaders;
 	};
 
 	class TextureLoader
 	{
 	public:
-		static std::shared_ptr<Texture> LoadTextureFromFile(const std::filesystem::path& path);
+		static Ref<Texture> LoadTextureFromFile(const std::filesystem::path& path);
 		static void ShutDown();
 	private:
-		static std::unordered_map<std::string, std::shared_ptr<Texture>> s_LoadedTextures;
+		static std::unordered_map<std::string, Ref<Texture>> s_LoadedTextures;
+	};
+
+	class FontLoader
+	{
+	public:
+		static Ref<Font> LoadFontFromFile(const std::filesystem::path& path);
+		static void ShutDown();
+	private:
+		static std::unordered_map<std::string, Ref<Font>> s_LoadedFonts;
 	};
 }

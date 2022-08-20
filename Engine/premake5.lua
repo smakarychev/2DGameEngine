@@ -24,12 +24,16 @@ project "Engine"
 		"%{IncludeDir.glad}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.msdf_atlas}",
+		"%{IncludeDir.msdfgen}",	
 	}
 
 	links
 	{
 		"GLFW",
 		"glad",
+		"msdfgen",
+		"msdf-atlas-gen"
 	}
 
 	defines

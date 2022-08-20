@@ -87,6 +87,40 @@ namespace Engine
 		} };
 	}
 
+	void OpenGLTexture::SetMagnificationFilter(Filter filter)
+	{
+		switch (filter)
+		{
+		case Engine::Texture::Filter::Nearest:			glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			break;
+		case Engine::Texture::Filter::Linear:			glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			break;
+		case Engine::Texture::Filter::MipmapNearest:	glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			break;
+		case Engine::Texture::Filter::MipmapLinear:		glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			break;
+		default:										glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			break;
+		}
+	}
+
+	void OpenGLTexture::SetMinificationFilter(Filter filter)
+	{
+		switch (filter)
+		{
+		case Engine::Texture::Filter::Nearest:			glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			break;																			 
+		case Engine::Texture::Filter::Linear:			glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			break;																			 
+		case Engine::Texture::Filter::MipmapNearest:	glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			break;																			 
+		case Engine::Texture::Filter::MipmapLinear:		glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			break;																			 
+		default:										glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			break;
+		}
+	}
+
 	OpenGLTexture::~OpenGLTexture()
 	{
 		glDeleteTextures(1, &m_Id);

@@ -16,6 +16,8 @@ void GameLayer::OnAttach()
     SetBounds();
 
     SpawnPlayer();
+
+    m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Regular.ttf");
 }
 
 void GameLayer::OnUpdate()
@@ -270,13 +272,27 @@ void GameLayer::sRender()
 {
     Renderer2D::BeginScene(m_CameraController->GetCamera());
 
-    Renderer2D::DrawQuad({ 0.0f, 0.0f, -10.0f }, { 20.0f, 20.0f }, *m_Background, { 10, 10 });
+    /*Renderer2D::DrawQuad({ 0.0f, 0.0f, -10.0f }, { 20.0f, 20.0f }, *m_Background, { 1, 1 });
 
     for (auto& entity : m_Manager.GetEntities())
     {
         if (!entity->Mesh2D) continue;
         Renderer2D::DrawPolygon(entity->Mesh2D->Shape, entity->Transform2D->Position, entity->Transform2D->Scale, entity->Transform2D->Rotation, entity->Mesh2D->Tint);
+    }*/
+
+    F32 advance = 0.0f;
+    for (int i = 65; i < 100; i++)
+    {
+        Renderer2D::DrawQuad(
+            glm::vec3{ advance, 0.0f, 0.0f } + glm::vec3(m_Font->GetCharacters()[i].Bearing, 0.0f),
+            m_Font->GetCharacters()[i].Size,
+            m_Font->GetAtlas(),
+            m_Font->GetCharacters()[i].UV, 
+            glm::vec4(1.0f)
+        );
+        advance += m_Font->GetCharacters()[i].Advance;
     }
+    
 
     Renderer2D::EndScene();
 }

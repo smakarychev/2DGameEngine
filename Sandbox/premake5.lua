@@ -6,6 +6,8 @@ project "Sandbox"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
+	files
+	{
 		"src/**.cpp",
 		"src/**.h"
 	}
@@ -15,7 +17,9 @@ project "Sandbox"
 
 		"%{wks.location}/Engine/src",
 		"%{wks.location}/Engine/vendor/**/include",
-		"%{wks.location}/Engine/vendor/glm",
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.msdf_atlas}",
+		"%{IncludeDir.msdfgen}",	
 	}
 
 	links

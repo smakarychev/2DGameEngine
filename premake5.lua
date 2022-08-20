@@ -16,8 +16,7 @@ workspace "2DGameEngine"
 group "Dependencies"
 	include "Engine/vendor/GLFW"
 	include "Engine/vendor/glad"
-
-
+	include "Engine/vendor/msdf-atlas-gen"
 group""
 
 	include "Engine"

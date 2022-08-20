@@ -39,9 +39,9 @@ private:
 	bool Collide(Entity& a, Entity& b);
 
 private:
-	std::shared_ptr<Texture> m_Tileset;
-	std::shared_ptr<Texture> m_Background;
-	std::shared_ptr<CameraController> m_CameraController;
+	Ref<Texture> m_Tileset;
+	Ref<Texture> m_Background;
+	Ref<CameraController> m_CameraController;
 
 	EntityManager m_Manager;
 	U64 m_CurrentFrame = 0;
@@ -51,4 +51,6 @@ private:
 	Entity* m_Player;
 
 	AABB m_Bounds;
+
+	Ref<Font> m_Font;
 };

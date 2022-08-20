@@ -10,3 +10,6 @@
 [submodule "Engine/vendor/stb"]
 	path = Engine/vendor/stb
 	url = https://github.com/nothings/stb
+[submodule "Engine/vendor/msdf-atlas-gen"]
+	path = Engine/vendor/msdf-atlas-gen
+	url = https://github.com/Chlumsky/msdf-atlas-gen

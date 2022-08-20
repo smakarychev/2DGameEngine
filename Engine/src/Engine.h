@@ -42,6 +42,7 @@
 #include "Engine/Rendering/Renderer.h"
 #include "Engine/Rendering/Renderer2D.h"
 #include "Engine/Rendering/RenderCommand.h"
+#include "Engine/Rendering/Font.h"
 
 /* All camera related */
 #include "Engine/Core/Camera.h"

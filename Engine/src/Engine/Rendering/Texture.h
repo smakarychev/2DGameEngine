@@ -12,11 +12,17 @@ namespace Engine
 	class Texture
 	{
 	public:
+		enum class Filter
+		{
+			Nearest, Linear, MipmapNearest, MipmapLinear
+		};
+		
 		struct TextureData
 		{
 			std::string  Name = "Default";
 			U8* Data = nullptr;
 			U32 Width = 0, Height = 0, Channels = 0;
+			Filter Minification, Magnification;
 		};
 
 		enum class PixelFormat
@@ -30,6 +36,7 @@ namespace Engine
 			Alpha
 		};
 
+
 	public:
 		virtual ~Texture() {}
 		static std::shared_ptr<Texture> LoadTextureFromFile(const std::filesystem::path& path);
@@ -40,6 +47,11 @@ namespace Engine
 		virtual void Bind(U32 slot = 0) = 0;
 		virtual void UpdateData(void* data, PixelFormat format = PixelFormat::RGBA) = 0;
 		virtual void UpdateData(U32 width, U32 height, void* data, PixelFormat format = PixelFormat::RGBA) = 0;
+
+		virtual void SetMinificationFilter(Filter filter) = 0;
+		virtual void SetMagnificationFilter(Filter filter) = 0;
+
+		virtual const TextureData& GetData() const = 0;
 
 		virtual std::shared_ptr<Texture> GetSubTexture(const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize = glm::vec2(1)) = 0;
 		static std::shared_ptr<Texture> GetSubTexture(Texture& texture, const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize = glm::vec2(1));
