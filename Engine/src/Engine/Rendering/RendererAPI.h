@@ -14,6 +14,12 @@ namespace Engine
 		{
 			None = 0, OpenGL
 		};
+
+		enum class Mode
+		{
+			Read, ReadWrite
+		};
+
 	public:
 		virtual void Init() = 0;
 		
@@ -22,6 +28,8 @@ namespace Engine
 
 		virtual void DrawIndexed(std::shared_ptr<VertexArray> vertexArray) = 0;
 		virtual void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count) = 0;
+
+		virtual void SetDepthTestMode(Mode mode) = 0;
 
 		static APIType Get() { return s_APIType; };
 

@@ -12,6 +12,7 @@ namespace Engine
 		static void DrawIndexed(std::shared_ptr<VertexArray> vertexArray);
 		static void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count);
 		static void SetClearColor(const glm::vec3& color);
+		static void SetDepthTestMode(RendererAPI::Mode mode);
 		static void ClearScreen();
 	private:
 		static std::shared_ptr<RendererAPI> s_API;

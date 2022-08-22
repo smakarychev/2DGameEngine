@@ -34,8 +34,6 @@ namespace Engine
 		m_Position(DEFAULT_POSITION), m_Orientation(DEFAULT_ORIENTATION)
 	{
 		UpdateViewMatrix();
-		UpdateProjectionMatrix();
-		UpdateViewProjection();
 	}
 
 	Camera::Camera(const glm::vec3& position, F32 fov, F32 aspect) : m_FieldOfView(fov), m_Aspect(aspect),
@@ -43,8 +41,6 @@ namespace Engine
 		m_Position(position), m_Orientation(DEFAULT_ORIENTATION)
 	{
 		UpdateViewMatrix();
-		UpdateProjectionMatrix();
-		UpdateViewProjection();
 	}
 
 	void Camera::SetViewport(U32 width, U32 height)
@@ -63,6 +59,18 @@ namespace Engine
 	void Camera::SetOrientation(const glm::quat& orientation)
 	{
 		m_Orientation = orientation;
+	}
+
+	F32 Camera::GetPixelCoefficient()
+	{
+		if (m_ProjectionType == ProjectionType::Perspective) return 1.0f;
+		return GetPixelCoefficient(m_OrthoZoom);
+	}
+
+	F32 Camera::GetPixelCoefficient(F32 distance)
+	{
+		if (m_ProjectionType == ProjectionType::Perspective) return 1.0f;
+		return m_Aspect * 2.0f * distance / m_ViewportWidth;
 	}
 
 	void Camera::SetProjection(ProjectionType type)

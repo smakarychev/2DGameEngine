@@ -41,8 +41,13 @@ namespace Engine
 
 		glm::mat4& GetViewProjection() { return m_ViewProjection; }
 
+		F32 GetPixelCoefficient();
+		F32 GetPixelCoefficient(F32 distance);
+
 		void SetProjection(ProjectionType type);
 		void SetViewport(U32 width, U32 height);
+		U32 GetViewportWidth() const { return m_ViewportWidth; }
+		U32 GetViewportHeight() const { return m_ViewportHeight; }
 
 		glm::vec3 GetForward() const;
 		glm::vec3 GetUp() const;

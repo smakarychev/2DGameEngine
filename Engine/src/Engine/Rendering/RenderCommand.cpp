@@ -27,6 +27,11 @@ namespace Engine
 		s_API->SetClearColor(color);
 	}
 
+	void RenderCommand::SetDepthTestMode(RendererAPI::Mode mode)
+	{
+		s_API->SetDepthTestMode(mode);
+	}
+
 	void RenderCommand::ClearScreen()
 	{
 		s_API->ClearScreen();

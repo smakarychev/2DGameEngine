@@ -22,7 +22,7 @@ namespace Engine
 			std::string  Name = "Default";
 			U8* Data = nullptr;
 			U32 Width = 0, Height = 0, Channels = 0;
-			Filter Minification, Magnification;
+			Filter Minification = Filter::Nearest, Magnification = Filter::Nearest;
 		};
 
 		enum class PixelFormat

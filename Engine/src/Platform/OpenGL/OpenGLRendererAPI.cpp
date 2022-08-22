@@ -44,6 +44,19 @@ namespace Engine
 		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
 	}
 
+	void  OpenGLRendererAPI::SetDepthTestMode(Mode mode)
+	{
+		switch (mode)
+		{
+		case Engine::RendererAPI::Mode::Read: glDepthMask(false);
+			break;
+		case Engine::RendererAPI::Mode::ReadWrite: glDepthMask(true);
+			break;
+		default:
+			break;
+		}
+	}
+
 	void errorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 	{
 		auto sourceStr = [source]() -> std::string {

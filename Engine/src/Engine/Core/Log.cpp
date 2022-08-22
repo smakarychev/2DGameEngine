@@ -1,7 +1,9 @@
 #include "enginepch.h"
 #include "Log.h"
 
+#pragma warning (push, 0)
 #include <spdlog/sinks/stdout_color_sinks.h>
+#pragma warning (pop)
 
 constexpr auto CORE_LOGGER_NAME = "CoreLogger";
 constexpr auto CLIENT_LOGGER_NAME = "ClientLogger";

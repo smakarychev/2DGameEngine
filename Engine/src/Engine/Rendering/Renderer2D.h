@@ -5,6 +5,7 @@
 #include "Engine/Rendering/Buffer.h"
 #include "Engine/Rendering/Shader.h"
 #include "Engine/Rendering/Texture.h"	
+#include "Engine/Rendering/Font.h"	
 
 #include "Engine/Core/Camera.h"
 #include "Engine/Primitives/2D/RegularPolygon.h"
@@ -58,7 +59,7 @@ namespace Engine
 			U32 CurrentTextureIndex = 0;
 			U32 CurrentVertices = 0;
 			U32 CurrentIndices = 0;
-			std::shared_ptr<VertexArray> VAO;
+			Ref<VertexArray> VAO;
 
 			U8* VerticesMemory = nullptr;
 			BatchVertex* CurrentVertexPointer = nullptr;
@@ -70,8 +71,10 @@ namespace Engine
 		{
 			U32 DrawCalls = 0;
 
-			std::shared_ptr<Shader> BatchShader;
+			Ref<Shader> BatchShader;
+			Ref<Shader> TextShader;
 			glm::mat4 CameraViewProjection = glm::mat4(1.0f);
+			Ref<Camera> Camera;
 
 			struct ReferenceQuad
 			{
@@ -84,13 +87,14 @@ namespace Engine
 
 			BatchData QuadBatch;
 			BatchData PolygonBatch;
+			BatchData TextBatch;
 		};
 
 	public:
 		static void Init();
 		static void ShutDown();
 
-		static void BeginScene(std::shared_ptr<Camera> camera);
+		static void BeginScene(Ref<Camera> camera);
 		static void EndScene();
 
 		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec4& color);
@@ -119,7 +123,15 @@ namespace Engine
 			Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2(1.0f)
 		);
 
-		static void Flush(BatchData& batch);
+		// Winapi uses DrawText as a macro >:(
+		// Fixed font retains its relative position and size as camera moves/zoomes.
+		static void DrawFontFixed(Font& font, F32 fontSize, const std::string& text, const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawFontFixed(Font& font, F32 fontSize, F32 xminPx, F32 xmaxPx, F32 yminPx, const std::string& text, const glm::vec4& color = glm::vec4(1.0f));
+
+		// `fontSize` as if camera is exactly one unit away.
+		static void DrawFont(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color = glm::vec4(1.0f));
+
+		static void Flush(BatchData& batch, Shader& shader = *s_BatchData.BatchShader);
 		static void ResetBatch(BatchData& batch);
 	private:
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale);

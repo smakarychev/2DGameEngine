@@ -5,8 +5,10 @@
 
 #include "Engine/Core/Log.h"
 
+#pragma warning (push, 0)
 #include <stb_image/stb_image.h>
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
+#pragma warning (pop)
 
 namespace Engine
 {
@@ -103,7 +105,7 @@ namespace Engine
 			{		
 				std::vector<GlyphGeometry> glyphs;
 				FontGeometry fontGeometry(&glyphs);
-				fontGeometry.loadCharset(font, 2.0, Charset::ASCII);
+				fontGeometry.loadCharset(font, 1.0, Charset::ASCII);
 
 				const F64 maxCornerAngle = 3.0;
 				for (GlyphGeometry& glyph : glyphs)
@@ -111,17 +113,17 @@ namespace Engine
 
 				TightAtlasPacker packer;
 				packer.setDimensionsConstraint(TightAtlasPacker::DimensionsConstraint::POWER_OF_TWO_RECTANGLE);
-				packer.setScale(48.0);
-				packer.setPixelRange(2.0);
+				packer.setMinimumScale(48.0f);
+				packer.setPixelRange(4.0);
 				packer.setMiterLimit(1.0);
-				packer.pack(glyphs.data(), glyphs.size());
+				packer.pack(glyphs.data(), (I32)glyphs.size());
 				I32 width = 0, height = 0;
 				packer.getDimensions(width, height);
 				ImmediateAtlasGenerator<F32, 3, msdfGenerator, BitmapAtlasStorage<byte, 3>> generator(width, height);
 				GeneratorAttributes attributes;
 				generator.setAttributes(attributes);
 				generator.setThreadCount(4);
-				generator.generate(glyphs.data(), glyphs.size());
+				generator.generate(glyphs.data(), (I32)glyphs.size());
 				
 				msdfgen::BitmapConstRef<msdfgen::byte, 3> bitmap = generator.atlasStorage();
 				Texture::TextureData data;
@@ -132,10 +134,12 @@ namespace Engine
 				fontAtlas->SetMinificationFilter(Texture::Filter::Linear);
 				fontAtlas->SetMagnificationFilter(Texture::Filter::Linear);
 
-				Ref<Font> newFont = CreateRef<Font>(fontName, fontAtlas);
+				Ref<Font> newFont = CreateRef<Font>(fontName, fontAtlas, 48.0f / 2.0f);
+				newFont->SetGeometryScale((F32)fontGeometry.getGeometryScale());
+				newFont->SetLineHeight((F32)fontGeometry.getMetrics().lineHeight * 16.0f * 2.0f);
 				ExtractCharacters(*newFont, glyphs);
 				s_LoadedFonts.emplace(pathString, newFont);
-
+				//msdf_atlas::saveImage(bitmap, msdf_atlas::ImageFormat::PNG, "output.png", msdf_atlas::YDirection::BOTTOM_UP);
 				msdfgen::destroyFont(font);
 			}
 			msdfgen::deinitializeFreetype(ft);
@@ -153,19 +157,21 @@ namespace Engine
 		for (auto& glyph : glyphs)
 		{
 			F64 l, b, r, t;
-			I32 x, y, w, h;
-			
 			glyph.getQuadAtlasBounds(l, b, r, t);
 			glm::vec2 bl { F32(l) / atlasWidth, F32(b) / atlasHeight };
 			glm::vec2 tr { F32(r) / atlasWidth, F32(t) / atlasHeight };
 
 			glyph.getQuadPlaneBounds(l, b, r, t);
+			l /= font.GetGeometryScale();
+			b /= font.GetGeometryScale();
+			r /= font.GetGeometryScale();
+			t /= font.GetGeometryScale();
 			Font::CharacterInfo character
 			{
 				{ { {bl.x, bl.y }, {tr.x, bl.y}, {tr.x, tr.y}, {bl.x, tr.y} } },
-				glm::vec2{r - l, t - b },
-				glm::vec2{l / 2.0f + r / 2.0f, b / 2.0f + t / 2.0f},
-				glyph.getAdvance()
+				glm::vec2{ r - l, t - b },
+				glm::vec2{ (r + l) / 2.0f, (t + b) / 2.0f },
+				(F32)glyph.getAdvance() / (F32)font.GetGeometryScale()
 			};
 			U32 codePoint = glyph.getCodepoint();
 			chars[codePoint] = character;
