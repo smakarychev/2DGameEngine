@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "Log.h"
 #include "Engine/Memory/MemoryManager.h"
+#include "Engine/Rendering/Renderer.h"
 #include "Engine/Resource/ResourceManager.h"
 
 extern std::unique_ptr<Engine::Application> Engine::CreateApplication();

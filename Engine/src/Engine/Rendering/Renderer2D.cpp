@@ -278,7 +278,7 @@ namespace Engine
 				vertex->Position = glm::vec3(referenceQuad.Position[i]);
 				InitVertexGeometryData(
 					*vertex,
-					glm::vec3{ x, y, 0.0f } +
+					glm::vec3{ x, y, s_BatchData.Camera->GetPosition().z - s_BatchData.Camera->GetNearClipPlane() * 1.001f } +
 						glm::vec3(font.GetCharacters()[ch].Bearing * fontSizeCoeff, 0.0f) +
 						glm::vec3(glm::vec2(s_BatchData.Camera->GetPosition()), 0.0f),
 					font.GetCharacters()[ch].Size * fontSizeCoeff);

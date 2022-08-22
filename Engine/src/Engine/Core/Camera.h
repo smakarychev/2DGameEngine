@@ -48,6 +48,8 @@ namespace Engine
 		void SetViewport(U32 width, U32 height);
 		U32 GetViewportWidth() const { return m_ViewportWidth; }
 		U32 GetViewportHeight() const { return m_ViewportHeight; }
+		F32 GetNearClipPlane() const { return m_NearClipPlane; }
+		F32 GetFarClipPlane() const { return m_FarClipPlane; }
 
 		glm::vec3 GetForward() const;
 		glm::vec3 GetUp() const;
