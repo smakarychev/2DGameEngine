@@ -90,6 +90,13 @@ namespace Engine
 				CoolDown(coolDown), RemainingCoolDown(0)
 			{ }
 		};
+
+		struct Score
+		{
+			U32 TotalScore;
+			Score(U32 score) : TotalScore(score) 
+			{ }
+		};
 	}
 	
 }

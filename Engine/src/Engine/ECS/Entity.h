@@ -28,6 +28,7 @@ namespace Engine
 		std::shared_ptr<Component::LifeSpan>		LifeSpan;
 		std::shared_ptr<Component::Input>			Input;
 		std::shared_ptr<Component::SpecialAbility>	SpecialAbility;
+		std::shared_ptr<Component::Score>			Score;
 	};
 
 }

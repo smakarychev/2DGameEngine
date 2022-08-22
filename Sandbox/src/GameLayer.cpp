@@ -8,6 +8,7 @@ void GameLayer::OnAttach()
     m_Background = m_Tileset->GetSubTexture({ 8.0f, 8.0f }, { 3, 11 });
     auto camera = Camera::Create(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f, 16.0f / 9.0f);
     camera->SetViewport(Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight());
+    camera->SetProjection(Camera::ProjectionType::Orthographic);
 
     m_CameraController = CameraController::Create(CameraController::ControllerType::Editor2D, camera);
 
@@ -17,7 +18,7 @@ void GameLayer::OnAttach()
 
     SpawnPlayer();
 
-    m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Regular.ttf");
+    m_Font = Font::ReadFontFromFile("assets/fonts/RobotoSlab-Regular.ttf");
 }
 
 void GameLayer::OnUpdate()
@@ -56,6 +57,7 @@ void GameLayer::SpawnPlayer()
     entity->Mesh2D = CreateRef<Component::Mesh2D>(8, nullptr, glm::vec4{ 0.78f, 0.55f, 0.16f, 1.0f });
     entity->Input = CreateRef<Component::Input>();
     entity->SpecialAbility = CreateRef<Component::SpecialAbility>(120);
+    entity->Score = CreateRef<Component::Score>(0);
     m_Player = entity;
     for (auto& e : m_Manager.GetEntities("enemy"))
     {
@@ -75,20 +77,21 @@ void GameLayer::sEnemySpawner()
         U32 enemiesToSpawn = Random::UInt(1, 3);
         for (U32 i = 0; i < enemiesToSpawn; i++)
         {
-            Entity& entity = m_Manager.AddEntity("enemy");
+            Entity& enemy = m_Manager.AddEntity("enemy");
             F32 enemyRadius = Random::Float(0.15f, 0.45f);
             glm::vec2 allowedXRegion = glm::vec2{ m_Bounds.BottomLeft.x + enemyRadius, m_Bounds.TopRight.x - enemyRadius };
             glm::vec2 allowedYRegion = glm::vec2{ m_Bounds.BottomLeft.y + enemyRadius, m_Bounds.TopRight.y - enemyRadius };
             glm::vec2 enemyPosition = glm::vec2(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y));
-            entity.Transform2D = CreateRef<Component::Tranform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
-            entity.RigidBody2D = CreateRef<Component::RigidBody2D>(enemyRadius, Random::Float(2.0, 5.0f), Random::Float(glm::radians(30.0f), glm::radians(90.0f)));
-            while (Collide(entity, *m_Player))
+            enemy.Transform2D = CreateRef<Component::Tranform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
+            enemy.RigidBody2D = CreateRef<Component::RigidBody2D>(enemyRadius, Random::Float(2.0, 5.0f), Random::Float(glm::radians(30.0f), glm::radians(90.0f)));
+            while (Collide(enemy, *m_Player))
             {
-                entity.Transform2D->Position = glm::vec3(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y), 0.0f);
+                enemy.Transform2D->Position = glm::vec3(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y), 0.0f);
             }
 
-            entity.RigidBody2D->Velocity = glm::normalize(Random::Float2(-1.0, 1.0));
-            entity.Mesh2D = CreateRef<Component::Mesh2D>(Random::UInt(3, 8), nullptr, glm::vec4(Random::Float3(0.2, 0.6), 1.0));
+            enemy.RigidBody2D->Velocity = glm::normalize(Random::Float2(-1.0, 1.0));
+            enemy.Mesh2D = CreateRef<Component::Mesh2D>(Random::UInt(3, 8), nullptr, glm::vec4(Random::Float3(0.2f, 0.6f), 1.0));
+            enemy.Score = CreateRef<Component::Score>(enemy.Mesh2D->Shape.GetNumberOfVertices() * 10);
         }
        
         m_LastEnemySpawnTime = m_CurrentFrame;
@@ -159,6 +162,12 @@ void GameLayer::sSpecialAbility()
     }
     if (m_Player->SpecialAbility->RemainingCoolDown > 0) m_Player->SpecialAbility->RemainingCoolDown--;
 
+}
+
+void GameLayer::sAddScore(Entity& entity)
+{
+    m_Player->Score->TotalScore += entity.Score->TotalScore;
+    entity.Score->TotalScore = 0;
 }
 
 void GameLayer::sMovement(F32 dt)
@@ -236,6 +245,7 @@ void GameLayer::sCollision()
             {
                 bullet->Destroy(); enemy->Destroy();
                 SpawnParticles(*enemy);
+                sAddScore(*enemy);
             }
         }
     }
@@ -272,27 +282,14 @@ void GameLayer::sRender()
 {
     Renderer2D::BeginScene(m_CameraController->GetCamera());
 
-    /*Renderer2D::DrawQuad({ 0.0f, 0.0f, -10.0f }, { 20.0f, 20.0f }, *m_Background, { 1, 1 });
+    Renderer2D::DrawQuad({ 0.0f, 0.0f, -10.0f }, { 20.0f, 20.0f }, *m_Background, { 10, 10 });
 
     for (auto& entity : m_Manager.GetEntities())
     {
         if (!entity->Mesh2D) continue;
         Renderer2D::DrawPolygon(entity->Mesh2D->Shape, entity->Transform2D->Position, entity->Transform2D->Scale, entity->Transform2D->Rotation, entity->Mesh2D->Tint);
-    }*/
-
-    F32 advance = 0.0f;
-    for (int i = 65; i < 100; i++)
-    {
-        Renderer2D::DrawQuad(
-            glm::vec3{ advance, 0.0f, 0.0f } + glm::vec3(m_Font->GetCharacters()[i].Bearing, 0.0f),
-            m_Font->GetCharacters()[i].Size,
-            m_Font->GetAtlas(),
-            m_Font->GetCharacters()[i].UV, 
-            glm::vec4(1.0f)
-        );
-        advance += m_Font->GetCharacters()[i].Advance;
     }
-    
+    Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("score: {:d}", m_Player->Score->TotalScore), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
 
     Renderer2D::EndScene();
 }

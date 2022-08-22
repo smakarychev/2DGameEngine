@@ -35,6 +35,7 @@ private:
 	void sRender();
 	void sParticleUpdate();
 	void sSpecialAbility();
+	void sAddScore(Entity& entity);
 
 	bool Collide(Entity& a, Entity& b);
 
