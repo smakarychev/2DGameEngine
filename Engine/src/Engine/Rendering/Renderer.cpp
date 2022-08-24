@@ -28,6 +28,11 @@ namespace Engine
 	{
 	}
 
+	void Renderer::OnWindowResize(U32 width, U32 height)
+	{
+		RenderCommand::SetViewport(width, height);
+	}
+
 	RendererAPI::APIType Engine::Renderer::GetAPI()
 	{
 		return RendererAPI::Get();

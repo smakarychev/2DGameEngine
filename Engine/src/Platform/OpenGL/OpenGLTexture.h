@@ -25,6 +25,8 @@ namespace Engine
 
 		void SetMinificationFilter(Filter filter) override;
 		void SetMagnificationFilter(Filter filter) override;
+		void SetWrapSMode(WrapMode mode) override;
+		void SetWrapTMode(WrapMode mode) override;
 	private:
 		U32 m_Id;
 		TextureData m_Data;

@@ -1,7 +1,7 @@
 #include <Engine.h>
 #include <Engine/Core/EntryPoint.h>
 
-#include "GameLayer.h"
+#include "GemWarsExample.h"
 
 #include <chrono> // TEMP
 #include <random>
@@ -13,8 +13,7 @@ class SandboxApp : public Engine::Application
 public:
 	SandboxApp()
 	{
-		GameLayer* layer = Engine::New<GameLayer>();
-		PushLayer(layer);
+		PushLayer(Engine::New<GemWarsExample>());
 	}
 	~SandboxApp()
 	{

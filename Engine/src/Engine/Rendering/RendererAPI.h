@@ -30,6 +30,7 @@ namespace Engine
 		virtual void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count) = 0;
 
 		virtual void SetDepthTestMode(Mode mode) = 0;
+		virtual void SetViewport(U32 width, U32 height) = 0;
 
 		static APIType Get() { return s_APIType; };
 

@@ -130,9 +130,9 @@ namespace Engine
 				data.Channels = 3;
 				data.Width = bitmap.width; data.Height = bitmap.height;
 				data.Data = const_cast<U8*>(bitmap.pixels);
+				data.Minification = Texture::Filter::Linear;
+				data.Magnification = Texture::Filter::Linear;
 				Ref<Texture> fontAtlas = Texture::Create(data);
-				fontAtlas->SetMinificationFilter(Texture::Filter::Linear);
-				fontAtlas->SetMagnificationFilter(Texture::Filter::Linear);
 
 				Ref<Font> newFont = CreateRef<Font>(fontName, fontAtlas, 48.0f / 2.0f);
 				newFont->SetGeometryScale((F32)fontGeometry.getGeometryScale());
@@ -142,7 +142,17 @@ namespace Engine
 				//msdf_atlas::saveImage(bitmap, msdf_atlas::ImageFormat::PNG, "output.png", msdf_atlas::YDirection::BOTTOM_UP);
 				msdfgen::destroyFont(font);
 			}
+			else
+			{
+				ENGINE_CORE_ERROR("Failed to load font: {}", pathString);
+				return nullptr;
+			}
 			msdfgen::deinitializeFreetype(ft);
+		}
+		else
+		{
+			ENGINE_CORE_ERROR("Failed to initialize Freetype.");
+			return nullptr;
 		}
 
 		return s_LoadedFonts[pathString];

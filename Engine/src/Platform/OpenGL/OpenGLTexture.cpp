@@ -13,11 +13,10 @@ namespace Engine
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_Id);
 
-		glTextureParameteri(m_Id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTextureParameteri(m_Id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		// TODO: decide nearest / smt else?
-		glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		SetWrapSMode(textureData.WrapS);
+		SetWrapTMode(textureData.WrapT);
+		SetMinificationFilter(textureData.Minification);
+		SetMagnificationFilter(textureData.Magnification);
 
 		GLenum internalFormat = 0, dataFormat = 0;
 		if (textureData.Channels == 4)
@@ -34,7 +33,10 @@ namespace Engine
 		glTextureStorage2D(m_Id, 1, internalFormat, textureData.Width, textureData.Height);
 		glTextureSubImage2D(m_Id, 0, 0, 0, textureData.Width, textureData.Height, dataFormat, GL_UNSIGNED_BYTE, textureData.Data);
 
-		glGenerateTextureMipmap(m_Id);
+		if (textureData.GenerateBitmaps)
+		{
+			glGenerateTextureMipmap(m_Id);
+		}
 	}
 
 
@@ -99,8 +101,6 @@ namespace Engine
 			break;
 		case Engine::Texture::Filter::MipmapLinear:		glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			break;
-		default:										glTextureParameteri(m_Id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			break;
 		}
 	}
 
@@ -116,7 +116,30 @@ namespace Engine
 			break;																			 
 		case Engine::Texture::Filter::MipmapLinear:		glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			break;																			 
-		default:										glTextureParameteri(m_Id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+	}
+
+	void OpenGLTexture::SetWrapSMode(WrapMode mode)
+	{
+		switch (mode)
+		{
+		case Engine::Texture::WrapMode::None:
+			break;
+		case Engine::Texture::WrapMode::Clamp:			glTextureParameteri(m_Id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			break;
+		case Engine::Texture::WrapMode::Repeat:			glTextureParameteri(m_Id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			break;
+		}
+	}
+	void OpenGLTexture::SetWrapTMode(WrapMode mode)
+	{
+		switch (mode)
+		{
+		case Engine::Texture::WrapMode::None:
+			break;
+		case Engine::Texture::WrapMode::Clamp:			glTextureParameteri(m_Id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			break;
+		case Engine::Texture::WrapMode::Repeat:			glTextureParameteri(m_Id, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			break;
 		}
 	}

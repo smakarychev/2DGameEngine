@@ -53,6 +53,7 @@ namespace Engine {
 	{
 		EventDispatcher dispatcher(event);
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_FN(Application::OnApplicationClose));
+		dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(Application::OnWindowResize));
 		Input::OnEvent(event);
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); it++)
@@ -78,6 +79,15 @@ namespace Engine {
 	{
 		m_IsRunning = false;
 		return true;
+	}
+
+	bool Application::OnWindowResize(WindowResizeEvent& event)
+	{
+		U32 width = event.GetWidth();
+		U32 height = event.GetHeight();
+		if (width == 0 || height == 0) return true;
+		Renderer::OnWindowResize(width, height);
+		return false;
 	}
 }
 

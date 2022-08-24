@@ -1,7 +1,9 @@
 #include "enginepch.h"
 #include "OpenGLBuffer.h"
 
-#include "glad/glad.h"
+#include "Engine/Rendering/Texture.h"
+
+#include <glad/glad.h>
 
 namespace Engine
 {
@@ -93,6 +95,68 @@ namespace Engine
 	void OpenGLVertexArray::Bind()
 	{
 		glBindVertexArray(m_Id);
+	}
+
+	OpenGLFrameBuffer::OpenGLFrameBuffer(const FrameBuffer::Spec& spec) :
+		m_Id(0), m_Spec(spec)
+	{
+		CreateBuffers();
+	}
+
+	void OpenGLFrameBuffer::Bind()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_Id);
+	}
+
+	void OpenGLFrameBuffer::Unbind()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void OpenGLFrameBuffer::Resize(U32 width, U32 height)
+	{
+		m_Spec.Width = width;
+		m_Spec.Height = height;
+		CreateBuffers();
+	}
+
+	U32 OpenGLFrameBuffer::GetColorBufferId() const
+	{
+		return m_ColorBuffer->GetId();
+	}
+
+	void OpenGLFrameBuffer::CreateBuffers()
+	{
+		if (m_Id != 0)
+		{
+			glDeleteFramebuffers(1, &m_Id);
+			m_ColorBuffer->~Texture();
+			glDeleteRenderbuffers(1, &m_DepthStencilBufferId);
+		}
+			
+		glCreateFramebuffers(1, &m_Id);
+
+		Texture::TextureData data;
+		data.Channels = 3;
+		data.Width = m_Spec.Width;	data.Height = m_Spec.Height;
+		data.Data = nullptr;
+		data.Name = std::format("fb{}color", m_Id);
+		data.WrapS = data.WrapT = Texture::WrapMode::None;
+		data.Minification = data.Magnification =  Texture::Filter::Linear;
+		data.GenerateBitmaps = false;
+		m_ColorBuffer = Texture::Create(data);
+		glNamedFramebufferTexture(m_Id, GL_COLOR_ATTACHMENT0, m_ColorBuffer->GetId(), 0);
+
+		glCreateRenderbuffers(1, &m_DepthStencilBufferId);
+		glNamedRenderbufferStorage(m_DepthStencilBufferId, GL_DEPTH24_STENCIL8, m_Spec.Width, m_Spec.Height);
+		glNamedFramebufferRenderbuffer(m_Id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBufferId);
+
+		if (glCheckNamedFramebufferStatus(m_Id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			ENGINE_CORE_FATAL("Framebuffer is not complete. Status: {}", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }
 

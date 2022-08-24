@@ -41,6 +41,8 @@ namespace Engine
 
 		glm::mat4& GetViewProjection() { return m_ViewProjection; }
 
+		void OnEvent(Event& event);
+
 		F32 GetPixelCoefficient();
 		F32 GetPixelCoefficient(F32 distance);
 
@@ -61,13 +63,14 @@ namespace Engine
 		void UpdateViewMatrix();
 		void UpdateProjectionMatrix();
 		void UpdateViewProjection();
+		bool OnWindowResize(WindowResizeEvent& event);
 	private:
 		ProjectionType m_ProjectionType;
 		F32 m_Aspect;
 		F32 m_NearClipPlane, m_FarClipPlane;
 		F32 m_FieldOfView;
 
-		U32 m_ViewportWidth, m_ViewportHeight;
+		U32 m_ViewportWidth = 1600, m_ViewportHeight = 900;
 
 		glm::vec3 m_Position;
 		glm::quat m_Orientation;

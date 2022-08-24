@@ -5,7 +5,7 @@
 namespace Engine
 {
 
-	std::shared_ptr<RendererAPI> RenderCommand::s_API = RendererAPI::Create();
+	Ref<RendererAPI> RenderCommand::s_API = RendererAPI::Create();
 
 	void RenderCommand::Init()
 	{
@@ -35,6 +35,10 @@ namespace Engine
 	void RenderCommand::ClearScreen()
 	{
 		s_API->ClearScreen();
+	}
+	void RenderCommand::SetViewport(U32 width, U32 height)
+	{
+		s_API->SetViewport(width, height);
 	}
 }
 

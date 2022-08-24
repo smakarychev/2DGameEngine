@@ -11,6 +11,9 @@ namespace Engine
 
 	void OpenGLRendererAPI::Init()
 	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -19,6 +22,11 @@ namespace Engine
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(errorCallback, nullptr);
+	}
+
+	void OpenGLRendererAPI::SetViewport(U32 width, U32 height)
+	{
+		glViewport(0, 0, width, height);
 	}
 
 	void OpenGLRendererAPI::ClearScreen()
@@ -96,6 +104,7 @@ namespace Engine
 			}
 		}();
 		ENGINE_CORE_ERROR("OpenGL: {}, {}, {}, {}: {}", sourceStr, typeStr, severityStr, id, message);
+		ENGINE_ASSERT(false, "OpenGL error");
 	}
 }
 

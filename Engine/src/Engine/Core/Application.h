@@ -29,6 +29,7 @@ namespace Engine {
 		void OnUpdate();
 		void OnEvent(Event& event);
 		bool OnApplicationClose(WindowCloseEvent& event);
+		bool OnWindowResize(WindowResizeEvent& event);
 	private:
 		std::unique_ptr<Window> m_Window;
 		bool m_IsRunning;

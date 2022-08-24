@@ -39,8 +39,8 @@ namespace Engine
 			indices[i + 1]	= currVer + 1;
 			indices[i + 2]	= currVer + 3;
 			indices[i + 3]	= currVer + 1;
-			indices[i + 4]	= currVer + 3;
-			indices[i + 5]	= currVer + 2;
+			indices[i + 4]	= currVer + 2;
+			indices[i + 5]	= currVer + 3;
 			quadBatch.CurrentVertices += 4;
 		}
 		quadBatch.CurrentVertices = 0;
@@ -95,12 +95,21 @@ namespace Engine
 	
 	void Renderer2D::EndScene()
 	{
-		Flush(s_BatchData.QuadBatch);
-		ResetBatch(s_BatchData.QuadBatch);
-		Flush(s_BatchData.PolygonBatch);
-		ResetBatch(s_BatchData.PolygonBatch);
-		Flush(s_BatchData.TextBatch, *s_BatchData.TextShader);
-		ResetBatch(s_BatchData.TextBatch);
+		if (s_BatchData.QuadBatch.CurrentIndices > 0)
+		{
+			Flush(s_BatchData.QuadBatch);
+			ResetBatch(s_BatchData.QuadBatch);
+		}
+		if (s_BatchData.PolygonBatch.CurrentIndices > 0)
+		{
+			Flush(s_BatchData.PolygonBatch);
+			ResetBatch(s_BatchData.PolygonBatch);
+		}
+		if (s_BatchData.TextBatch.CurrentIndices > 0)
+		{
+			Flush(s_BatchData.TextBatch, *s_BatchData.TextShader);
+			ResetBatch(s_BatchData.TextBatch);
+		}	
 		//ENGINE_INFO("Renderer2D total draw calls: {}", s_BatchData.DrawCalls);
 		s_BatchData.DrawCalls = 0;
 	}

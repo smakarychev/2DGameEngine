@@ -14,7 +14,12 @@ namespace Engine
 	public:
 		enum class Filter
 		{
-			Nearest, Linear, MipmapNearest, MipmapLinear
+			None, Nearest, Linear, MipmapNearest, MipmapLinear
+		};
+
+		enum class WrapMode
+		{
+			None, Clamp, Repeat
 		};
 		
 		struct TextureData
@@ -22,7 +27,9 @@ namespace Engine
 			std::string  Name = "Default";
 			U8* Data = nullptr;
 			U32 Width = 0, Height = 0, Channels = 0;
-			Filter Minification = Filter::Nearest, Magnification = Filter::Nearest;
+			Filter Minification = Filter::Nearest, Magnification = Filter::MipmapLinear;
+			WrapMode WrapS = WrapMode::Repeat; WrapMode WrapT = WrapMode::Repeat;
+			bool GenerateBitmaps = true;
 		};
 
 		enum class PixelFormat
@@ -50,6 +57,8 @@ namespace Engine
 
 		virtual void SetMinificationFilter(Filter filter) = 0;
 		virtual void SetMagnificationFilter(Filter filter) = 0;
+		virtual void SetWrapSMode(WrapMode mode) = 0;
+		virtual void SetWrapTMode(WrapMode mode) = 0;
 
 		virtual const TextureData& GetData() const = 0;
 

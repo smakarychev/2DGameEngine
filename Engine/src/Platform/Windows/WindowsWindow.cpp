@@ -62,7 +62,7 @@ namespace Engine
 		
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, I32 width, I32 height) 
 			{
-				WindowData data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
+				WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 				data.Width = U32(width);
 				data.Height = U32(height);
 

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Engine/Core/Types.h"
+#include "Engine/Core/Core.h"
 #include "Engine/Core/Log.h"
+#include "Engine/Core/Types.h"
 
 #include <memory>
 
@@ -119,7 +120,7 @@ namespace Engine
 		virtual void SetData(void* data, U32 size, U32 offset = 0) = 0;
 
 
-		static std::shared_ptr<VertexBuffer> Create(void* data, U32 size);
+		static Ref<VertexBuffer> Create(void* data, U32 size);
 	};
 
 	class IndexBuffer
@@ -132,7 +133,7 @@ namespace Engine
 
 		virtual void SetData(U32* data, U32 count, U32 offset = 0) = 0;
 
-		static std::shared_ptr<IndexBuffer> Create(U32* data, U32 count);
+		static Ref<IndexBuffer> Create(U32* data, U32 count);
 	};
 
 	// TODO: see how bgfx avoids this in api.
@@ -142,14 +143,37 @@ namespace Engine
 		virtual ~VertexArray() {}
 		virtual U32 GetId() const = 0;
 
-		virtual void AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer) = 0;
-		virtual void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) = 0;
+		virtual void AddVertexBuffer(Ref<VertexBuffer> buffer) = 0;
+		virtual void SetIndexBuffer(Ref<IndexBuffer> buffer) = 0;
 
-		virtual std::shared_ptr<IndexBuffer> GetIndexBuffer() = 0;
-		virtual std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() = 0;
+		virtual Ref<IndexBuffer> GetIndexBuffer() = 0;
+		virtual std::vector<Ref<VertexBuffer>>& GetVertexBuffers() = 0;
 
 		virtual void Bind() = 0;
 
-		static std::shared_ptr<VertexArray> Create();
+		static Ref<VertexArray> Create();
 	};
+
+	class Texture;
+	class FrameBuffer
+	{
+	public:
+		struct Spec
+		{
+			U32 Width = 0;
+			U32 Height = 0;
+		};
+	public:
+		virtual ~FrameBuffer() {}
+		
+		virtual void Bind() = 0;
+		virtual void Unbind() = 0;
+		virtual void Resize(U32 width, U32 height) = 0;
+		virtual const Spec& GetSpec() const = 0;
+		virtual U32 GetColorBufferId() const = 0;
+		virtual Texture& GetColorBuffer() const = 0;
+
+		static Ref<FrameBuffer> Create(const Spec& spec);
+	};
+
 }

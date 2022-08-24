@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Engine/Core/Camera.h"
+
 #include "RendererAPI.h"
 
 namespace Engine
@@ -14,7 +16,8 @@ namespace Engine
 		static void SetClearColor(const glm::vec3& color);
 		static void SetDepthTestMode(RendererAPI::Mode mode);
 		static void ClearScreen();
+		static void SetViewport(U32 width, U32 height);
 	private:
-		static std::shared_ptr<RendererAPI> s_API;
+		static Ref<RendererAPI> s_API;
 	};
 }

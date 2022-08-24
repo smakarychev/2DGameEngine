@@ -60,4 +60,25 @@ namespace Engine
 		U32 m_AttributeIndex;
 		U32 m_Id;
 	};
+
+	class OpenGLFrameBuffer : public FrameBuffer
+	{
+	public:
+		OpenGLFrameBuffer(const Spec& spec);
+		void Bind() override;
+		void Unbind() override;
+		void Resize(U32 width, U32 height) override;
+		const Spec& GetSpec() const override { return m_Spec; }
+		U32 GetColorBufferId() const override;
+		Texture& GetColorBuffer() const override { return *m_ColorBuffer; }
+
+	private:
+		void CreateBuffers();
+	private:
+		U32 m_Id;
+		Ref<Texture> m_ColorBuffer;
+		U32 m_DepthStencilBufferId;
+		Spec m_Spec;
+	};
+
 }

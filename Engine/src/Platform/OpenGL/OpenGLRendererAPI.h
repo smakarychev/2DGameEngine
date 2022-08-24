@@ -14,6 +14,7 @@ namespace Engine
 		void DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count) override;
 
 		void SetDepthTestMode(Mode mode) override;
+		void SetViewport(U32 width, U32 height) override;
 	private:
 		glm::vec3 m_ClearColor;
 	};

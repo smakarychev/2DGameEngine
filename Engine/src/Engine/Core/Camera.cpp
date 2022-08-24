@@ -61,6 +61,12 @@ namespace Engine
 		m_Orientation = orientation;
 	}
 
+	void Camera::OnEvent(Event& event)
+	{
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(Camera::OnWindowResize));
+	}
+
 	F32 Camera::GetPixelCoefficient()
 	{
 		if (m_ProjectionType == ProjectionType::Perspective) return 1.0f;
@@ -122,6 +128,12 @@ namespace Engine
 	{
 		m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
 		m_ViewProjectionInverse = glm::inverse(m_ViewProjection);
+	}
+
+	bool Camera::OnWindowResize(WindowResizeEvent& event)
+	{
+		SetViewport(event.GetWidth(), event.GetHeight());
+		return false;
 	}
 
 	glm::vec2 Camera::ScreenToWorldPoint(const glm::vec2& screenPosition) const
