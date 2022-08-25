@@ -76,7 +76,7 @@ namespace Engine
 	F32 Camera::GetPixelCoefficient(F32 distance)
 	{
 		if (m_ProjectionType == ProjectionType::Perspective) return 1.0f;
-		return m_Aspect * 2.0f * distance / m_ViewportWidth;
+		return 2.0f * distance / m_ViewportHeight;
 	}
 
 	void Camera::SetProjection(ProjectionType type)

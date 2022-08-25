@@ -44,6 +44,9 @@
 #include "Engine/Rendering/RenderCommand.h"
 #include "Engine/Rendering/Font.h"
 
+/* UI */
+#include "Engine/Imgui/ImguiLayer.h"
+
 /* All camera related */
 #include "Engine/Core/Camera.h"
 

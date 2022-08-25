@@ -90,7 +90,7 @@ namespace Engine
 	void Renderer2D::BeginScene(Ref<Camera> camera)
 	{
 		s_BatchData.CameraViewProjection = camera->GetViewProjection();
-		s_BatchData.Camera = camera;
+		s_BatchData.Camera = camera.get();
 	}
 	
 	void Renderer2D::EndScene()
@@ -438,7 +438,6 @@ namespace Engine
 		s_BatchData.QuadBatch.VAO.~shared_ptr();
 		s_BatchData.PolygonBatch.VAO.~shared_ptr();
 		s_BatchData.TextBatch.VAO.~shared_ptr();
-		s_BatchData.Camera.~shared_ptr();
 		DeleteArr<U8>(s_BatchData.QuadBatch.VerticesMemory, s_BatchData.QuadBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.VerticesMemory, s_BatchData.PolygonBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.IndicesMemory, s_BatchData.PolygonBatch.MaxIndices * sizeof(U32));

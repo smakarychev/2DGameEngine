@@ -7,6 +7,7 @@
 #include "Engine/Events/WindowEvents.h"
 #include "Engine/Events/KeyboardEvents.h"
 #include "Engine/Events/MouseEvents.h"
+#include "Engine/Imgui/ImguiLayer.h"
 
 #include <memory>
 
@@ -37,6 +38,7 @@ namespace Engine {
 		static Application* s_Instance;
 
 		LayerStack m_LayerStack;
+		ImguiLayer* m_ImguiLayer;
 	};
 
 	// Client shall define this function.

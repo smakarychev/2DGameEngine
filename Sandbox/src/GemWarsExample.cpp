@@ -1,13 +1,12 @@
 #include "GemWarsExample.h"
 
-#include "GLFW/glfw3.h"
-
 void GemWarsExample::OnAttach()
 {
     m_Tileset = Texture::LoadTextureFromFile("assets/textures/cavesofgallet_tiles.png");
     m_Background = m_Tileset->GetSubTexture({ 8.0f, 8.0f }, { 3, 11 });
     auto camera = Camera::Create(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f, 16.0f / 9.0f);
-    camera->SetViewport(Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight());
+    m_ViewportSize = { Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight() };
+    camera->SetViewport(m_ViewportSize.x, m_ViewportSize.y);
     camera->SetProjection(Camera::ProjectionType::Orthographic);
 
     m_CameraController = CameraController::Create(CameraController::ControllerType::Editor2D, camera);
@@ -29,6 +28,15 @@ void GemWarsExample::OnUpdate()
     F32 dt = 1.0f / 60.0f;
     m_CameraController->OnUpdate(dt);
 
+    if (FrameBuffer::Spec spec = m_FrameBuffer->GetSpec();
+        m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f &&
+        (spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
+    {
+        m_FrameBuffer->Resize((U32)m_ViewportSize.x, (U32)m_ViewportSize.y);
+        m_CameraController->GetCamera()->SetViewport(m_ViewportSize.x, m_ViewportSize.y);
+        RenderCommand::SetViewport((U32)m_ViewportSize.x, (U32)m_ViewportSize.y);
+        SetBounds();
+    }
 
     sUserInput();
     if (m_IsRunning)
@@ -43,6 +51,73 @@ void GemWarsExample::OnUpdate()
         m_CurrentFrame++;
     }
     sRender();
+}
+
+void GemWarsExample::OnImguiUpdate()
+{
+    static bool dockspaceOpen = true;
+    static bool opt_fullscreen_persistant = true;
+    bool opt_fullscreen = opt_fullscreen_persistant;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+    // because it would be confusing to have two docking targets within each others.
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    if (opt_fullscreen)
+    {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    }
+
+    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        window_flags |= ImGuiWindowFlags_NoBackground;
+
+    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
+    // all active windows docked into it will lose their parent and become undocked.
+    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
+    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+    ImGui::PopStyleVar();
+
+    if (opt_fullscreen)
+        ImGui::PopStyleVar(2);
+
+    // DockSpace
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float minWinSizeX = style.WindowMinSize.x;
+    style.WindowMinSize.x = 370.0f;
+    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+    {
+        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    }
+
+    style.WindowMinSize.x = minWinSizeX;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+    ImGui::Begin("Viewport");
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+    uint64_t textureID = m_FrameBuffer->GetColorBufferId();
+    ImGui::Image(reinterpret_cast<void*>(textureID), viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+    // https://www.youtube.com/watch?v=Ku_DILlRIqQ&list=PLtrSb4XxIVbp8AKuEAlwNXDxr99e3woGE&index=30
+    ImGui::PopStyleVar(1);
+    ImGui::End();
+    ImGui::End();
+    
+    ImGui::Begin("Button");
+    ImGui::Button("g", { 20, 30 });
+    ImGui::End();
 }
 
 
@@ -131,7 +206,7 @@ void GemWarsExample::SpawnBullet(Entity& entity, const glm::vec2& target)
     F32 bulletSpeed = 15.0f;
     F32 bulletRadius = 0.02f;
     glm::vec2 bulletVelocity = target - glm::vec2(entity.Transform2D->Position);
-    bulletVelocity += Random::Float2(-0.3, 0.3);
+    bulletVelocity += Random::Float2(-0.3f, 0.3f);
     bulletVelocity = glm::normalize(bulletVelocity);
     glm::vec2 bulletPosition = glm::vec2(entity.Transform2D->Position) + entity.RigidBody2D->CollisionRadius * bulletVelocity;
     Entity& bullet = m_Manager.AddEntity("bullet");
@@ -278,7 +353,7 @@ void GemWarsExample::sUserInput()
 
 void GemWarsExample::sRender()
 {
-    //m_FrameBuffer->Bind();
+    m_FrameBuffer->Bind();
     RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera());
 
@@ -290,10 +365,12 @@ void GemWarsExample::sRender()
         Renderer2D::DrawPolygon(entity->Mesh2D->Shape, entity->Transform2D->Position, entity->Transform2D->Scale, entity->Transform2D->Rotation, entity->Mesh2D->Tint);
     }
     Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("score: {:d}", m_Player->Score->TotalScore), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
+    Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 90.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("GemWars example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
 
     Renderer2D::EndScene();
-   /* m_FrameBuffer->Unbind();
-    RenderCommand::ClearScreen();
+
+    m_FrameBuffer->Unbind();
+    /* RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera());
     F32 aspect = (F32)m_CameraController->GetCamera()->GetViewportWidth() / (F32)m_CameraController->GetCamera()->GetViewportHeight();
     Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.0f }, { 6.0f * aspect, 6.0f }, m_FrameBuffer->GetColorBuffer(), {1, 1});
@@ -318,8 +395,8 @@ void GemWarsExample::sParticleUpdate()
 
 void GemWarsExample::SetBounds()
 {
-    glm::vec2 bottomLeft = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, Application::Get().GetWindow().GetHeight() });
-    glm::vec2 topRight   = m_CameraController->GetCamera()->ScreenToWorldPoint({ Application::Get().GetWindow().GetWidth(),  0 });
+    glm::vec2 bottomLeft = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, m_ViewportSize.y });
+    glm::vec2 topRight   = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  0 });
     m_Bounds.BottomLeft = bottomLeft;
     m_Bounds.TopRight = topRight;
 }
@@ -333,14 +410,12 @@ bool GemWarsExample::Collide(Entity& a, Entity& b)
 void GemWarsExample::OnEvent(Event& event)
 {
     m_CameraController->OnEvent(event);
-    m_CameraController->GetCamera()->OnEvent(event);
     EventDispatcher dispatcher(event);
     dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(GemWarsExample::OnWindowResize));
 }
 
 bool GemWarsExample::OnWindowResize(WindowResizeEvent& event)
 {
-    m_FrameBuffer->Resize(event.GetWidth(), event.GetHeight());
     SetBounds();
     return false;
 }

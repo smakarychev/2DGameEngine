@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include "Engine/Core/Input.h"
+#include "Engine/Memory/MemoryManager.h"
 #include "Engine/Rendering/Renderer.h"
 
 namespace Engine {
@@ -25,6 +26,9 @@ namespace Engine {
 		m_Window = Window::Create();
 		m_Window->SetEventCallbackFunction(BIND_FN(Application::OnEvent));
 
+		m_ImguiLayer = New<ImguiLayer>();
+		PushOverlay(m_ImguiLayer);
+
 		Renderer::Init();
 	}
 
@@ -40,10 +44,18 @@ namespace Engine {
 	{
 
 		m_Window->OnUpdate();
+
 		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
 		{
 			(*it)->OnUpdate();
 		}
+
+		m_ImguiLayer->BeginFrame();
+		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
+		{
+			(*it)->OnImguiUpdate();
+		}
+		m_ImguiLayer->EndFrame();
 
 		// Should be last for correct work of ...Down()/...Up() versions of input.
 		Input::OnUpdate();
@@ -83,10 +95,6 @@ namespace Engine {
 
 	bool Application::OnWindowResize(WindowResizeEvent& event)
 	{
-		U32 width = event.GetWidth();
-		U32 height = event.GetHeight();
-		if (width == 0 || height == 0) return true;
-		Renderer::OnWindowResize(width, height);
 		return false;
 	}
 }

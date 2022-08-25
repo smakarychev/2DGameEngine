@@ -75,6 +75,7 @@ namespace Engine
 	
 	void MemoryManager::Dealloc(void* memory)
 	{
+		if (memory == nullptr) return;
 		if (s_IsPendingProbe) ProbeAll();
 		MarkedInterval* interval = GetContainingInterval(memory);
 		DeallocationDispatcher dispatcher(*interval, memory);

@@ -13,6 +13,7 @@ namespace Engine
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
 		virtual void OnUpdate() {}
+		virtual void OnImguiUpdate() {}
 		virtual void OnEvent(Event& event) {}
 	
 	protected:

@@ -74,7 +74,7 @@ namespace Engine
 			Ref<Shader> BatchShader;
 			Ref<Shader> TextShader;
 			glm::mat4 CameraViewProjection = glm::mat4(1.0f);
-			Ref<Camera> Camera;
+			Camera* Camera;
 
 			struct ReferenceQuad
 			{

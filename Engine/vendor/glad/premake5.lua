@@ -4,7 +4,7 @@ project "glad"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
-
+	warnings "Off"
 	files
 	{
 		"include/glad/glad.h",

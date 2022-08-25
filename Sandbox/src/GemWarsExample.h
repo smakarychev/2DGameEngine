@@ -19,6 +19,7 @@ public:
 	
 	void OnAttach() override;
 	void OnUpdate() override;
+	void OnImguiUpdate() override;
 	void OnEvent(Event& event) override;
 private:
 	void SetBounds();
@@ -56,4 +57,5 @@ private:
 	Ref<Font> m_Font;
 
 	Ref<FrameBuffer> m_FrameBuffer;
+	glm::vec2 m_ViewportSize = glm::vec2{ 0.0f };
 };
