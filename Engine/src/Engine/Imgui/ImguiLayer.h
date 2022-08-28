@@ -17,5 +17,10 @@ namespace Engine
 		void BeginFrame();
 		void EndFrame();
 		void OnEvent(Event& e);
+	private:
+		bool m_DockspaceOpen;
+		ImGuiDockNodeFlags m_DockspaceFlags;
+		ImGuiWindowFlags m_MainDockNodeFlags;
+		ImGuiID m_DockspaceID;
 	};
 }

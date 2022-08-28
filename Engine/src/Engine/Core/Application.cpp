@@ -45,12 +45,12 @@ namespace Engine {
 
 		m_Window->OnUpdate();
 
+		m_ImguiLayer->BeginFrame();
 		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
 		{
 			(*it)->OnUpdate();
 		}
 
-		m_ImguiLayer->BeginFrame();
 		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
 		{
 			(*it)->OnImguiUpdate();

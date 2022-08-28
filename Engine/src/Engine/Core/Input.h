@@ -34,11 +34,17 @@ namespace Engine
 		static void OnUpdate();
 		static void OnEvent(Event& event);
 
+		static void SetMainViewportOffset(const glm::vec2& offset) { s_MainViewportOffset = offset; }
+
 	private:
 		static std::map<KeyCode, bool> s_PressedKeys;
 		static std::map<MouseCode, bool> s_PressedButtons;
 		static std::map<KeyCode, bool> s_ReleasedKeys;
 		static std::map<MouseCode, bool> s_ReleasedButtons;
+
+		// Not the best way.
+
+		static glm::vec2 s_MainViewportOffset;
 
 		static bool SetKeyPressed(KeyPressedEvent& event);
 		static bool SetKeyReleased(KeyReleasedEvent& event);

@@ -26,6 +26,7 @@ project "Engine"
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.msdf_atlas}",
 		"%{IncludeDir.msdfgen}",	
+		"%{IncludeDir.imgui}",	
 	}
 
 	links
@@ -33,7 +34,8 @@ project "Engine"
 		"GLFW",
 		"glad",
 		"msdfgen",
-		"msdf-atlas-gen"
+		"msdf-atlas-gen",
+		"imgui",
 	}
 
 	defines

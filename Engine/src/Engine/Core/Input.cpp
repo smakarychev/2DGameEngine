@@ -9,6 +9,7 @@ namespace Engine
 	std::map<MouseCode, bool>	Input::s_PressedButtons;
 	std::map<KeyCode, bool>		Input::s_ReleasedKeys;
 	std::map<MouseCode, bool>	Input::s_ReleasedButtons;
+	glm::vec2					Input::s_MainViewportOffset = glm::vec2(0.0f, 0.0f);
 
 	void Input::OnUpdate()
 	{

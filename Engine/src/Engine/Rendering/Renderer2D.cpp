@@ -253,16 +253,16 @@ namespace Engine
 		BatchData& textBatch = s_BatchData.TextBatch;
 		if (textBatch.CurrentVertices + 4 > textBatch.MaxVertices || textBatch.CurrentIndices + 6 > textBatch.MaxIndices)
 		{
-			Flush(textBatch);
+			Flush(textBatch, *s_BatchData.TextShader);
 			ResetBatch(textBatch);
 		}
 		F32 textureIndex = GetTextureIndex(textBatch, &font.GetAtlas());
 		auto& referenceQuad = s_BatchData.ReferenceQuad;
 
 		F32 fontSizeCoeff = fontSize / font.GetBaseFontSize() * s_BatchData.Camera->GetPixelCoefficient();
-		xminPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
-		xmaxPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
-		yminPx = (F32)s_BatchData.Camera->GetViewportHeight() / 2.0f - fontSize - yminPx;
+		xminPx -= (F32)s_BatchData.Camera->GetViewportWidth()  / 2.0f;
+		xmaxPx -= (F32)s_BatchData.Camera->GetViewportWidth()  / 2.0f;
+		yminPx =  (F32)s_BatchData.Camera->GetViewportHeight() / 2.0f - fontSize - yminPx;
 		xminPx *= s_BatchData.Camera->GetPixelCoefficient(); xmaxPx *= s_BatchData.Camera->GetPixelCoefficient(); yminPx *= s_BatchData.Camera->GetPixelCoefficient();
 		F32 x = xminPx;
 		F32 y = yminPx;
@@ -306,7 +306,7 @@ namespace Engine
 		BatchData& textBatch = s_BatchData.TextBatch;
 		if (textBatch.CurrentVertices + 4 > textBatch.MaxVertices || textBatch.CurrentIndices + 6 > textBatch.MaxIndices)
 		{
-			Flush(textBatch);
+			Flush(textBatch, *s_BatchData.TextShader);
 			ResetBatch(textBatch);
 		}
 		F32 textureIndex = GetTextureIndex(textBatch, &font.GetAtlas());

@@ -20,6 +20,7 @@ project "Sandbox"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.msdf_atlas}",
 		"%{IncludeDir.msdfgen}",	
+		"%{IncludeDir.imgui}",	
 	}
 
 	links
