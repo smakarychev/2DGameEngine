@@ -12,6 +12,7 @@
 #include <ostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <map>
 #include <stack>
 #include <queue>

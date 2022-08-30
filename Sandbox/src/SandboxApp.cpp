@@ -1,11 +1,11 @@
 #include <Engine.h>
 #include <Engine/Core/EntryPoint.h>
 
-#include "GemWarsExample.h"
+#include "GemWarsExample/GemWarsExample.h"
+#include "QuadTreeExample/QuadTreeExample.h"
 
 #include <chrono> // TEMP
 #include <random>
-/* Entry point */
 
 
 class SandboxApp : public Engine::Application
@@ -13,7 +13,8 @@ class SandboxApp : public Engine::Application
 public:
 	SandboxApp()
 	{
-		PushLayer(Engine::New<GemWarsExample>());
+		//PushLayer(Engine::New<GemWarsExample>());
+		PushLayer(Engine::New<QuadTreeExample>());
 	}
 	~SandboxApp()
 	{

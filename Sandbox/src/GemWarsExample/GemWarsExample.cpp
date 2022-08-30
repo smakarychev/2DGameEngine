@@ -62,17 +62,7 @@ void GemWarsExample::OnImguiUpdate()
     m_ViewportSize = { viewportSize.x, viewportSize.y };
     U64 textureID = m_FrameBuffer->GetColorBufferId();
     ImGui::Image(reinterpret_cast<void*>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-    // https://www.youtube.com/watch?v=Ku_DILlRIqQ&list=PLtrSb4XxIVbp8AKuEAlwNXDxr99e3woGE&index=30
     ImGui::PopStyleVar(1);
-    ImGui::End();
-    
-    ImGui::Begin("Button");
-    ImGui::Button("g", { 20, 30 });
-    ImGui::End();
-
-    ImGui::Begin("Slider");
-    float a = 2;
-    ImGui::SliderFloat("g", &a, 0, 10);
     ImGui::End();
 }
 
