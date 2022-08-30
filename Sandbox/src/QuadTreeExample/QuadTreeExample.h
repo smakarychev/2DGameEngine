@@ -10,6 +10,7 @@ using namespace Engine::Types;
 struct ColoredQuad
 {
 	glm::vec3 pos;
+	glm::vec2 vel;
 	glm::vec2 size;
 	glm::vec4 color;
 };
@@ -28,7 +29,7 @@ private:
 	Rect GetCameraBounds();
 private:
 	Ref<CameraController> m_CameraController;
-	QuadTreeContainer<ColoredQuad> m_QuadTree;
+	DynamicQuadTreeContainer<ColoredQuad> m_QuadTree;
 	U32 m_MaxQuads = 0;
 
 	Ref<Font> m_Font;

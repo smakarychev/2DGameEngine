@@ -61,6 +61,7 @@ void QuadTreeExample::PopulateQuadTree()
             Random::Float(bounds.Center.y - bounds.HalfSize.y, bounds.Center.y + bounds.HalfSize.y),
             0.0f);
         quad.size = Random::Float2(0.05f, 0.125f);
+        quad.vel = Random::Float2(-0.00125f, 0.00125f);
         m_QuadTree.Insert(quad, { glm::vec2(quad.pos), quad.size * 0.5f });
     }
 }
@@ -75,7 +76,16 @@ void QuadTreeExample::Render()
     for (auto& quad : quadsToRender)
     {
         //Renderer2D::DrawQuad(quad.pos, quad.size, quad.color);
-        Renderer2D::DrawQuad(quad->pos, quad->size, quad->color);
+        Renderer2D::DrawQuad(quad->Item.pos, quad->Item.size, quad->Item.color);
+    }
+    for (auto& quad : quadsToRender)
+    {
+        glm::vec2 acceleration = Random::Float2(-0.0005f, 0.0005f);
+        glm::vec2 newVel = quad->Item.vel + acceleration;
+        quad->Item.vel = newVel;
+        glm::vec3 newPos = quad->Item.pos + glm::vec3(quad->Item.vel, 0.0f);
+        quad->Item.pos = newPos;
+        m_QuadTree.Relocate(quad, { glm::vec2(quad->Item.pos),  quad->Item.size * 0.5f });
     }
     auto duration = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count();
     ENGINE_INFO("Frame time: {:.5f}", duration);
