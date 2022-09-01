@@ -30,6 +30,7 @@ private:
 private:
 	Ref<CameraController> m_CameraController;
 	DynamicQuadTreeContainer<ColoredQuad> m_QuadTree;
+	FastQuadTreeContainer<ColoredQuad> m_FastQuadTree;
 	U32 m_MaxQuads = 0;
 
 	Ref<Font> m_Font;

@@ -18,7 +18,7 @@ namespace Engine
 	static U64 SMALL_POOL_SIZE = 32_B;
 	static U64 MEDIUM_POOL_SIZE = 128_B;
 	static U64 BIG_POOL_SIZE = 512_B;
-	static U64 BUDDY_DEFAULT_SIZE_BYTES = 128_MiB;
+	static U64 BUDDY_DEFAULT_SIZE_BYTES = 16_MiB;
 
 	struct MemoryInterval
 	{

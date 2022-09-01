@@ -17,7 +17,7 @@ namespace Engine
 		U64 allocatorId = 0;
 		BuddyAllocator* buddyAlloc = new BuddyAllocator(BUDDY_DEFAULT_SIZE_BYTES, BUDDY_ALLOCATOR_DEFAULT_LEAF_SIZE_BYTES);
 		s_Allocators.push_back({ buddyAlloc, allocatorId++, 128_MiB });
-		FreelistRedBlackAllocator* freeTreeAlloc = new FreelistRedBlackAllocator(RBFREELIST_ALLOCATOR_INCREMENT_BYTES);
+		FreelistRedBlackAllocator* freeTreeAlloc = new FreelistRedBlackAllocator(2_MiB);
 		s_Allocators.push_back({ freeTreeAlloc, allocatorId++, std::numeric_limits<U64>::max() });
 
 		for (U32 pow = 3; pow <= 10; pow++)

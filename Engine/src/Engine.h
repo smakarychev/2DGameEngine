@@ -54,5 +54,7 @@
 #include "Engine/Primitives/2D/RegularPolygon.h"
 
 /* Common (data structures, etc). */
+#include "Engine/Common/FreeList.h"
 #include "Engine/Common/Geometry2D.h"
 #include "Engine/Common/QuadTree.h"
+#include "Engine/Common/FastQuadTree.h"
