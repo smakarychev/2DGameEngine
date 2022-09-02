@@ -49,6 +49,30 @@ namespace Engine
 		void* m_Address;
 	};
 
+	class DeallocationSizeAwareDispatcher
+	{
+	public:
+		DeallocationSizeAwareDispatcher(void* address, U64 sizeBytes): m_Address(address), m_SizeBytes(sizeBytes), m_Dispatched(false)
+		{ }
+
+		template <typename Fn>
+		void Dispatch(U64 sizeBytes, Fn func)
+		{
+			if (m_SizeBytes <= sizeBytes)
+			{
+				func(m_Address, m_SizeBytes);
+				m_Dispatched = true;
+			}
+		}
+
+		bool HasDispatchedAddress() const { return m_Dispatched; }
+
+	private:
+		U64 m_SizeBytes;
+		void* m_Address;
+		bool m_Dispatched;
+	};
+
 	class AllocationDispatcher
 	{
 	public:
@@ -80,14 +104,17 @@ namespace Engine
 		// Shall be called in entry point (frees memory).
 		static void ShutDown();
 
-		// Dispaches and allocates memory.
+		// Dispatches and allocates memory.
 		static void* Alloc(U64 sizeBytes);
 
 		template <typename T>
 		static T* Alloc(U64 count = 1) { return reinterpret_cast<T*>(Alloc(sizeof(T) * count)); }
 
-		// Dispaches and deallocates memory.
+		// Dispatches and deallocates memory.
 		static void Dealloc(void* memory);
+
+		// Dispatches and deallocates memory.
+		static void Dealloc(void* memory, U64 sizeBytes);
 
 	private:
 		static void ProbeAll();
@@ -171,7 +198,7 @@ namespace Engine
 	void Delete(T* obj)
 	{
 		obj->~T();
-		MemoryManager::Dealloc(static_cast<void*>(obj));
+		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T));
 	}
 
 	template <typename T, U64 Count>
@@ -183,7 +210,7 @@ namespace Engine
 			reinterpret_cast<T*>(memoryBytes + sizeof obj)->~T();
 			memoryBytes += sizeof obj;
 		}
-		MemoryManager::Dealloc(static_cast<void*>(obj));
+		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T) * Count);
 	}
 
 	template <typename T>
@@ -195,7 +222,7 @@ namespace Engine
 			reinterpret_cast<T*>(memoryBytes + sizeof obj)->~T();
 			memoryBytes += sizeof obj;
 		}
-		MemoryManager::Dealloc(static_cast<void*>(obj));
+		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T) * count);
 	}
 
 }

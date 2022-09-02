@@ -34,6 +34,7 @@ namespace Engine
 		T* AllocAligned(U64 count = 1) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignof(T))); }
 
 		void Dealloc(void* memory);
+		void Dealloc(void* memory, U64 sizeBytes);
 
 		// Recursive version of BelongsLocal.
 		bool Belongs(void* memory) const;

@@ -87,6 +87,19 @@ namespace Engine
 		}
 	}
 
+	void MemoryManager::Dealloc(void* memory, U64 sizeBytes)
+	{
+		if (memory == nullptr) return;
+		DeallocationSizeAwareDispatcher dispatcher(memory, sizeBytes);
+		for (auto&& markAlloc : s_Allocators)
+		{
+			std::visit([&dispatcher, &markAlloc](auto&& alloc) {
+				dispatcher.Dispatch(markAlloc.HigherBound, [&alloc](void* address, U64 sizeBytes) -> void { return alloc->Dealloc(address, sizeBytes); });
+			}, markAlloc.Allocator);
+			if (dispatcher.HasDispatchedAddress()) break;
+		}
+	}
+
 	void MemoryManager::ProbeAll()
 	{
 		// Best oop solid practices right here.

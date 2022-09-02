@@ -42,6 +42,6 @@ namespace Engine
 		// Would be better to use unique_ptr, but need to supply deleter
 		GLFWwindow* m_Window;
 
-		GraphicsContext* m_Context;
+		Ref<GraphicsContext> m_Context;
 	};
 }

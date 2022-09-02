@@ -24,6 +24,8 @@ namespace Engine
 		// Return element to the pull
 		void Dealloc(void* memory);
 
+		void Dealloc(void* memory, [[maybe_unused]] U64 sizeBytes) { Dealloc(memory); }
+
 		// Allocates extra memory when pull is empty and returns its address.
 		void* ExpandPool();
 	

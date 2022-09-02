@@ -29,6 +29,7 @@ namespace Engine
 		T* AllocAligned(U64 count = 1) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignof(T))); }
 
 		void Dealloc(void* memory);
+		void Dealloc(void* memory, [[maybe_unused]] U64 sizeBytes) { Dealloc(memory); }
 
 		// Checks if memory was allocated here.
 		bool Belongs(void* memory);

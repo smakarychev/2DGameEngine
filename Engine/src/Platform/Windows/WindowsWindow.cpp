@@ -44,7 +44,7 @@ namespace Engine
 		ENGINE_CORE_ASSERT(m_Window != 0, "Failed to create glfwWindow.");
 
 		// Create an opengl context.
-		m_Context = New<OpenGLContext>(m_Window);
+		m_Context = CreateRef<OpenGLContext>(m_Window);
 		m_Context->Init();
 
 
@@ -166,7 +166,6 @@ namespace Engine
 	void WindowsWindow::Shutdown()
 	{
 		glfwDestroyWindow(m_Window);
-		Delete<GraphicsContext>(m_Context);
 		glfwTerminate();
 	}
 }

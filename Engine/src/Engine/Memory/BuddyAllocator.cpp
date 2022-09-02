@@ -59,18 +59,32 @@ namespace Engine
 
 	void BuddyAllocator::Dealloc(void* memory)
 	{
+		Dealloc(memory, 0);
+	}
+
+	void BuddyAllocator::Dealloc(void* memory, U64 sizeBytes)
+	{
 		// If block wasn't allocated here, delegate it to next allocator.
 		if (!BelongsLocal(reinterpret_cast<BuddyAllocatorBlock*>(memory)))
 		{
 			if (m_NextBuddyAllocator != nullptr)
 			{
-				m_NextBuddyAllocator->Dealloc(memory);
+				m_NextBuddyAllocator->Dealloc(memory, sizeBytes);
 				return;
 			}
 			ENGINE_CORE_ERROR("{}: unidentified memory address: {:x}", m_DebugName, reinterpret_cast<U64>(memory));
 			return;
 		}
-		U32 level = GetLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));
+		U32 level = 0;
+		if (sizeBytes != 0)
+		{
+			sizeBytes = Math::CeilToPower2(sizeBytes);
+			level = static_cast<U32>(m_Levels - Math::Log2(sizeBytes / m_LeafSizeBytes));
+		}
+		else
+		{
+			level = GetLevel(reinterpret_cast<BuddyAllocatorBlock*>(memory));
+		}		 
 
 		U64 sizeOfBlockInLevel = m_TotalSizeBytes >> level;
 		U64 indexInLevel = (reinterpret_cast<U8*>(memory) - m_Memory) / sizeOfBlockInLevel;
