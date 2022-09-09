@@ -29,6 +29,14 @@ namespace Engine
 		// Returns size of freelist.
 		U32 Size();
 
+		// Returns the first free element
+		I32 GetFirstFree();
+
+		// Returns underlying union.
+		FreeElement& Get(I32 n);
+
+		U32 GetNumberOfFreeElements() const;
+
 		T& operator[](I32 n);
 		const T& operator[](I32 n) const;
 
@@ -43,10 +51,11 @@ namespace Engine
 		};
 		std::vector<FreeElement> m_Data;
 		I32 m_FirstFree;
+		U32 m_NumberOfFreeElements;
 	};
 
 	template <typename T>
-	FreeList<T>::FreeList() : m_FirstFree(-1)
+	FreeList<T>::FreeList() : m_FirstFree(-1), m_NumberOfFreeElements(0)
 	{}
 
 	template <typename T>
@@ -57,6 +66,7 @@ namespace Engine
 		{
 			I32 index = m_FirstFree;
 			m_FirstFree = m_Data[m_FirstFree].Next;
+			m_NumberOfFreeElements--;
 			m_Data[index].Element = element;
 			return index;
 		}
@@ -72,6 +82,7 @@ namespace Engine
 		// Add the nth element to the linked list.
 		m_Data[n].Next = m_FirstFree;
 		m_FirstFree = n;
+		m_NumberOfFreeElements++;
 	}
 
 	template <typename T>
@@ -79,11 +90,30 @@ namespace Engine
 	{
 		m_Data.clear();
 		m_FirstFree = -1;
+		m_NumberOfFreeElements = 0;
 	}
 	template <typename T>
 	U32 FreeList<T>::Size()
 	{
 		return static_cast<U32>(m_Data.size());
+	}
+
+	template<typename T>
+	inline I32 FreeList<T>::GetFirstFree()
+	{
+		return m_FirstFree;
+	}
+
+	template<typename T>
+	FreeList<T>::FreeElement& FreeList<T>::Get(I32 n)
+	{
+		return m_Data[n];
+	}
+
+	template<typename T>
+	inline U32 FreeList<T>::GetNumberOfFreeElements() const
+	{
+		return m_NumberOfFreeElements;
 	}
 
 	template <typename T>

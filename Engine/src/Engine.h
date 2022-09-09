@@ -46,6 +46,7 @@
 
 /* UI */
 #include "Engine/Imgui/ImguiLayer.h"
+#include "Engine/Imgui/ImguiCommon.h"
 
 /* All camera related */
 #include "Engine/Core/Camera.h"
@@ -57,4 +58,3 @@
 #include "Engine/Common/FreeList.h"
 #include "Engine/Common/Geometry2D.h"
 #include "Engine/Common/QuadTree.h"
-#include "Engine/Common/FastQuadTree.h"

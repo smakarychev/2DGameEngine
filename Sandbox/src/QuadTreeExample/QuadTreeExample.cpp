@@ -8,8 +8,7 @@ void QuadTreeExample::OnAttach()
     camera->SetProjection(Camera::ProjectionType::Orthographic);
     m_CameraController = CameraController::Create(CameraController::ControllerType::Editor2D, camera);
     
-    m_MaxQuads = 1'000'000;
-    m_QuadTree.Resize({ { 0.0f, 0.0f }, { 50.0f, 50.0f } });
+    m_MaxQuads = 20'000;
     PopulateQuadTree();
 
     m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Thin.ttf");
@@ -38,15 +37,7 @@ void QuadTreeExample::OnUpdate()
 
 void QuadTreeExample::OnImguiUpdate()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-    ImGui::Begin("Viewport");
-
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-    m_ViewportSize = { viewportSize.x, viewportSize.y };
-    U64 textureID = m_FrameBuffer->GetColorBufferId();
-    ImGui::Image(reinterpret_cast<void*>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-    ImGui::PopStyleVar(1);
-    ImGui::End();
+    m_ViewportSize = ImguiMainViewport(*m_FrameBuffer);
 }
 
 void QuadTreeExample::PopulateQuadTree()
@@ -63,7 +54,6 @@ void QuadTreeExample::PopulateQuadTree()
         quad.size = Random::Float2(0.05f, 0.125f);
         quad.vel = Random::Float2(-0.00125f, 0.00125f);
         m_QuadTree.Insert(quad, { glm::vec2(quad.pos), quad.size * 0.5f });
-        m_FastQuadTree.Insert(quad, { glm::vec2(quad.pos), quad.size * 0.5f });
     }
 }
 
@@ -72,24 +62,40 @@ void QuadTreeExample::Render()
     m_FrameBuffer->Bind();
     RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera());
+    auto quadsToRender = m_QuadTree.Search(GetCameraBounds());
     auto start = std::chrono::high_resolution_clock::now();
-    auto quadsToRender = m_FastQuadTree.Search(GetCameraBounds());
+
     for (auto& quad : quadsToRender)
     {
         //Renderer2D::DrawQuad(quad.pos, quad.size, quad.color);
         Renderer2D::DrawQuad(quad->Item.pos, quad->Item.size, quad->Item.color);
     }
+    for (U32 i = 0; i < m_QuadTree.GetItems().size(); i++)
+    {
+        auto& quad = m_QuadTree.GetItems()[i];
+        glm::vec2 acceleration = Random::Float2(-0.005f, 0.005f);
+        glm::vec2 newVel = quad.Item.vel + acceleration;
+        quad.Item.vel = newVel;
+        glm::vec3 newPos = quad.Item.pos + glm::vec3(quad.Item.vel, 0.0f);
+        quad.Item.pos = newPos;
+
+        if (quad.Item.pos.x < m_QuadTree.GetBounds().Center.x - m_QuadTree.GetBounds().HalfSize.x || quad.Item.pos.x >  m_QuadTree.GetBounds().Center.x + m_QuadTree.GetBounds().HalfSize.x)
+            quad.Item.vel.x *= -1.0f;
+        if (quad.Item.pos.y < m_QuadTree.GetBounds().Center.y - m_QuadTree.GetBounds().HalfSize.y || quad.Item.pos.y >  m_QuadTree.GetBounds().Center.y + m_QuadTree.GetBounds().HalfSize.y)
+            quad.Item.vel.y *= -1.0f;
+
+        m_QuadTree.Relocate(m_QuadTree.GetItems().begin() + i, {glm::vec2(quad.Item.pos),  quad.Item.size * 0.5f});
+    }
     for (auto& quad : quadsToRender)
     {
-        glm::vec2 acceleration = Random::Float2(-0.0005f, 0.0005f);
-        glm::vec2 newVel = quad->Item.vel + acceleration;
-        quad->Item.vel = newVel;
-        glm::vec3 newPos = quad->Item.pos + glm::vec3(quad->Item.vel, 0.0f);
-        quad->Item.pos = newPos;
-        m_FastQuadTree.Relocate(quad, { glm::vec2(quad->Item.pos),  quad->Item.size * 0.5f });
+        auto overlapping = m_QuadTree.Search({ quad->Item.pos, quad->Item.size * 0.5f });
+        if (overlapping.size() > 1)
+        {
+            quad->Item.vel *= -1.0f;
+        }
     }
     auto duration = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count();
-    ENGINE_INFO("Frame time: {:.5f}", duration);
+    ENGINE_INFO("Frame time: {:.5f} ({:.0f} fps)", duration, 1.0 / duration);
     Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("Visible (drawn) quads: {:d} out of {}", quadsToRender.size(), m_MaxQuads), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
     Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 90.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("Quad tree example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
 

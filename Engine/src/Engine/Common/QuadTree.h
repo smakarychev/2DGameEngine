@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Common/Geometry2D.h"
+#include "Engine/Common/FreeList.h"
 #include "Engine/Core/Core.h"
 #include "Engine/Core/Types.h"
 #include "Engine/Math/MathUtils.h"
@@ -15,17 +16,30 @@ namespace Engine
 	using namespace Types;
 
 	template <typename T>
+	struct QuadTreeItemLocation
+	{
+		FreeList<std::pair<Rect, T>>* Container;
+		U32 Index;
+	};
+
+	template <typename T>
+	struct QuadTreeItem
+	{
+		T Item;
+		QuadTreeItemLocation<U32> Location;
+	};
+
 	class QuadTree
 	{
 	public:
-		QuadTree(const Rect& bounds = { {0.0f, 0.0f}, {50.0f, 50.0f} }, U32 depth = 0) : 
-			m_Depth(depth)
+		QuadTree(const Rect& bounds = { {0.0f, 0.0f}, {100.0f, 100.0f} }, U32 depth = 0) :
+			m_Depth(depth), m_MaxDepth(8)
 		{
 			Resize(bounds);
 		}
 
 		const Rect& GetBounds() const { return m_Rect; }
-		
+
 		void Resize(const Rect& bounds)
 		{
 			Clear();
@@ -41,7 +55,7 @@ namespace Engine
 
 		void Clear()
 		{
-			m_Items.clear();
+			m_Items.Clear();
 			for (U32 i = 0; i < 4; i++)
 			{
 				if (m_Child[i]) m_Child[i]->Clear();
@@ -52,7 +66,7 @@ namespace Engine
 		// U64 is quite ambitious.
 		U64 Size()
 		{
-			U64 size = m_Items.size();
+			U64 size = m_Items.Size();
 			for (U32 i = 0; i < 4; i++)
 			{
 				if (m_Child[i]) size += m_Child[i]->Size();
@@ -60,42 +74,71 @@ namespace Engine
 			return size;
 		}
 
-		void Insert(const T& item, const Rect& itemBounds)
+		QuadTreeItemLocation<U32> Insert(U32 id, const Rect& itemBounds)
 		{
 			for (U32 i = 0; i < 4; i++)
 			{
 				if (m_RectChild[i].Contains(itemBounds))
 				{
 					// If max depth not yet reached, create new child.
-					if (m_Depth + 1 < MAX_DEPTH)
+					if (m_Depth + 1 < m_MaxDepth)
 					{
 						if (!m_Child[i])
 						{
-							m_Child[i] = CreateRef<QuadTree<T>>(m_RectChild[i], m_Depth + 1);
-						}	
+							m_Child[i] = CreateRef<QuadTree>(m_RectChild[i], m_Depth + 1);
+						}
 
 						// Check if the child can be subdivided further.
-						m_Child[i]->Insert(item, itemBounds);
-						return;
+						return m_Child[i]->Insert(id, itemBounds);
 					}
 				}
 			}
-			m_Items.emplace_back(itemBounds, item);
+			U32 itemIndex = static_cast<U32>(m_Items.Insert({ itemBounds, id }));
+			return { &m_Items, itemIndex };
 		}
 
 		// Returns the list of item in specified area.
-		std::vector<T> Search(const Rect& bounds)
+		std::vector<U32> Search(const Rect& bounds)
 		{
-			std::vector<T> result;
+			std::vector<U32> result;
 			Search(bounds, result);
 			return result;
 		}
 
-		void Search(const Rect& bounds, std::vector<T>& foundElements)
+		void Search(const Rect& bounds, std::vector<U32>& foundElements)
 		{
-			for (auto& p : m_Items)
+			// First create an array of free elements, so we don't push it to result.
+			std::vector<I32> freeItems;
+			freeItems.reserve(m_Items.GetNumberOfFreeElements());
+			I32 freeIndex = m_Items.GetFirstFree();
+			while (freeIndex != -1)
 			{
-				if (bounds.Overlaps(p.first)) foundElements.push_back(p.second);
+				freeItems.push_back(freeIndex);
+				freeIndex = m_Items.Get(freeIndex).Next;
+			}
+			std::sort(freeItems.begin(), freeItems.end());
+			freeIndex = 0;
+			I32 freeItem = 0;
+			if (freeIndex < freeItems.size()) freeItem = freeItems[freeIndex];
+			else freeItem = -1;
+			for (U32 i = 0; i < m_Items.Size(); i++)
+			{
+				// push back to result only items, that are really exists (not free).
+				if (i == freeItem)
+				{
+					freeIndex++;
+					if (freeIndex < freeItems.size())
+					{
+						freeItem = freeItems[freeIndex];
+					}
+				}
+				else
+				{
+					if (bounds.Overlaps(m_Items[i].first))
+					{
+						foundElements.push_back(m_Items[i].second);
+					}
+				}
 			}
 
 			for (U32 i = 0; i < 4; i++)
@@ -116,12 +159,40 @@ namespace Engine
 	private:
 
 		// Appends all items to `elements`.
-		void InsertItems(std::vector<T>& elements)
+		void InsertItems(std::vector<U32>& elements)
 		{
-			for (auto& item : m_Items)
+			//ENGINE_CORE_ERROR("QuadTree is not working correctly! Use DynamicQuadTree instead.");
+			// First create an array of free elements, so we don't push it to result.
+			std::vector<I32> freeItems;
+			I32 freeIndex = m_Items.GetFirstFree();
+			freeItems.reserve(m_Items.GetNumberOfFreeElements());
+			while (freeIndex != -1)
 			{
-				elements.push_back(item.second);
+				freeItems.push_back(freeIndex);
+				freeIndex = m_Items.Get(freeIndex).Next;
 			}
+			std::sort(freeItems.begin(), freeItems.end());
+			freeIndex = 0;
+			I32 freeItem = 0;
+			if (freeIndex < freeItems.size()) freeItem = freeItems[freeIndex];
+			else freeItem = -1;
+			for (U32 i = 0; i < m_Items.Size(); i++)
+			{
+				// push back to result only items, that are really exists (not free).
+				if (i == freeItem)
+				{
+					freeIndex++;
+					if (freeIndex < freeItems.size())
+					{
+						freeItem = freeItems[freeIndex];
+					}
+				}
+				else
+				{
+					elements.push_back(m_Items[i].second);
+				}
+			}
+
 			for (U32 i = 0; i < 4; i++)
 			{
 				if (m_Child[i])
@@ -133,6 +204,7 @@ namespace Engine
 
 	private:
 		U32 m_Depth = 0;
+		U32 m_MaxDepth = 0;
 
 		// Containing rect.
 		Rect m_Rect;
@@ -141,17 +213,12 @@ namespace Engine
 		std::array<Rect, 4> m_RectChild{};
 
 		// 4 children.
-		std::array<Ref<QuadTree<T>>, 4> m_Child{};
+		std::array<Ref<QuadTree>, 4> m_Child{};
 
 		// Elements of quadtree.
-		std::vector<std::pair<Rect, T>> m_Items;
+		FreeList<std::pair<Rect, U32>> m_Items;
 
-		// TODO: move to config.
-		const static U32 MAX_DEPTH;
 	};
-
-	template <typename T>
-	const U32 QuadTree<T>::MAX_DEPTH = 8;
 
 	template <typename T>
 	class QuadTreeContainer
@@ -180,246 +247,42 @@ namespace Engine
 
 		void Insert(const T& item, const Rect& itemsize)
 		{
-			m_Items.push_back(item);
-
-			m_QuadTree.Insert(m_Items.size() - 1, itemsize);
-		}
-
-		std::vector<T*> Search(const Rect& bounds)
-		{
-			std::vector<U64> itemIndices;
-			m_QuadTree.Search(bounds, itemIndices);
-
-			std::vector<T*> items;
-			items.reserve(itemIndices.size());
-			for (auto& ind : itemIndices)
-			{
-				items.push_back(&m_Items[ind]);
-			}
-			return items;
-		}
-
-	private:
-		std::vector<T> m_Items;
-		QuadTree<U64> m_QuadTree;
-	};	
-
-	/*********** Dynamic version **********/
-
-	template <typename T>
-	struct DynamicQuadTreeItemLocation
-	{
-		std::list<std::pair<Rect, T>>* Container;
-		std::list<std::pair<Rect, T>>::iterator Iterator;
-	};
-
-	template <typename T>
-	struct DynamicQuadTreeItem
-	{
-		T Item;
-		DynamicQuadTreeItemLocation<typename std::list<DynamicQuadTreeItem<T>>::iterator> Location;
-	};
-
-	template <typename T>
-	class DynamicQuadTree
-	{
-	public:
-		DynamicQuadTree(const Rect& bounds = { {0.0f, 0.0f}, {50.0f, 50.0f} }, U32 depth = 0) :
-			m_Depth(depth)
-		{
-			Resize(bounds);
-		}
-
-		const Rect& GetBounds() const { return m_Rect; }
-
-		void Resize(const Rect& bounds)
-		{
-			Clear();
-			m_Rect = bounds;
-			glm::vec2 childSize = bounds.HalfSize * 0.5f;
-			m_RectChild = {
-				Rect{ { bounds.Center + glm::vec2{ -childSize.x,  childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{  childSize.x,  childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{  childSize.x, -childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{ -childSize.x, -childSize.y} }, childSize },
-			};
-		}
-
-		void Clear()
-		{
-			m_Items.clear();
-			for (U32 i = 0; i < 4; i++)
-			{
-				if (m_Child[i]) m_Child[i]->Clear();
-				m_Child[i].reset();
-			}
-		}
-
-		// U64 is quite ambitious.
-		U64 Size()
-		{
-			U64 size = m_Items.size();
-			for (U32 i = 0; i < 4; i++)
-			{
-				if (m_Child[i]) size += m_Child[i]->Size();
-			}
-			return size;
-		}
-
-		DynamicQuadTreeItemLocation<T> Insert(const T& item, const Rect& itemBounds)
-		{
-			for (U32 i = 0; i < 4; i++)
-			{
-				if (m_RectChild[i].Contains(itemBounds))
-				{
-					// If max depth not yet reached, create new child.
-					if (m_Depth + 1 < MAX_DEPTH)
-					{
-						if (!m_Child[i])
-						{
-							m_Child[i] = CreateRef<DynamicQuadTree<T>>(m_RectChild[i], m_Depth + 1);
-						}
-
-						// Check if the child can be subdivided further.
-						return m_Child[i]->Insert(item, itemBounds);
-					}
-				}
-			}
-			m_Items.emplace_back(itemBounds, item);
-			return { &m_Items, std::prev(m_Items.end()) };
-		}
-
-		// Returns the list of item in specified area.
-		std::list<T> Search(const Rect& bounds)
-		{
-			std::list<T> result;
-			Search(bounds, result);
-			return result;
-		}
-
-		void Search(const Rect& bounds, std::list<T>& foundElements)
-		{
-			for (auto& p : m_Items)
-			{
-				if (bounds.Overlaps(p.first)) foundElements.push_back(p.second);
-			}
-
-			for (U32 i = 0; i < 4; i++)
-			{
-				if (m_Child[i])
-				{
-					if (bounds.Contains(m_RectChild[i]))
-					{
-						m_Child[i]->InsertItems(foundElements);
-					}
-					else if (m_RectChild[i].Overlaps(bounds))
-					{
-						m_Child[i]->Search(bounds, foundElements);
-					}
-				}
-			}
-		}
-	private:
-
-		// Appends all items to `elements`.
-		void InsertItems(std::list<T>& elements)
-		{
-			for (auto& item : m_Items)
-			{
-				elements.push_back(item.second);
-			}
-			for (U32 i = 0; i < 4; i++)
-			{
-				if (m_Child[i])
-				{
-					m_Child[i]->InsertItems(elements);
-				}
-			}
-		}
-
-	private:
-		U32 m_Depth = 0;
-
-		// Containing rect.
-		Rect m_Rect;
-
-		// 4 rect for children.
-		std::array<Rect, 4> m_RectChild{};
-
-		// 4 children.
-		std::array<Ref<DynamicQuadTree<T>>, 4> m_Child{};
-
-		// Elements of quadtree.
-		std::list<std::pair<Rect, T>> m_Items;
-
-		// TODO: move to config.
-		const static U32 MAX_DEPTH;
-	};
-
-	template <typename T>
-	const U32 DynamicQuadTree<T>::MAX_DEPTH = 8;
-
-	template <typename T>
-	class DynamicQuadTreeContainer
-	{
-	public:
-		DynamicQuadTreeContainer(const Rect& bounds = { {0.0f, 0.0f}, {50.0f, 50.0f} }, U32 depth = 0) : m_QuadTree(bounds, depth)
-		{}
-
-		const Rect& GetBounds() const { return m_QuadTree.GetBounds(); }
-
-		void Resize(const Rect& bounds)
-		{
-			m_QuadTree.Resize(bounds);
-		}
-
-		U64 Size()
-		{
-			return m_Items.size();
-		}
-
-		void Clear()
-		{
-			m_QuadTree.Clear();
-			m_Items.clear();
-		}
-
-		void Insert(const T& item, const Rect& itemsize)
-		{
-			DynamicQuadTreeItem<T> newItem;
+			QuadTreeItem<T> newItem;
 			newItem.Item = item;
 			m_Items.push_back(newItem);
-			m_Items.back().Location = m_QuadTree.Insert(std::prev(m_Items.end()), itemsize);
+			m_Items.back().Location = m_QuadTree.Insert(static_cast<I32>(m_Items.size() - 1), itemsize);
 		}
 
-		void Remove(typename std::list<DynamicQuadTreeItem<T>>::iterator& item)
+		void Remove(typename std::vector<QuadTreeItem<T>>::iterator& item)
 		{
 			m_Items.erase(item);
-			item->Location.Container->erase(item->Location.Iterator);
+			item->Location.Container->Erase(item->Location.Index);
 		}
 
-		void Relocate(typename std::list<DynamicQuadTreeItem<T>>::iterator& item, const Rect& newLocation)
+		void Relocate(typename const std::vector<QuadTreeItem<T>>::iterator& item, const Rect& newLocation)
 		{
-			item->Location.Container->erase(item->Location.Iterator);
-			item->Location = m_QuadTree.Insert(item, newLocation);
+			item->Location.Container->Erase(item->Location.Index);
+			item->Location = m_QuadTree.Insert(static_cast<I32>(item - m_Items.begin()), newLocation);
 		}
 
-		std::list<typename std::list<DynamicQuadTreeItem<T>>::iterator> Search(const Rect& bounds)
+		const std::vector<typename std::vector<QuadTreeItem<T>>::iterator> Search(const Rect& bounds)
 		{
-			std::list<typename std::list<DynamicQuadTreeItem<T>>::iterator> itemIndices;
+			std::vector<U32> itemIndices;
 			m_QuadTree.Search(bounds, itemIndices);
 
-			std::list<typename std::list<DynamicQuadTreeItem<T>>::iterator> items;
+			std::vector<typename std::vector<QuadTreeItem<T>>::iterator> items;
 			for (auto& ind : itemIndices)
 			{
-				items.push_back(ind);
+				items.push_back(m_Items.begin() + ind);
 			}
 			return items;
 		}
 
+		std::vector<QuadTreeItem<T>>& GetItems() { return m_Items; }
+
 	private:
-		std::list<DynamicQuadTreeItem<T>> m_Items;
-		DynamicQuadTree<typename std::list<DynamicQuadTreeItem<T>>::iterator> m_QuadTree;
+		std::vector<QuadTreeItem<T>> m_Items;
+		QuadTree m_QuadTree;
 	};
 
 }

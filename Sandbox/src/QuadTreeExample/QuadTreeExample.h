@@ -29,12 +29,12 @@ private:
 	Rect GetCameraBounds();
 private:
 	Ref<CameraController> m_CameraController;
-	DynamicQuadTreeContainer<ColoredQuad> m_QuadTree;
-	FastQuadTreeContainer<ColoredQuad> m_FastQuadTree;
+	QuadTreeContainer<ColoredQuad> m_QuadTree;
 	U32 m_MaxQuads = 0;
 
 	Ref<Font> m_Font;
 
 	Ref<FrameBuffer> m_FrameBuffer;
 	glm::vec2 m_ViewportSize = glm::vec2{ 0.0f };
+
 };
