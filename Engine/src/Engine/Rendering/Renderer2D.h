@@ -49,6 +49,26 @@ namespace Engine
 			BatchVertex() = default;
 		};
 
+		struct BatchVertexLine
+		{
+			glm::vec3 Position;
+			glm::vec4 Color;
+
+			static const VertexLayout& GetLayout()
+			{
+				const static VertexLayout layout{ {
+					{ LayoutElement::Float3,	"a_position" },
+					{ LayoutElement::Float4,	"a_color" },
+				} };
+				return layout;
+			}
+
+			BatchVertexLine(const glm::vec3& pos, const glm::vec4 color) :
+				Position(pos), Color(color)
+			{}
+			BatchVertexLine() = default;
+		};
+
 		struct BatchData
 		{
 			// TODO: move to config.
@@ -67,12 +87,28 @@ namespace Engine
 			U32* CurrentIndexPointer;
 		};
 
+		struct BatchDataLines
+		{
+			// TODO: move to config.
+			U32 MaxVertices = U32(2_MiB) / sizeof(BatchVertexLine);
+			U32 MaxIndices = U32(2_MiB) / sizeof(U32);
+			U32 CurrentVertices = 0;
+			U32 CurrentIndices = 0;
+			Ref<VertexArray> VAO;
+
+			U8* VerticesMemory = nullptr;
+			BatchVertexLine* CurrentVertexPointer = nullptr;
+			U8* IndicesMemory = nullptr;
+			U32* CurrentIndexPointer;
+		};
+
 		struct BatchRendererData
 		{
 			U32 DrawCalls = 0;
 
 			Ref<Shader> BatchShader;
 			Ref<Shader> TextShader;
+			Ref<Shader> LineShader;
 			glm::mat4 CameraViewProjection = glm::mat4(1.0f);
 			Camera* Camera;
 
@@ -88,6 +124,7 @@ namespace Engine
 			BatchData QuadBatch;
 			BatchData PolygonBatch;
 			BatchData TextBatch;
+			BatchDataLines LineBatch;
 		};
 
 	public:
@@ -131,8 +168,13 @@ namespace Engine
 		// `fontSize` as if camera is exactly one unit away.
 		static void DrawFont(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color = glm::vec4(1.0f));
 
+		static void DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color = glm::vec4(1.0f));
+
 		static void Flush(BatchData& batch, Shader& shader = *s_BatchData.BatchShader);
+		static void Flush(BatchDataLines& batch, Shader& shader = *s_BatchData.LineShader);
 		static void ResetBatch(BatchData& batch);
+		static void ResetBatch(BatchDataLines& batch);
 	private:
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale);
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, F32 rotation);

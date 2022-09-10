@@ -12,7 +12,7 @@ namespace Engine
 		Renderer2D::Init();
 	}
 
-	void Renderer::Submit(std::shared_ptr<Shader> shader, std::shared_ptr<VertexArray> vertexArray, const glm::mat4& transform)
+	void Renderer::Submit(Ref<Shader> shader, Ref<VertexArray> vertexArray, const glm::mat4& transform)
 	{
 		shader->Bind();
 		shader->SetUniformMat4("u_modelViewProjection", transform);

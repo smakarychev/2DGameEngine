@@ -15,6 +15,7 @@ namespace Engine
 		// Initialize batch shader and batch buffers.
 		s_BatchData.BatchShader = Shader::ReadShaderFromFile("assets/shaders/batchShader.glsl");
 		s_BatchData.TextShader = Shader::ReadShaderFromFile("assets/shaders/textShader.glsl");
+		s_BatchData.LineShader= Shader::ReadShaderFromFile("assets/shaders/lineShader.glsl");
 		
 		//*************** Init quad **********************************************************
 		s_BatchData.ReferenceQuad.Position.resize(4);
@@ -85,6 +86,27 @@ namespace Engine
 		s_BatchData.TextBatch = textBatch;
 
 		DeleteArr<U32>(indices, quadBatch.MaxIndices);
+
+		//*************** Init lines *********************************************************
+		BatchDataLines lineBatch;
+		vbo = VertexBuffer::Create(nullptr, lineBatch.MaxVertices * sizeof(BatchVertexLine));
+		vbo->SetVertexLayout(BatchVertexLine::GetLayout());
+		indices = NewArr<U32>(lineBatch.MaxIndices);
+		for (U32 i = 0; i + 2 < lineBatch.MaxIndices; i += 2)
+		{
+			indices[i]		= i;
+			indices[i + 1]	= i + 1;
+		}
+		ibo = IndexBuffer::Create(indices, lineBatch.MaxIndices);
+		lineBatch.VAO = VertexArray::Create();
+		lineBatch.VAO->AddVertexBuffer(vbo);
+		lineBatch.VAO->SetIndexBuffer(ibo);
+
+		lineBatch.VerticesMemory = NewArr<U8>(lineBatch.MaxVertices * sizeof(BatchVertexLine));
+		lineBatch.CurrentVertexPointer = reinterpret_cast<BatchVertexLine*>(lineBatch.VerticesMemory);
+		s_BatchData.LineBatch = lineBatch;
+
+		DeleteArr<U32>(indices, lineBatch.MaxIndices);
 	}
 
 	void Renderer2D::BeginScene(Ref<Camera> camera)
@@ -110,6 +132,11 @@ namespace Engine
 			Flush(s_BatchData.TextBatch, *s_BatchData.TextShader);
 			ResetBatch(s_BatchData.TextBatch);
 		}	
+		if (s_BatchData.LineBatch.CurrentIndices > 0)
+		{
+			Flush(s_BatchData.LineBatch);
+			ResetBatch(s_BatchData.LineBatch);
+		}
 		//ENGINE_INFO("Renderer2D total draw calls: {}", s_BatchData.DrawCalls);
 		s_BatchData.DrawCalls = 0;
 	}
@@ -349,6 +376,34 @@ namespace Engine
 		}
 	}
 
+	void Renderer2D::DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
+	{
+		DrawLine(glm::vec3{ from, 0.0f }, glm::vec3{ to, 0.0f }, color);
+	}
+
+	void Renderer2D::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
+	{
+		BatchDataLines& lineBatch = s_BatchData.LineBatch;
+		if (lineBatch.CurrentVertices + 2 > lineBatch.MaxVertices || lineBatch.CurrentIndices + 2 > lineBatch.MaxIndices)
+		{
+			Flush(lineBatch);
+			ResetBatch(lineBatch);
+		}
+
+		// Create new line.
+		BatchVertexLine* vertex = lineBatch.CurrentVertexPointer;
+		vertex->Position = from;
+		vertex->Color = color;
+		lineBatch.CurrentVertexPointer++;
+		vertex = lineBatch.CurrentVertexPointer;
+		vertex->Position = to;
+		vertex->Color = color;
+		lineBatch.CurrentVertexPointer++;
+
+		lineBatch.CurrentVertices += 2;
+		lineBatch.CurrentIndices += 2;
+	}
+
 	void Renderer2D::Flush(BatchData& batch, Shader& shader)
 	{
 		shader.Bind();
@@ -373,12 +428,31 @@ namespace Engine
 			RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
 	}
 
+	void Renderer2D::Flush(BatchDataLines& batch, Shader& shader)
+	{
+		shader.Bind();
+		ENGINE_CORE_ASSERT(batch.VAO->GetVertexBuffers().size() == 1, "Batch must have only one vbo.");
+		batch.VAO->GetVertexBuffers()[0]->SetData(batch.VerticesMemory, sizeof(BatchVertexLine) * batch.CurrentVertices);
+		
+		shader.SetUniformMat4("u_modelViewProjection", s_BatchData.CameraViewProjection);
+		s_BatchData.DrawCalls++;
+		RenderCommand::DrawIndexed(batch.VAO, batch.CurrentIndices, RendererAPI::PrimitiveType::Line);
+	}
+
 	void Renderer2D::ResetBatch(BatchData& batch)
 	{
 		batch.CurrentVertices = 0;
 		batch.CurrentIndices = 0;
 		batch.CurrentTextureIndex = 0;
 		batch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(batch.VerticesMemory);
+		batch.CurrentIndexPointer = reinterpret_cast<U32*>(batch.IndicesMemory);
+	}
+
+	void Renderer2D::ResetBatch(BatchDataLines& batch)
+	{
+		batch.CurrentVertices = 0;
+		batch.CurrentIndices = 0;
+		batch.CurrentVertexPointer = reinterpret_cast<BatchVertexLine*>(batch.VerticesMemory);
 		batch.CurrentIndexPointer = reinterpret_cast<U32*>(batch.IndicesMemory);
 	}
 
@@ -435,12 +509,16 @@ namespace Engine
 	{
 		s_BatchData.BatchShader.~shared_ptr();
 		s_BatchData.TextShader.~shared_ptr();
+		s_BatchData.LineShader.~shared_ptr();
 		s_BatchData.QuadBatch.VAO.~shared_ptr();
 		s_BatchData.PolygonBatch.VAO.~shared_ptr();
 		s_BatchData.TextBatch.VAO.~shared_ptr();
+		s_BatchData.LineBatch.VAO.~shared_ptr();
 		DeleteArr<U8>(s_BatchData.QuadBatch.VerticesMemory, s_BatchData.QuadBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.VerticesMemory, s_BatchData.PolygonBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.IndicesMemory, s_BatchData.PolygonBatch.MaxIndices * sizeof(U32));
 		DeleteArr<U8>(s_BatchData.TextBatch.VerticesMemory, s_BatchData.TextBatch.MaxVertices * sizeof(BatchVertex));
+		DeleteArr<U8>(s_BatchData.LineBatch.VerticesMemory, s_BatchData.LineBatch.MaxVertices * sizeof(BatchVertexLine));
+		DeleteArr<U8>(s_BatchData.LineBatch.IndicesMemory, s_BatchData.LineBatch.MaxIndices * sizeof(U32));
 	}
 }

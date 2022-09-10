@@ -12,14 +12,24 @@ namespace Engine
 		s_API->Init();
 	}
 
-	void RenderCommand::DrawIndexed(std::shared_ptr<VertexArray> vertexArray)
+	void RenderCommand::DrawIndexed(Ref<VertexArray> vertexArray)
 	{
 		s_API->DrawIndexed(vertexArray);
 	}
 
-	void RenderCommand::DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count)
+	void RenderCommand::DrawIndexed(Ref<VertexArray> vertexArray, U32 count)
 	{
 		s_API->DrawIndexed(vertexArray, count);
+	}
+
+	void RenderCommand::DrawIndexed(Ref<VertexArray> vertexArray, RendererAPI::PrimitiveType type)
+	{
+		s_API->DrawIndexed(vertexArray, type);
+	}
+
+	void RenderCommand::DrawIndexed(Ref<VertexArray> vertexArray, U32 count, RendererAPI::PrimitiveType type)
+	{
+		s_API->DrawIndexed(vertexArray, count, type);
 	}
 
 	void RenderCommand::SetClearColor(const glm::vec3& color)

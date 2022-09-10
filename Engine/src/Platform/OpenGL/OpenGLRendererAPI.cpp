@@ -40,17 +40,37 @@ namespace Engine
 		glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, 1.0f);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(std::shared_ptr<VertexArray> vertexArray)
+	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray)
 	{
 		vertexArray->Bind();
 		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(std::shared_ptr<VertexArray> vertexArray, U32 count)
+	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray, U32 count)
 	{
 		vertexArray->Bind();
 		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
 	}
+
+	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray, PrimitiveType type)
+	{
+		DrawIndexed(vertexArray, vertexArray->GetIndexBuffer()->GetCount(), type);
+	}
+
+	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray, U32 count, PrimitiveType type)
+	{
+		vertexArray->Bind();
+		switch (type)
+		{
+		case Engine::RendererAPI::PrimitiveType::Triangle:
+			glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+			break;
+		case Engine::RendererAPI::PrimitiveType::Line:
+			glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+			break;
+		}
+	}
+
 
 	void  OpenGLRendererAPI::SetDepthTestMode(Mode mode)
 	{
