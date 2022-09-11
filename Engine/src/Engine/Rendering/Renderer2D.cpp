@@ -117,6 +117,13 @@ namespace Engine
 	
 	void Renderer2D::EndScene()
 	{
+		// Lines are rendered first because they are less likely to be transparent.
+		// (transparency is only partially supported yet).
+		if (s_BatchData.LineBatch.CurrentIndices > 0)
+		{
+			Flush(s_BatchData.LineBatch);
+			ResetBatch(s_BatchData.LineBatch);
+		}
 		if (s_BatchData.QuadBatch.CurrentIndices > 0)
 		{
 			Flush(s_BatchData.QuadBatch);
@@ -132,11 +139,6 @@ namespace Engine
 			Flush(s_BatchData.TextBatch, *s_BatchData.TextShader);
 			ResetBatch(s_BatchData.TextBatch);
 		}	
-		if (s_BatchData.LineBatch.CurrentIndices > 0)
-		{
-			Flush(s_BatchData.LineBatch);
-			ResetBatch(s_BatchData.LineBatch);
-		}
 		//ENGINE_INFO("Renderer2D total draw calls: {}", s_BatchData.DrawCalls);
 		s_BatchData.DrawCalls = 0;
 	}
@@ -519,6 +521,5 @@ namespace Engine
 		DeleteArr<U8>(s_BatchData.PolygonBatch.IndicesMemory, s_BatchData.PolygonBatch.MaxIndices * sizeof(U32));
 		DeleteArr<U8>(s_BatchData.TextBatch.VerticesMemory, s_BatchData.TextBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.LineBatch.VerticesMemory, s_BatchData.LineBatch.MaxVertices * sizeof(BatchVertexLine));
-		DeleteArr<U8>(s_BatchData.LineBatch.IndicesMemory, s_BatchData.LineBatch.MaxIndices * sizeof(U32));
 	}
 }

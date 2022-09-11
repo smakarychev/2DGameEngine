@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Core/Core.h"
 #include "Engine/Core/Types.h"
 
 #ifdef _MSC_VER
@@ -78,6 +79,11 @@ namespace Engine
 		inline T Abs(T val)
 		{
 			return std::abs(val);
+		}
+
+		inline constexpr std::floating_point auto Sqrt(std::floating_point auto val)
+		{
+			return std::sqrt(val);
 		}
 	}
 }

@@ -58,3 +58,10 @@
 #include "Engine/Common/FreeList.h"
 #include "Engine/Common/Geometry2D.h"
 #include "Engine/Common/QuadTree.h"
+
+/* All physics related. */
+#include "Engine/Physics/ParticleEngine/Particle.h"
+#include "Engine/Physics/ParticleEngine/ParticleContact.h"
+#include "Engine/Physics/ParticleEngine/ParticleForceGenerator.h"
+#include "Engine/Physics/ParticleEngine/ParticleLinks.h"
+#include "Engine/Physics/ParticleEngine/ParticleWorld.h"

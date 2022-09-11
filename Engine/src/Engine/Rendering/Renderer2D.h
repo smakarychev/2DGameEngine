@@ -44,7 +44,7 @@ namespace Engine
 				Position(pos), UV(uv), Color(color)
 			{}
 			BatchVertex(const glm::vec3& pos, const glm::vec2& uv, Texture& texture, F32 textureTiling = 1.0f) :
-				Position(pos), UV(uv), TextureIndex(F32(texture.GetId())), TextureTiling(textureTiling)
+				Position(pos), TextureIndex(F32(texture.GetId())), UV(uv), TextureTiling(textureTiling)
 			{}
 			BatchVertex() = default;
 		};

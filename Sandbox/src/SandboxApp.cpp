@@ -3,6 +3,7 @@
 
 #include "GemWarsExample/GemWarsExample.h"
 #include "QuadTreeExample/QuadTreeExample.h"
+#include "ParticlePhysicsExample/ParticlePhysicsExample.h"
 
 #include <chrono> // TEMP
 #include <random>
@@ -14,7 +15,8 @@ public:
 	SandboxApp()
 	{
 		//PushLayer(Engine::New<GemWarsExample>());
-		PushLayer(Engine::New<QuadTreeExample>());
+		//PushLayer(Engine::New<QuadTreeExample>());
+		PushLayer(Engine::New<ParticlePhysicsExample>());
 	}
 	~SandboxApp()
 	{
