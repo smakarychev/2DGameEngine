@@ -234,7 +234,7 @@ namespace Engine
 	const F32 EditorCameraController::DEFAULT_ROTATION_SPEED			= 0.5f;
 	const F32 EditorCameraController::DEFAULT_E_YAW						= 0.0f;
 	const F32 EditorCameraController::DEFAULT_E_PITCH					= 0.0f;
-	const F32 EditorCameraController::DEFAULT_DISTANCE					= 3.0f;
+	const F32 EditorCameraController::DEFAULT_DISTANCE					= 5.0f;
 	const glm::vec3 EditorCameraController::DEFAULT_FOCAL_POINT			= glm::vec3(0.0);
 
 	EditorCameraController::EditorCameraController(std::shared_ptr<Camera> camera) : m_Camera(camera),

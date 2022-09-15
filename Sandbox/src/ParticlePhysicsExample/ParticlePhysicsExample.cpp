@@ -16,14 +16,14 @@ void ParticlePhysicsExample::OnAttach()
     RenderCommand::SetClearColor(glm::vec3(0.1f, 0.1f, 0.1f));
     //m_World.AddForce(CreateRef<ParticleDrag>(ParticleDrag(0.1f, 0.2f)));
 
-    auto* nw = &m_World.CreateParticle(glm::vec3{ -2.0f,  2.0f, 0.0f }); // 0
-    auto* ne = &m_World.CreateParticle(glm::vec3{  2.0f,  2.0f, 0.0f }); // 1
-    auto* sw = &m_World.CreateParticle(glm::vec3{ -2.0f, -2.0f, 0.0f }); // 2
-    auto* se = &m_World.CreateParticle(glm::vec3{  2.0f, -2.0f, 0.0f }); // 3
+    auto* nw = &m_World.CreateParticle(glm::vec3{ -2.0f,  4.0f, 0.0f }); // 0
+    auto* ne = &m_World.CreateParticle(glm::vec3{  2.0f,  4.0f, 0.0f }); // 1
+    auto* sw = &m_World.CreateParticle(glm::vec3{ -2.0f, -1.0f, 0.0f }); // 2
+    auto* se = &m_World.CreateParticle(glm::vec3{  2.0f, -1.0f, 0.0f }); // 3
     nw->SetInverseMass(0.0f); ne->SetInverseMass(0.0f); sw->SetInverseMass(0.0f); se->SetInverseMass(0.0f);
 
-    auto* moverA = &m_World.CreateParticle(glm::vec3{ 0.0f,  1.0f, 0.0f }); // 4
-    auto* moverB = &m_World.CreateParticle(glm::vec3{ 0.0f, -1.0f, 0.0f }); // 5
+    auto* moverA = &m_World.CreateParticle(glm::vec3{ 0.0f,  3.0f, 0.0f }); // 4
+    auto* moverB = &m_World.CreateParticle(glm::vec3{ 0.0f,  1.0f, 0.0f }); // 5
 
     m_World.AddForce(CreateRef<ParticleSpring>(ParticleSpring(nw, 1.0f, 0.5f)), *moverA);
     m_World.AddForce(CreateRef<ParticleSpring>(ParticleSpring(ne, 1.0f, 0.5f)), *moverA);
@@ -32,6 +32,7 @@ void ParticlePhysicsExample::OnAttach()
     m_World.AddForce(CreateRef<ParticleSpring>(ParticleSpring(se, 1.0f, 0.5f)), *moverB);
 
     m_World.CreateParticleRod(*moverA, *moverB, 3.0f);
+    //m_World.CreateParticleCable(*moverA, *moverB, 3.0f, 0.8f);
 }
 
 void ParticlePhysicsExample::OnUpdate()
@@ -68,7 +69,7 @@ void ParticlePhysicsExample::Render()
     // Render particles.
     for (auto& particle : m_World.GetParticles())
     {
-        Renderer2D::DrawQuad(particle->GetPosition(), glm::vec2{ 0.2f }, glm::vec4(1.0f));
+        Renderer2D::DrawQuad(particle->GetPosition(), glm::vec2{ 0.2f }, glm::vec4{ 1.0f });
     }
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[0]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[1]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
