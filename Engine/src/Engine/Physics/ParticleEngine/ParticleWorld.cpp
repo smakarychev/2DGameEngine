@@ -71,7 +71,7 @@ namespace Engine
             }
             glm::vec3 newVelocity = particle->GetVelocity() +
                 (particle->GetAcceleration() + newAcceleration) * deltaTime * 0.5f;
-            particle->SetVelocity(newVelocity);
+            particle->SetVelocity(newVelocity * particle->GetDamping());
             particle->SetAcceleration(newAcceleration);
 
             particle->ResetForce();
