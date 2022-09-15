@@ -27,7 +27,8 @@ namespace Engine
 		F32 GetMass() const { return 1.0f / m_InverseMass; }
 		F32 GetInverseMass() const { return m_InverseMass; }
 		bool HasFiniteMass() const { return m_InverseMass != 0.0f; }
-		
+		void SetInfiniteMass() { m_InverseMass = 0.0f; }
+
 		void SetDamping(F32 damping) { m_Damping = damping; }
 		F32 GetDamping() const { return m_Damping; }
 

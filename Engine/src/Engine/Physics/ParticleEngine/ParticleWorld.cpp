@@ -38,6 +38,48 @@ namespace Engine
 
     void ParticleWorld::Update(F32 deltaTime)
     {
+        VelocityVerletIntegration(deltaTime);
+
+        m_ParticleContacts.clear();
+        m_ParticleContacts.reserve(128);
+        ProcessLinks(deltaTime);
+        m_ContactResolver.SetIterations(U32(m_ParticleContacts.size()) * 1);
+        m_ContactResolver.Resolve(m_ParticleContacts, deltaTime);
+    }
+
+    void ParticleWorld::VelocityVerletIntegration(F32 deltaTime)
+    {
+        // First update positions.
+        for (auto& particle : m_Particles)
+        {
+            glm::vec3 newPosition = particle->GetPosition() +
+                particle->GetVelocity() * deltaTime +
+                particle->GetAcceleration() * deltaTime * deltaTime * 0.5f;
+            particle->SetPosition(newPosition);
+        }
+        // Then apply forces.
+        ApplyGlobalForces();
+        m_Registry.ApplyForces();
+        // Then update acceleration and velocity.
+        for (auto& particle : m_Particles)
+        {
+            glm::vec3 newAcceleration = glm::vec3{ 0.0f };
+            if (particle->HasFiniteMass())
+            {
+                newAcceleration += m_Gravity;
+                newAcceleration += particle->GetForce() * particle->GetInverseMass();
+            }
+            glm::vec3 newVelocity = particle->GetVelocity() +
+                (particle->GetAcceleration() + newAcceleration) * deltaTime * 0.5f;
+            particle->SetVelocity(newVelocity);
+            particle->SetAcceleration(newAcceleration);
+
+            particle->ResetForce();
+        }
+    }
+
+    void ParticleWorld::ApplyGlobalForces()
+    {
         for (auto& globalForce : m_GlobalForces)
         {
             for (auto& particle : m_Particles)
@@ -45,35 +87,6 @@ namespace Engine
                 globalForce->ApplyForce(*particle);
             }
         }
-
-        m_Registry.ApplyForces();
-
-        for (auto& particle : m_Particles)
-        {
-            // Update velocity.
-            glm::vec3 acceleration = glm::vec3{ 0.0f };
-            // Gravity acts like acceleration.
-            if (particle->HasFiniteMass())
-            {
-                acceleration += m_Gravity;
-                acceleration += particle->GetForce() * particle->GetInverseMass();
-            }
-            glm::vec3 velocity = particle->GetVelocity();
-            velocity += acceleration * deltaTime;
-            velocity *= particle->GetDamping();
-            particle->SetAcceleration(acceleration);
-            particle->SetVelocity(velocity);
-        
-            // Update positon.
-            particle->SetPosition(particle->GetPosition() + particle->GetVelocity() * deltaTime);
-
-            particle->ResetForce();
-        }
-        m_ParticleContacts.clear();
-        m_ParticleContacts.reserve(126);
-        ProcessLinks(deltaTime);
-        m_ContactResolver.SetIterations(U32(m_ParticleContacts.size()) * 1);
-        m_ContactResolver.Resolve(m_ParticleContacts, deltaTime);
     }
 
     void ParticleWorld::ProcessLinks(F32 deltaTime)

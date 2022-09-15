@@ -33,6 +33,8 @@ namespace Engine
 
 		const std::vector<Ref<Particle>>& GetParticles() const { return m_Particles; }
 	private:
+		void VelocityVerletIntegration(F32 deltaTime);
+		void ApplyGlobalForces();
 		void ProcessLinks(F32 deltaTime);
 	private:
 		// Particles that are updated every frame.
