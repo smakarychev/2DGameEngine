@@ -143,72 +143,7 @@ namespace Engine
 		s_BatchData.DrawCalls = 0;
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec4& color)
-	{
-		DrawQuad(position, scale, nullptr, s_BatchData.ReferenceQuad.UV, color);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, const glm::vec4& color)
-	{
-		DrawQuad(position, scale, rotation, nullptr, s_BatchData.ReferenceQuad.UV, color);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, const glm::vec4& color)
-	{
-		DrawQuad(position, scale, rotation, nullptr, s_BatchData.ReferenceQuad.UV, color);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, &texture, s_BatchData.ReferenceQuad.UV, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, rotation, &texture, s_BatchData.ReferenceQuad.UV, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, rotation, &texture, s_BatchData.ReferenceQuad.UV, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, &texture, s_BatchData.ReferenceQuad.UV, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, rotation, &texture, s_BatchData.ReferenceQuad.UV, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, rotation, &texture, s_BatchData.ReferenceQuad.UV, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const std::vector<glm::vec2>& uv, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawQuad(position, scale, &texture, uv, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture* texture, const std::vector<glm::vec2>& uv, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		// Note that glm::vec2{ 0.0f, 0.0f } is not a valid rotation vector.
-		DrawQuad(position, scale, glm::vec2{ 0.0f, 0.0f }, texture, uv, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(
-		const glm::vec3& position, const glm::vec2& scale, F32 rotation,
-		Texture* texture, const std::vector<glm::vec2>& uv,
-		const glm::vec4& tint, const glm::vec2& textureTiling
-	)
-	{
-		DrawQuad(position, scale, glm::vec2{ glm::cos(rotation), glm::sin(rotation) }, texture, uv, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture* texture, const std::vector<glm::vec2>& uv, const glm::vec4& tint, const glm::vec2& textureTiling)
+	void Renderer2D::DrawQuad(const DrawInfo& drawInfo)
 	{
 		BatchData& quadBatch = s_BatchData.QuadBatch;
 		if (quadBatch.CurrentVertices + 4 > quadBatch.MaxVertices || quadBatch.CurrentIndices + 6 > quadBatch.MaxIndices)
@@ -216,7 +151,7 @@ namespace Engine
 			Flush(quadBatch);
 			ResetBatch(quadBatch);
 		}
-		F32 textureIndex = GetTextureIndex(quadBatch, texture);
+		F32 textureIndex = GetTextureIndex(quadBatch, drawInfo.Texture);
 		auto& referenceQuad = s_BatchData.ReferenceQuad;
 
 		// Create new quad.
@@ -224,9 +159,15 @@ namespace Engine
 		{
 			BatchVertex* vertex = quadBatch.CurrentVertexPointer;
 			vertex->Position = glm::vec3(referenceQuad.Position[i]);
-			if (rotation.x == 0.0f && rotation.y == 0.0f) InitVertexGeometryData(*vertex, position, scale);
-			else InitVertexGeometryData(*vertex, position, scale, rotation);
-			InitVertexColorData(*vertex, textureIndex, uv[i], tint, textureTiling);
+			if (drawInfo.Rotation.RotationVec.x == 1.0f && drawInfo.Rotation.RotationVec.y == 0.0f)
+			{
+				InitVertexGeometryData(*vertex, drawInfo.Position, drawInfo.Scale);
+			}
+			else
+			{
+				InitVertexGeometryData(*vertex, drawInfo.Position, drawInfo.Scale, drawInfo.Rotation.RotationVec);
+			}
+			InitVertexColorData(*vertex, textureIndex, drawInfo.UV[i], drawInfo.Color, drawInfo.TextureTiling);
 
 			quadBatch.CurrentVertexPointer++;
 		}
@@ -234,53 +175,7 @@ namespace Engine
 		quadBatch.CurrentIndices += 6;
 	}
 
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec4& color)
-	{
-		DrawPolygon(polygon, position, scale, nullptr, color);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, F32 rotation, const glm::vec4& color)
-	{
-		DrawPolygon(polygon, position, scale, rotation, nullptr, color);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, const glm::vec4& color)
-	{
-		DrawPolygon(polygon, position, scale, rotation, nullptr, color);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawPolygon(polygon, position, scale, &texture, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawPolygon(polygon, position, scale, rotation, &texture, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec2& textureTiling)
-	{
-		DrawPolygon(polygon, position, scale, rotation, &texture, glm::vec4{ 1.0f }, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawPolygon(polygon, position, scale, &texture, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		// Note that glm::vec2{ 0.0f, 0.0f } is not a valid rotation vector.
-		DrawPolygon(polygon, position, scale, glm::vec2{ 0.0f, 0.0f }, texture, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling)
-	{
-		DrawPolygon(polygon, position, scale, glm::vec2{ glm::cos(rotation), glm::sin(rotation) }, texture, tint, textureTiling);
-	}
-
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling)
+	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo)
 	{
 		BatchData& polygonBatch = s_BatchData.PolygonBatch;
 		if (polygonBatch.CurrentVertices + polygon.GetVertices().size() > polygonBatch.MaxVertices)
@@ -288,15 +183,21 @@ namespace Engine
 			Flush(s_BatchData.PolygonBatch);
 			ResetBatch(s_BatchData.PolygonBatch);
 		}
-		F32 textureIndex = GetTextureIndex(polygonBatch, texture);
+		F32 textureIndex = GetTextureIndex(polygonBatch, drawInfo.Texture);
 
 		for (U32 i = 0; i < polygon.GetNumberOfVertices(); i++)
 		{
 			BatchVertex* vertex = polygonBatch.CurrentVertexPointer;
 			vertex->Position = glm::vec3(polygon.GetVertices()[i], 0.0f);
-			if (rotation.x == 0.0f && rotation.y == 0.0f) InitVertexGeometryData(*vertex, position, scale);
-			else InitVertexGeometryData(*vertex, position, scale, rotation);
-			InitVertexColorData(*vertex, textureIndex, polygon.GetUVs()[i], tint, textureTiling);
+			if (drawInfo.Rotation.RotationVec.x == 1.0f && drawInfo.Rotation.RotationVec.y == 0.0f)
+			{
+				InitVertexGeometryData(*vertex, drawInfo.Position, drawInfo.Scale);
+			}
+			else
+			{
+				InitVertexGeometryData(*vertex, drawInfo.Position, drawInfo.Scale, drawInfo.Rotation.RotationVec);
+			}
+			InitVertexColorData(*vertex, textureIndex, drawInfo.UV[i], drawInfo.Color, drawInfo.TextureTiling);
 			polygonBatch.CurrentVertexPointer++;
 		}
 		for (U32 i = 0; i < polygon.GetIndices().size(); i++)

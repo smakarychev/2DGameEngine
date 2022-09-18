@@ -303,12 +303,22 @@ void GemWarsExample::sRender()
     RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera());
 
-    Renderer2D::DrawQuad({ 0.0f, 0.0f, -10.0f }, { 20.0f, 20.0f }, *m_Background, { 10, 10 });
+    Renderer2D::DrawQuad({ .Position{ 0.0f, 0.0f, -10.0f },
+        .Scale{ 40.0f, 40.0f }, 
+        .Texture{m_Background.get()},
+        .TextureTiling{20, 20}}
+    );
 
     for (auto& entity : m_Manager.GetEntities())
     {
         if (!entity->Mesh2D) continue;
-        Renderer2D::DrawPolygon(entity->Mesh2D->Shape, entity->Transform2D->Position, entity->Transform2D->Scale, entity->Transform2D->Rotation, entity->Mesh2D->Tint);
+        Renderer2D::DrawPolygon(entity->Mesh2D->Shape, 
+            { .Position{ entity->Transform2D->Position },
+                .Scale{ entity->Transform2D->Scale },
+                .Rotation{ entity->Transform2D->Rotation },
+                .Color { entity->Mesh2D->Tint } ,
+                .UV { entity->Mesh2D->Shape.GetUVs() } }
+        );
     }
     Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("score: {:d}", m_Player->Score->TotalScore), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
     Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 90.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("GemWars example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));

@@ -84,7 +84,7 @@ namespace Engine
 			U8* VerticesMemory = nullptr;
 			BatchVertex* CurrentVertexPointer = nullptr;
 			U8* IndicesMemory = nullptr;
-			U32* CurrentIndexPointer;
+			U32* CurrentIndexPointer = nullptr;
 		};
 
 		struct BatchDataLines
@@ -127,6 +127,23 @@ namespace Engine
 			BatchDataLines LineBatch;
 		};
 
+		struct DrawInfo
+		{
+			struct Rotation
+			{
+				glm::vec2 RotationVec;
+				Rotation(const glm::vec2& rotation) : RotationVec(rotation) {}
+				Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad)) {}
+			};
+			const glm::vec3& Position			= glm::vec3{ 0.0f };
+			const glm::vec2& Scale				= glm::vec2{ 1.0f };
+			const Rotation&  Rotation			= glm::vec2{ 1.0f, 0.0f };
+			const glm::vec4& Color				= glm::vec4{ 1.0f };
+			Texture*  Texture					= nullptr;
+			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
+		};
+
 	public:
 		static void Init();
 		static void ShutDown();
@@ -134,45 +151,9 @@ namespace Engine
 		static void BeginScene(Ref<Camera> camera);
 		static void EndScene();
 
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec4& color);
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, const glm::vec4& color);
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, const glm::vec4& color);
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture& texture, const std::vector<glm::vec2>& uv, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{1.0f});
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, Texture* texture, const std::vector<glm::vec2>& uv, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{1.0f});
-		static void DrawQuad(
-			const glm::vec3& position, const glm::vec2& scale, F32 rotation,
-			Texture* texture, const std::vector<glm::vec2>& uv, 
-			const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f }
-		);
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation,
-			Texture* texture, const std::vector<glm::vec2>& uv,
-			const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f }
-		);
+		static void DrawQuad(const DrawInfo& drawInfo);
 
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec4& color);
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, F32 rotation, const glm::vec4& color);
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, const glm::vec4& color);
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, F32 rotation, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation, Texture& texture, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture& texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawPolygon(const RegularPolygon& polygon, const glm::vec3& position, const glm::vec2& scale, Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
-		static void DrawPolygon(
-			const RegularPolygon& polygon,
-			const glm::vec3& position, const glm::vec2& scale, F32 rotation,
-			Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f }
-		);
-		static void DrawPolygon(
-			const RegularPolygon& polygon,
-			const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation,
-			Texture* texture, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f }
-		);
+		static void DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo);
 
 		// Winapi uses DrawText as a macro >:(
 		// Fixed font retains its relative position and size as camera moves/zoomes.

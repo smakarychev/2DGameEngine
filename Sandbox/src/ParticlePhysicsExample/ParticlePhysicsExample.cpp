@@ -69,7 +69,10 @@ void ParticlePhysicsExample::Render()
     // Render particles.
     for (auto& particle : m_World.GetParticles())
     {
-        Renderer2D::DrawQuad(particle->GetPosition(), glm::vec2{ 0.2f }, glm::vec4{ 1.0f });
+        Renderer2D::DrawQuad({ .Position{particle->GetPosition() },
+            .Scale{ glm::vec2{ 0.2f } },
+            .Color{ glm::vec4{ 1.0f } } }
+        );
     }
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[0]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[1]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
@@ -91,6 +94,5 @@ Rect ParticlePhysicsExample::GetCameraBounds()
     Rect bounds;
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };
-    Renderer2D::DrawQuad(glm::vec3(bounds.Center, -2.0), bounds.HalfSize * 2.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.1f));
     return bounds;
 }

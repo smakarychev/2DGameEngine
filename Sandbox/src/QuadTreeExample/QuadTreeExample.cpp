@@ -68,7 +68,10 @@ void QuadTreeExample::Render()
     for (auto& quad : quadsToRender)
     {
         //Renderer2D::DrawQuad(quad.pos, quad.size, quad.color);
-        Renderer2D::DrawQuad(quad->Item.pos, quad->Item.size, quad->Item.color);
+        Renderer2D::DrawQuad({ .Position{ quad->Item.pos },
+            .Scale{ quad->Item.size },
+            .Color{ quad->Item.color } }
+        );
     }
     for (U32 i = 0; i < m_QuadTree.GetItems().size(); i++)
     {
@@ -112,6 +115,9 @@ Rect QuadTreeExample::GetCameraBounds()
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };
     bounds.HalfSize *= 0.9f;
-    Renderer2D::DrawQuad(glm::vec3(bounds.Center, -2.0), bounds.HalfSize * 2.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.1f));
+    Renderer2D::DrawQuad({ .Position{ glm::vec3(bounds.Center, -2.0) },
+        .Scale{ bounds.HalfSize * 2.0f },
+        .Color{ glm::vec4(1.0f, 0.0f, 0.0f, 0.1f) } }
+    );
     return bounds;
 }
