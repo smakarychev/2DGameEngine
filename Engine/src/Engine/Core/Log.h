@@ -37,6 +37,28 @@ namespace Engine {
 		template<typename ...Ts>
 		static void ClientFatal(Fmt<Ts...> fmt, Ts&&... args) { s_ClientLogger->critical(fmt, std::forward<Ts>(args)...); }
 		
+		// Repeat all that is above but for the case when no format string was passed.
+		template<typename T>
+		static void CoreTrace(const T& message) { s_CoreLogger->trace(message); }
+		template<typename T>
+		static void CoreInfo(const T& message) { s_CoreLogger->info(message); }
+		template<typename T>
+		static void CoreWarn(const T& message) { s_CoreLogger->warn(message); }
+		template<typename T>
+		static void CoreError(const T& message) { s_CoreLogger->error(message); }
+		template<typename T>
+		static void CoreFatal(const T& message) { s_CoreLogger->critical(message); }
+
+		template<typename T>
+		static void ClientTrace(const T& message) { s_ClientLogger->trace(message); }
+		template<typename T>
+		static void ClientInfo(const T& message) { s_ClientLogger->info(message); }
+		template<typename T>
+		static void ClientWarn(const T& message) { s_ClientLogger->warn(message); }
+		template<typename T>
+		static void ClientError(const T& message) { s_ClientLogger->error(message); }
+		template<typename T>
+		static void ClientFatal(const T& message) { s_ClientLogger->critical(message); }
 
 	private:
 		static std::shared_ptr<spdlog::logger> s_CoreLogger;
