@@ -38,6 +38,7 @@ namespace Engine {
 		static void ClientFatal(Fmt<Ts...> fmt, Ts&&... args) { s_ClientLogger->critical(fmt, std::forward<Ts>(args)...); }
 		
 		// Repeat all that is above but for the case when no format string was passed.
+
 		template<typename T>
 		static void CoreTrace(const T& message) { s_CoreLogger->trace(message); }
 		template<typename T>

@@ -85,5 +85,23 @@ namespace Engine
 		{
 			return std::sqrt(val);
 		}
+
+		template <typename T>
+		inline T Max(const T& first, const T& second)
+		{
+			return std::max<T>(first, second);
+		}
+
+		template <typename T>
+		inline T Min(const T& first, const T& second)
+		{
+			return std::min<T>(first, second);
+		}
+
+		template <typename T>
+		inline constexpr T Pi()
+		{
+			return static_cast<T>(3.14159265358979323846);
+		}
 	}
 }

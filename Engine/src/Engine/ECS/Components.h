@@ -55,10 +55,10 @@ namespace Engine
 			Texture* Texture;
 			//TODO: Most of the parameters one day shall become the part of `Material`.
 			Mesh2D(U32 angles, Engine::Texture* texture, const glm::vec4& tint) :
-				Shape(angles), Tint(tint), Texture(texture), Tiling(glm::vec2(1.0f)), UV(Shape.GetUVs())
+				Shape(angles), Tint(tint), Texture(texture), Tiling(glm::vec2{1.0f}), UV(Shape.GetUVs())
 			{ }
 			Mesh2D(U32 angles) :
-				Shape(angles), Tint(glm::vec4(1.0f)), Tiling(glm::vec2(1.0f)), Texture(nullptr), UV(Shape.GetUVs())
+				Shape(angles), Tint(glm::vec4{ 1.0f }), Tiling(glm::vec2{1.0f}), Texture(nullptr), UV(Shape.GetUVs())
 			{ }
 		};
 
