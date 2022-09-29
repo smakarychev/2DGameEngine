@@ -7,11 +7,6 @@
 namespace Engine
 {
     using namespace Types;
-    class Holder
-    {
-    public:
-        static Ref<Texture> tex;
-    };
     
     class Font
     {
