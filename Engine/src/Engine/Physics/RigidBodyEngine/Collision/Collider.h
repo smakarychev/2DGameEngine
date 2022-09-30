@@ -16,7 +16,13 @@ namespace Engine
 		template <typename OtherImpl>
 		bool Intersects(const OtherImpl& other) const
 		{
-			return Engine::Intersect(static_cast<Impl&>(*this), other);
+			return Engine::Intersects(*reinterpret_cast<const Impl*>(this), other);
+		}
+
+		template <typename OtherImpl>
+		bool Contains(const OtherImpl& other) const
+		{
+			return Engine::Contains(*reinterpret_cast<const Impl*>(this), other);
 		}
 	};
 
@@ -45,6 +51,15 @@ namespace Engine
 		void Expand(const glm::vec2& expansion)
 		{
 			HalfSize += expansion;
+		}
+
+		void ExpandSigned(const glm::vec2& signedExpansion)
+		{
+			glm::vec2 delta = signedExpansion * 0.5f;
+			HalfSize.x += Math::Abs(delta.x);
+			HalfSize.y += Math::Abs(delta.y);
+			Center.x += delta.x;
+			Center.y += delta.y;
 		}
 
 		F32 GetPerimeter() const

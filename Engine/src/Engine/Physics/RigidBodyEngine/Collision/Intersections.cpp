@@ -7,42 +7,42 @@
 
 namespace Engine
 {
-	bool Intersect(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool Intersects(const BoxCollider2D& first, const BoxCollider2D& second)
 	{
 		return BoxBoxCollision2D(first, second);
 	}
 	
-	bool Intersect(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool Intersects(const CircleCollider2D& first, const CircleCollider2D& second)
 	{
 		return CircleCircleCollision2D(second, first);
 	}
 	
-	bool Intersect(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool Intersects(const BoxCollider2D& box, const CircleCollider2D& circle)
 	{
 		return BoxCircleCollision2D(box, circle);
 	}
 	
-	bool Intersect(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool Intersects(const CircleCollider2D& circle, const BoxCollider2D& box)
 	{
 		return BoxCircleCollision2D(box, circle);
 	}
 
-	bool Contain(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool Contains(const BoxCollider2D& first, const BoxCollider2D& second)
 	{
 		return BoxBoxContain2D(first, second);
 	}
 
-	bool Contain(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool Contains(const CircleCollider2D& first, const CircleCollider2D& second)
 	{
 		return CircleCircleContain2D(first, second);
 	}
 
-	bool Contain(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool Contains(const BoxCollider2D& box, const CircleCollider2D& circle)
 	{
 		return BoxCircleContain2D(box, circle);
 	}
 
-	bool Contain(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool Contains(const CircleCollider2D& circle, const BoxCollider2D& box)
 	{
 		return CircleBoxContain2D(circle, box);
 	}

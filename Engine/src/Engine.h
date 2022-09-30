@@ -43,6 +43,9 @@
 #include "Engine/Rendering/Renderer2D.h"
 #include "Engine/Rendering/RenderCommand.h"
 #include "Engine/Rendering/Font.h"
+/* Utility rendering (drawers) */
+#include "Engine/Rendering/Drawers/BVHTreeDrawer.h"
+
 
 /* UI */
 #include "Engine/Imgui/ImguiLayer.h"
@@ -69,5 +72,6 @@
 #include "Engine/Physics/RigidBodyEngine/RigidBodyForceGenerator.h"
 #include "Engine/Physics/RigidBodyEngine/RigidBodyWorld.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/BroadPhase.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/BVHTree.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Collider.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Intersections.h"

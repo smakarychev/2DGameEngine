@@ -12,6 +12,12 @@ project "glad"
         "src/glad.c"
 	}
 
+	removefiles 
+	{
+		"bin/**",
+		"bin-int/**",
+	}
+
 	includedirs
     {
         "include"
