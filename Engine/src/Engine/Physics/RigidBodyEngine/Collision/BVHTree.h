@@ -31,7 +31,7 @@ namespace Engine
 		union
 		{
 			I32 Parent;
-			I32 Next;
+			I32 Next = BVHNode::NULL_NODE;
 		};
 		// It is assumed that UserPayload is of type RigidBody2D.
 		void* Payload = nullptr;
@@ -364,7 +364,7 @@ namespace Engine
 		I32 currentId = nodeId;
 		while (currentId != BVHNode<Bounds>::NULL_NODE)
 		{
-			// TODO: rebalance.
+			currentId = RebalanceTree(currentId);
 
 			I32 leftChild = m_Nodes[currentId].LeftChild;
 			I32 rightChild = m_Nodes[currentId].RightChild;
@@ -378,8 +378,127 @@ namespace Engine
 	template<typename Bounds>
 	inline I32 BVHTree<Bounds>::RebalanceTree(I32 nodeId)
 	{
-		// TODO: implement
-		return I32();
+		I32 AId = nodeId;
+		BVHNode<Bounds>& A = m_Nodes[AId];
+		if (A.IsLeaf() || A.Height < 2) return AId;
+
+		I32 BId = A.LeftChild;
+		I32 CId = A.RightChild;
+		BVHNode<Bounds>& B = m_Nodes[BId];
+		BVHNode<Bounds>& C = m_Nodes[CId];
+
+		// In a perfect world balance is 0, but this is not a perfect world.
+		I32 balance = B.Height - C.Height;
+		if (balance > 1)
+		{
+			// Rotate right child up.
+			I32 FId = C.LeftChild;
+			I32 GId = C.RightChild;
+			BVHNode<Bounds>& F = m_Nodes[FId];
+			BVHNode<Bounds>& G = m_Nodes[GId];
+			
+			// Swap A and C.
+			C.LeftChild = AId;
+			C.Parent = A.Parent;
+			A.Parent = CId;
+
+			// Old parent of A should point to C.
+			if (C.Parent != BVHNode<Bounds>::NULL_NODE)
+			{
+				if (m_Nodes[C.Parent].LeftChild == AId)
+				{
+					m_Nodes[C.Parent].LeftChild = CId;
+				}
+				else
+				{
+					m_Nodes[C.Parent].RightChild = CId;
+				}
+			}
+			else
+			{
+				m_TreeRoot = CId;
+			}
+
+			// Rotate.
+			if (F.Height > G.Height)
+			{
+				C.RightChild = FId;
+				A.RightChild = GId;
+				G.Parent = AId;
+				A.Bounds = Bounds{ B.Bounds, G.Bounds };
+				C.Bounds = Bounds{ A.Bounds, F.Bounds };
+				A.Height = 1 + Math::Max(B.Height, G.Height);
+				C.Height = 1 + Math::Max(A.Height, F.Height);
+			}
+			else
+			{
+				C.RightChild = GId;
+				A.RightChild = FId;
+				F.Parent = AId;
+				A.Bounds = Bounds{ B.Bounds, F.Bounds };
+				C.Bounds = Bounds{ A.Bounds, G.Bounds };
+				A.Height = 1 + Math::Max(B.Height, F.Height);
+				C.Height = 1 + Math::Max(A.Height, G.Height);
+			}
+			return CId;
+		}	
+
+
+		else if (balance < -1)
+		{
+			// Rotate left child up.
+			I32 DId = B.LeftChild;
+			I32 EId = B.RightChild;
+			BVHNode<Bounds>& D = m_Nodes[DId];
+			BVHNode<Bounds>& E = m_Nodes[EId];
+
+			// Swap A and C.
+			B.LeftChild = AId;
+			B.Parent = A.Parent;
+			A.Parent = BId;
+
+			// Old parent of A should point to B.
+			if (B.Parent != BVHNode<Bounds>::NULL_NODE)
+			{
+				if (m_Nodes[B.Parent].LeftChild == AId)
+				{
+					m_Nodes[B.Parent].LeftChild = BId;
+				}
+				else
+				{
+					m_Nodes[B.Parent].RightChild = BId;
+				}
+			}
+			else
+			{
+				m_TreeRoot = BId;
+			}
+
+			// Rotate.
+			if (D.Height > E.Height)
+			{
+				B.RightChild = DId;
+				A.RightChild = EId;
+				E.Parent = AId;
+				A.Bounds = Bounds{ C.Bounds, E.Bounds };
+				B.Bounds = Bounds{ A.Bounds, D.Bounds };
+				A.Height = 1 + Math::Max(C.Height, E.Height);
+				B.Height = 1 + Math::Max(A.Height, D.Height);
+			}
+			else
+			{
+				B.RightChild = EId;
+				A.RightChild = DId;
+				E.Parent = AId;
+				A.Bounds = Bounds{ C.Bounds, D.Bounds };
+				B.Bounds = Bounds{ A.Bounds, E.Bounds };
+				A.Height = 1 + Math::Max(C.Height, D.Height);
+				B.Height = 1 + Math::Max(A.Height, E.Height);
+			}
+			return BId;
+		}
+
+		return AId;
 	}
 
 	template<typename Bounds>
