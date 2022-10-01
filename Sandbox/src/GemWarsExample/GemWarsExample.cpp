@@ -10,6 +10,7 @@ void GemWarsExample::OnAttach()
     camera->SetProjection(Camera::ProjectionType::Orthographic);
 
     m_CameraController = CameraController::Create(CameraController::ControllerType::Editor2D, camera);
+    camera->SetZoom(3.0f);
 
     RenderCommand::SetClearColor(glm::vec3(0.1f, 0.1f, 0.1f));
 

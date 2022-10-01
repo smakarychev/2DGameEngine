@@ -61,6 +61,13 @@ namespace Engine
 		m_Orientation = orientation;
 	}
 
+	void Camera::SetZoom(F32 zoom)
+	{
+		m_OrthoZoom = zoom;
+		UpdateProjectionMatrix();
+		UpdateViewProjection();
+	}
+
 	void Camera::OnEvent(Event& event)
 	{
 		EventDispatcher dispatcher(event);

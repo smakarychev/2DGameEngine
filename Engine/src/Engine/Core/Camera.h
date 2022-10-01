@@ -39,6 +39,8 @@ namespace Engine
 		const glm::vec3& GetPosition() const { return m_Position; }
 		const glm::quat& GetOrientation() const { return m_Orientation; }
 
+		void SetZoom(F32 zoom);
+
 		glm::mat4& GetViewProjection() { return m_ViewProjection; }
 
 		void OnEvent(Event& event);
