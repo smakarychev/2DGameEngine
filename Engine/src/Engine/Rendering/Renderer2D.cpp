@@ -14,99 +14,120 @@ namespace Engine
 	{
 		// Initialize batch shader and batch buffers.
 		s_BatchData.BatchShader = Shader::ReadShaderFromFile("assets/shaders/batchShader.glsl");
-		s_BatchData.TextShader = Shader::ReadShaderFromFile("assets/shaders/textShader.glsl");
-		s_BatchData.LineShader= Shader::ReadShaderFromFile("assets/shaders/lineShader.glsl");
+		s_BatchData.TextShader  = Shader::ReadShaderFromFile("assets/shaders/textShader.glsl");
+		s_BatchData.LineShader  = Shader::ReadShaderFromFile("assets/shaders/lineShader.glsl");
 		
-		//*************** Init quad **********************************************************
-		s_BatchData.ReferenceQuad.Position.resize(4);
-		s_BatchData.ReferenceQuad.Position[0] = glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
-		s_BatchData.ReferenceQuad.Position[1] = glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f);
-		s_BatchData.ReferenceQuad.Position[2] = glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f);
-		s_BatchData.ReferenceQuad.Position[3] = glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f);
-		
-		s_BatchData.ReferenceQuad.UV.resize(4);
-		s_BatchData.ReferenceQuad.UV[0] = glm::vec2(0.0f, 0.0f);
-		s_BatchData.ReferenceQuad.UV[1] = glm::vec2(1.0f, 0.0f);
-		s_BatchData.ReferenceQuad.UV[2] = glm::vec2(1.0f, 1.0f);
-		s_BatchData.ReferenceQuad.UV[3] = glm::vec2(0.0f, 1.0f);
-		
-		// Indices structure is predictable.
-		BatchData quadBatch;
-		U32* indices = NewArr<U32>(quadBatch.MaxIndices);
-		for (U32 i = 0; i + 6 < quadBatch.MaxIndices; i += 6)
-		{
-			U32 currVer = quadBatch.CurrentVertices;
-			indices[i]		= currVer + 0;
-			indices[i + 1]	= currVer + 1;
-			indices[i + 2]	= currVer + 3;
-			indices[i + 3]	= currVer + 1;
-			indices[i + 4]	= currVer + 2;
-			indices[i + 5]	= currVer + 3;
-			quadBatch.CurrentVertices += 4;
-		}
-		quadBatch.CurrentVertices = 0;
-
-		auto vbo = VertexBuffer::Create(nullptr, quadBatch.MaxVertices * sizeof(BatchVertex));
-		vbo->SetVertexLayout(BatchVertex::GetLayout());
-		auto ibo = IndexBuffer::Create(indices, quadBatch.MaxIndices);
-		quadBatch.VAO = VertexArray::Create();
-		quadBatch.VAO->AddVertexBuffer(vbo);
-		quadBatch.VAO->SetIndexBuffer(ibo);
-
-		quadBatch.VerticesMemory = NewArr<U8>(quadBatch.MaxVertices * sizeof(BatchVertex));
-		quadBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(quadBatch.VerticesMemory);
-		s_BatchData.QuadBatch = quadBatch;
-
-		//*************** Init regular polygon ***********************************************
-		BatchData polygonBatch;
-		vbo = VertexBuffer::Create(nullptr, polygonBatch.MaxVertices * sizeof(BatchVertex));
-		vbo->SetVertexLayout(BatchVertex::GetLayout());
-		ibo = IndexBuffer::Create(indices, polygonBatch.MaxIndices);
-		polygonBatch.VAO = VertexArray::Create();
-		polygonBatch.VAO->AddVertexBuffer(vbo);
-		polygonBatch.VAO->SetIndexBuffer(ibo);
-
-		polygonBatch.VerticesMemory = NewArr<U8>(polygonBatch.MaxVertices * sizeof(BatchVertex));
-		polygonBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(polygonBatch.VerticesMemory);
-		polygonBatch.IndicesMemory = NewArr<U8>(polygonBatch.MaxIndices * sizeof(U32));
-		polygonBatch.CurrentIndexPointer = reinterpret_cast<U32*>(polygonBatch.IndicesMemory);
-		s_BatchData.PolygonBatch = polygonBatch;
-
-		//*************** Init text **********************************************************
-		BatchData textBatch;
-		vbo = VertexBuffer::Create(nullptr, textBatch.MaxVertices * sizeof(BatchVertex));
-		vbo->SetVertexLayout(BatchVertex::GetLayout());
-		ibo = IndexBuffer::Create(indices, textBatch.MaxIndices);
-		textBatch.VAO = VertexArray::Create();
-		textBatch.VAO->AddVertexBuffer(vbo);
-		textBatch.VAO->SetIndexBuffer(ibo);
-
-		textBatch.VerticesMemory = NewArr<U8>(textBatch.MaxVertices * sizeof(BatchVertex));
-		textBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(textBatch.VerticesMemory);
-		s_BatchData.TextBatch = textBatch;
-
-		DeleteArr<U32>(indices, quadBatch.MaxIndices);
-
 		//*************** Init lines *********************************************************
-		BatchDataLines lineBatch;
-		vbo = VertexBuffer::Create(nullptr, lineBatch.MaxVertices * sizeof(BatchVertexLine));
-		vbo->SetVertexLayout(BatchVertexLine::GetLayout());
-		indices = NewArr<U32>(lineBatch.MaxIndices);
-		for (U32 i = 0; i + 2 < lineBatch.MaxIndices; i += 2)
 		{
-			indices[i]		= i;
-			indices[i + 1]	= i + 1;
+			BatchDataLines lineBatch;
+			auto vbo = VertexBuffer::Create(nullptr, lineBatch.MaxVertices * sizeof(BatchVertexLine));
+			vbo->SetVertexLayout(BatchVertexLine::GetLayout());
+			U32* indices = NewArr<U32>(lineBatch.MaxIndices);
+			for (U32 i = 0; i + 2 < lineBatch.MaxIndices; i += 2)
+			{
+				indices[i] = i;
+				indices[i + 1] = i + 1;
+			}
+			auto ibo = IndexBuffer::Create(indices, lineBatch.MaxIndices);
+			lineBatch.VAO = VertexArray::Create();
+			lineBatch.VAO->AddVertexBuffer(vbo);
+			lineBatch.VAO->SetIndexBuffer(ibo);
+
+			lineBatch.VerticesMemory = NewArr<U8>(lineBatch.MaxVertices * sizeof(BatchVertexLine));
+			lineBatch.CurrentVertexPointer = reinterpret_cast<BatchVertexLine*>(lineBatch.VerticesMemory);
+			s_BatchData.LineBatch = lineBatch;
+
+			DeleteArr<U32>(indices, lineBatch.MaxIndices);
 		}
-		ibo = IndexBuffer::Create(indices, lineBatch.MaxIndices);
-		lineBatch.VAO = VertexArray::Create();
-		lineBatch.VAO->AddVertexBuffer(vbo);
-		lineBatch.VAO->SetIndexBuffer(ibo);
+		//*************** Init quad **********************************************************
+		{
+			s_BatchData.ReferenceQuad.Position.resize(4);
+			s_BatchData.ReferenceQuad.Position[0] = glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
+			s_BatchData.ReferenceQuad.Position[1] = glm::vec4(0.5f, -0.5f, 0.0f, 1.0f);
+			s_BatchData.ReferenceQuad.Position[2] = glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+			s_BatchData.ReferenceQuad.Position[3] = glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f);
 
-		lineBatch.VerticesMemory = NewArr<U8>(lineBatch.MaxVertices * sizeof(BatchVertexLine));
-		lineBatch.CurrentVertexPointer = reinterpret_cast<BatchVertexLine*>(lineBatch.VerticesMemory);
-		s_BatchData.LineBatch = lineBatch;
+			s_BatchData.ReferenceQuad.UV.resize(4);
+			s_BatchData.ReferenceQuad.UV[0] = glm::vec2(0.0f, 0.0f);
+			s_BatchData.ReferenceQuad.UV[1] = glm::vec2(1.0f, 0.0f);
+			s_BatchData.ReferenceQuad.UV[2] = glm::vec2(1.0f, 1.0f);
+			s_BatchData.ReferenceQuad.UV[3] = glm::vec2(0.0f, 1.0f);
 
-		DeleteArr<U32>(indices, lineBatch.MaxIndices);
+			// Indices structure is predictable.
+			BatchData quadBatch;
+			U32* indices = NewArr<U32>(quadBatch.MaxIndices);
+			for (U32 i = 0; i + 6 < quadBatch.MaxIndices; i += 6)
+			{
+				U32 currVer = quadBatch.CurrentVertices;
+				indices[i] = currVer + 0;
+				indices[i + 1] = currVer + 1;
+				indices[i + 2] = currVer + 3;
+				indices[i + 3] = currVer + 1;
+				indices[i + 4] = currVer + 2;
+				indices[i + 5] = currVer + 3;
+				quadBatch.CurrentVertices += 4;
+			}
+			quadBatch.CurrentVertices = 0;
+
+			auto vbo = VertexBuffer::Create(nullptr, quadBatch.MaxVertices * sizeof(BatchVertex));
+			vbo->SetVertexLayout(BatchVertex::GetLayout());
+			auto ibo = IndexBuffer::Create(indices, quadBatch.MaxIndices);
+			quadBatch.VAO = VertexArray::Create();
+			quadBatch.VAO->AddVertexBuffer(vbo);
+			quadBatch.VAO->SetIndexBuffer(ibo);
+
+			quadBatch.VerticesMemory = NewArr<U8>(quadBatch.MaxVertices * sizeof(BatchVertex));
+			quadBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(quadBatch.VerticesMemory);
+			s_BatchData.QuadBatch = quadBatch;
+
+			DeleteArr<U32>(indices, quadBatch.MaxIndices);
+		}
+		//*************** Init regular polygon ***********************************************
+		{
+			BatchData polygonBatch;
+			auto vbo = VertexBuffer::Create(nullptr, polygonBatch.MaxVertices * sizeof(BatchVertex));
+			vbo->SetVertexLayout(BatchVertex::GetLayout());
+			auto ibo = IndexBuffer::Create(nullptr, polygonBatch.MaxIndices);
+			polygonBatch.VAO = VertexArray::Create();
+			polygonBatch.VAO->AddVertexBuffer(vbo);
+			polygonBatch.VAO->SetIndexBuffer(ibo);
+
+			polygonBatch.VerticesMemory = NewArr<U8>(polygonBatch.MaxVertices * sizeof(BatchVertex));
+			polygonBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(polygonBatch.VerticesMemory);
+			polygonBatch.IndicesMemory = NewArr<U8>(polygonBatch.MaxIndices * sizeof(U32));
+			polygonBatch.CurrentIndexPointer = reinterpret_cast<U32*>(polygonBatch.IndicesMemory);
+			s_BatchData.PolygonBatch = polygonBatch;
+		}
+		//*************** Init text **********************************************************
+		{
+			BatchData textBatch;
+			U32* indices = NewArr<U32>(textBatch.MaxIndices);
+			for (U32 i = 0; i + 6 < textBatch.MaxIndices; i += 6)
+			{
+				U32 currVer = textBatch.CurrentVertices;
+				indices[i] = currVer + 0;
+				indices[i + 1] = currVer + 1;
+				indices[i + 2] = currVer + 3;
+				indices[i + 3] = currVer + 1;
+				indices[i + 4] = currVer + 2;
+				indices[i + 5] = currVer + 3;
+				textBatch.CurrentVertices += 4;
+			}
+			textBatch.CurrentVertices = 0;
+
+			auto vbo = VertexBuffer::Create(nullptr, textBatch.MaxVertices * sizeof(BatchVertex));
+			vbo->SetVertexLayout(BatchVertex::GetLayout());
+			auto ibo = IndexBuffer::Create(indices, textBatch.MaxIndices);
+			textBatch.VAO = VertexArray::Create();
+			textBatch.VAO->AddVertexBuffer(vbo);
+			textBatch.VAO->SetIndexBuffer(ibo);
+
+			textBatch.VerticesMemory = NewArr<U8>(textBatch.MaxVertices * sizeof(BatchVertex));
+			textBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(textBatch.VerticesMemory);
+			s_BatchData.TextBatch = textBatch;
+
+			DeleteArr<U32>(indices, textBatch.MaxIndices);
+		}
 	}
 
 	void Renderer2D::BeginScene(Ref<Camera> camera)

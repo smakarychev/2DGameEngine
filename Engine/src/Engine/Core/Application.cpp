@@ -26,7 +26,7 @@ namespace Engine {
 		m_Window = Window::Create();
 		m_Window->SetEventCallbackFunction(BIND_FN(Application::OnEvent));
 
-		m_ImguiLayer = New<ImguiLayer>();
+		m_ImguiLayer = CreateRef<ImguiLayer>();
 		PushOverlay(m_ImguiLayer);
 
 		Renderer::Init();
@@ -75,13 +75,13 @@ namespace Engine {
 		}
 	}
 
-	void Application::PushLayer(Layer* layer)
+	void Application::PushLayer(Ref<Layer> layer)
 	{
 		m_LayerStack.PushLayer(layer);
 		layer->OnAttach();
 	}
 
-	void Application::PushOverlay(Layer* overlay)
+	void Application::PushOverlay(Ref<Layer> overlay)
 	{
 		m_LayerStack.PushLayer(overlay);
 		overlay->OnAttach();

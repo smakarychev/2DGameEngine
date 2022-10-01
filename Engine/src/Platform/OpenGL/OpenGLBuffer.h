@@ -10,6 +10,7 @@ namespace Engine
 	{
 	public:
 		OpenGLVertexBuffer(void* data, U32 size);
+		~OpenGLVertexBuffer();
 		U32 GetId() const override { return m_Id; }
 
 		void SetVertexLayout(const VertexLayout& layout) override { m_Layout = layout; }
@@ -28,6 +29,7 @@ namespace Engine
 	{
 	public:
 		OpenGLIndexBuffer(U32* data, U32 count);
+		~OpenGLIndexBuffer();
 		U32 GetId() const override { return m_Id; }
 
 		U32 GetCount() const override { return m_Count; }
@@ -44,6 +46,7 @@ namespace Engine
 	{
 	public:
 		OpenGLVertexArray();
+		~OpenGLVertexArray();
 
 		void AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer) override;
 		void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) override;
@@ -65,6 +68,7 @@ namespace Engine
 	{
 	public:
 		OpenGLFrameBuffer(const Spec& spec);
+		~OpenGLFrameBuffer();
 		void Bind() override;
 		void Unbind() override;
 		void Resize(U32 width, U32 height) override;

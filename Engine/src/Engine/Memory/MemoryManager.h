@@ -96,7 +96,17 @@ namespace Engine
 	{
 		template<typename ...Ts>
 		using AllocatorPolyType = std::variant<Ts...>;
-
+	public:
+		struct MemoryManagerStats
+		{
+			U32 TotalAllocations = 0;
+			U64 TotalAllocationsBytes = 0;
+			U32 TotalDeallocations = 0;
+			U64 TotalDeallocationsBytes = 0;
+			U32 TotalUnsizedDeallocations = 0;
+			bool IsIncomplete = false;
+			U64 GetLeakedMemory() { return TotalAllocationsBytes - TotalDeallocationsBytes; }
+		};
 	public:
 		// Shall be called in entry point.
 		static void Init();
@@ -115,6 +125,9 @@ namespace Engine
 
 		// Dispatches and deallocates memory.
 		static void Dealloc(void* memory, U64 sizeBytes);
+
+		// Prints the current allocation/deallocation stats.
+		static void PrintStats();
 
 	private:
 		static void ProbeAll();
@@ -166,6 +179,8 @@ namespace Engine
 		static std::vector<MarkedInterval> s_MarkedIntervals;
 
 		static bool s_IsPendingProbe;
+
+		static MemoryManagerStats s_Stats;
 	};
 
 	template <typename T, typename ... Args>

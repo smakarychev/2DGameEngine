@@ -16,6 +16,11 @@ namespace Engine
 		glNamedBufferData(m_Id, size, data, usage);
 	}
 
+	OpenGLVertexBuffer::~OpenGLVertexBuffer()
+	{
+		glDeleteBuffers(1, &m_Id);
+	}
+
 	void OpenGLVertexBuffer::SetData(void* data, U32 size, U32 offset)
 	{
 		glNamedBufferSubData(m_Id, offset, size, data);
@@ -28,6 +33,11 @@ namespace Engine
 		// I guess I saw this in bgfx.
 		GLenum usage = (data == nullptr) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 		glNamedBufferData(m_Id, sizeof(U32) * count, data, usage);
+	}
+
+	OpenGLIndexBuffer::~OpenGLIndexBuffer()
+	{
+		glDeleteBuffers(1, &m_Id);
 	}
 
 	void OpenGLIndexBuffer::SetData(U32* data, U32 count, U32 offset)
@@ -63,6 +73,11 @@ namespace Engine
 	OpenGLVertexArray::OpenGLVertexArray() : m_VertexBufferIndex(0), m_AttributeIndex(0)
 	{
 		glCreateVertexArrays(1, &m_Id);
+	}
+
+	OpenGLVertexArray::~OpenGLVertexArray()
+	{
+		glDeleteVertexArrays(1, &m_Id);
 	}
 
 	void OpenGLVertexArray::AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer)
@@ -101,6 +116,13 @@ namespace Engine
 		m_Id(0), m_Spec(spec)
 	{
 		CreateBuffers();
+	}
+
+	OpenGLFrameBuffer::~OpenGLFrameBuffer()
+	{
+		glDeleteFramebuffers(1, &m_Id);
+		m_ColorBuffer->~Texture();
+		glDeleteRenderbuffers(1, &m_DepthStencilBufferId);
 	}
 
 	void OpenGLFrameBuffer::Bind()

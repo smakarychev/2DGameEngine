@@ -19,8 +19,8 @@ namespace Engine {
 		~Application();
 		void Run();
 
-		void PushLayer(Layer* layer);
-		void PushOverlay(Layer* overlay);
+		void PushLayer(Ref<Layer> layer);
+		void PushOverlay(Ref<Layer> overlay);
 
 		static const Application& Get() { return *s_Instance; }
 		Window& GetWindow() const { return *m_Window; }
@@ -38,7 +38,7 @@ namespace Engine {
 		static Application* s_Instance;
 
 		LayerStack m_LayerStack;
-		ImguiLayer* m_ImguiLayer;
+		Ref<ImguiLayer> m_ImguiLayer;
 	};
 
 	// Client shall define this function.

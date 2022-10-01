@@ -9,6 +9,7 @@ namespace Engine
 
 	std::vector<MarkedInterval> MemoryManager::s_MarkedIntervals;
 	bool MemoryManager::s_IsPendingProbe;
+	MemoryManager::MemoryManagerStats MemoryManager::s_Stats;
 
 	void MemoryManager::Init()
 	{
@@ -49,7 +50,7 @@ namespace Engine
 
 	void MemoryManager::ShutDown()
 	{
-
+		PrintStats();
 		// Delete all allocators.
 		for (auto&& markAlloc : s_Allocators)
 		{
@@ -61,6 +62,8 @@ namespace Engine
 
 	void* MemoryManager::Alloc(U64 sizeBytes)
 	{
+		s_Stats.TotalAllocations++;
+		s_Stats.TotalAllocationsBytes += sizeBytes;
 		AllocationDispatcher dispatcher(sizeBytes);
 		for (auto&& markAlloc : s_Allocators)
 		{
@@ -75,6 +78,8 @@ namespace Engine
 	
 	void MemoryManager::Dealloc(void* memory)
 	{
+		s_Stats.IsIncomplete = true;
+		s_Stats.TotalUnsizedDeallocations++;
 		if (memory == nullptr) return;
 		if (s_IsPendingProbe) ProbeAll();
 		MarkedInterval* interval = GetContainingInterval(memory);
@@ -89,6 +94,8 @@ namespace Engine
 
 	void MemoryManager::Dealloc(void* memory, U64 sizeBytes)
 	{
+		s_Stats.TotalDeallocations++;
+		s_Stats.TotalDeallocationsBytes += sizeBytes;
 		if (memory == nullptr) return;
 		DeallocationSizeAwareDispatcher dispatcher(memory, sizeBytes);
 		for (auto&& markAlloc : s_Allocators)
@@ -98,6 +105,29 @@ namespace Engine
 			}, markAlloc.Allocator);
 			if (dispatcher.HasDispatchedAddress()) break;
 		}
+	}
+
+	void MemoryManager::PrintStats()
+	{
+		// Note: imgui leaks memory >:(.
+		ENGINE_CORE_INFO("Memory manager stats:");
+		ENGINE_CORE_TRACE(R""""(
+			Allocations: {} ({} bytes)
+			Deallocations: {} ({} bytes)
+			Deallocations with unknown size: {}
+			Total Deallocations: {}
+			Allocation / Deallocation difference: {}
+			Not complete: {}
+			Memory leak: {} bytes, is relevant: {}
+			)"""",
+			s_Stats.TotalAllocations, s_Stats.TotalAllocationsBytes,
+			s_Stats.TotalDeallocations, s_Stats.TotalDeallocationsBytes,
+			s_Stats.TotalUnsizedDeallocations,
+			s_Stats.TotalDeallocations + s_Stats.TotalUnsizedDeallocations,
+			s_Stats.TotalAllocations - (s_Stats.TotalDeallocations + s_Stats.TotalUnsizedDeallocations),
+			s_Stats.IsIncomplete,
+			s_Stats.GetLeakedMemory(), !s_Stats.IsIncomplete
+		);
 	}
 
 	void MemoryManager::ProbeAll()
