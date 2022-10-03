@@ -166,6 +166,13 @@ namespace Engine
 
 	void Renderer2D::DrawQuad(const DrawInfo& drawInfo)
 	{
+		// If we want to draw edges instead of full shape.
+		if (drawInfo.Type == RendererAPI::PrimitiveType::Line)
+		{
+			DrawOutline(drawInfo);
+			return;
+		}
+
 		BatchData& quadBatch = s_BatchData.QuadBatch;
 		if (quadBatch.CurrentVertices + 4 > quadBatch.MaxVertices || quadBatch.CurrentIndices + 6 > quadBatch.MaxIndices)
 		{
@@ -365,6 +372,30 @@ namespace Engine
 		lineBatch.CurrentIndices += 2;
 	}
 
+	void Renderer2D::DrawOutline(const DrawInfo& drawInfo)
+	{
+		auto& referenceQuad = s_BatchData.ReferenceQuad;
+		BatchVertex vertices[4];
+		// Create new quad.
+		for (U32 i = 0; i < 4; i++)
+		{
+			BatchVertex& vertex = vertices[i];
+			vertex.Position = glm::vec3(referenceQuad.Position[i]);
+			if (drawInfo.Rotation.RotationVec.x == 1.0f && drawInfo.Rotation.RotationVec.y == 0.0f)
+			{
+				InitVertexGeometryData(vertex, drawInfo.Position, drawInfo.Scale);
+			}
+			else
+			{
+				InitVertexGeometryData(vertex, drawInfo.Position, drawInfo.Scale, drawInfo.Rotation.RotationVec);
+			}
+		}
+		DrawLine(vertices[0].Position, vertices[1].Position, drawInfo.Color);
+		DrawLine(vertices[1].Position, vertices[2].Position, drawInfo.Color);
+		DrawLine(vertices[2].Position, vertices[3].Position, drawInfo.Color);
+		DrawLine(vertices[3].Position, vertices[0].Position, drawInfo.Color);
+	}
+
 	void Renderer2D::Flush(BatchData& batch, Shader& shader)
 	{
 		shader.Bind();
@@ -474,7 +505,6 @@ namespace Engine
 		}
 		return textureIndex;
 	}
-
 
 	void Renderer2D::ShutDown()
 	{

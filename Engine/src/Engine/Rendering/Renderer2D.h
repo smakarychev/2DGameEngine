@@ -7,6 +7,8 @@
 #include "Engine/Rendering/Texture.h"	
 #include "Engine/Rendering/Font.h"	
 
+#include "Engine/Rendering/RendererAPI.h"
+
 #include "Engine/Core/Camera.h"
 #include "Engine/Primitives/2D/RegularPolygon.h"
 
@@ -142,6 +144,7 @@ namespace Engine
 			Texture*  Texture					= nullptr;
 			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
 			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
+			RendererAPI::PrimitiveType Type		= RendererAPI::PrimitiveType::Triangle;
 		};
 
 	public:
@@ -176,6 +179,7 @@ namespace Engine
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation);
 		static void InitVertexColorData(BatchVertex& vertex, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
 		static F32 GetTextureIndex(BatchData& batch, Texture* texture);
+		static void DrawOutline(const DrawInfo& drawInfo);
 	private:
 		static BatchRendererData s_BatchData;
 	};
