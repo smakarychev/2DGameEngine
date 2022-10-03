@@ -18,6 +18,9 @@
 /* Input */
 #include "Engine/Core/Input.h"
 
+/* Time */
+#include "Engine/Core/Time.h"
+
 /* Custom heap allocators */
 #include "Engine/Memory/StackAllocator.h"
 #include "Engine/Memory/DequeAllocator.h"
