@@ -50,4 +50,9 @@ namespace Engine
 			delete[] rawMemory;
 		}
 	}
+	
+	void MemoryUtils::Copy(void* dest, void* source, U64 sizeBytes)
+	{
+		memcpy(dest, source, sizeBytes);
+	}
 }
