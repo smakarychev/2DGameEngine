@@ -45,7 +45,7 @@ namespace Engine
 				Math::Max(first.Center.y + first.HalfSize.y, second.Center.y + second.HalfSize.y)
 			};
 			Center = glm::vec3((min + max) * 0.5f, first.Center.z);
-			HalfSize = (min - max) * 0.5f;
+			HalfSize = (max - min) * 0.5f;
 		}
 
 		void Expand(const glm::vec2& expansion)
@@ -105,4 +105,6 @@ namespace Engine
 			return 2.0f * Math::Pi<F32>() * Radius;
 		}
 	};
+
+	// TODO: Add CompositeCollider2D.
 }

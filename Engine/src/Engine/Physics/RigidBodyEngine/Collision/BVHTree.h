@@ -33,7 +33,7 @@ namespace Engine
 			I32 Parent;
 			I32 Next = BVHNode::NULL_NODE;
 		};
-		// It is assumed that UserPayload is of type RigidBody2D.
+		// It is assumed that Payload is of type RigidBody2D.
 		void* Payload = nullptr;
 		bool Moved = true;
 
@@ -48,11 +48,11 @@ namespace Engine
 	class BVHTreeDrawer;
 
 	template <typename Bounds>
-	class BVHTree
+	class BVHTree2D
 	{
 		friend class BVHTreeDrawer<Bounds>;
 	public:
-		BVHTree();
+		BVHTree2D();
 
 		// `itemId` is id of object in some external container,
 		// Returns the index of node.
@@ -70,7 +70,9 @@ namespace Engine
 		void Query(const Callback& callback, const Bounds& bounds);
 
 		bool IsMoved(I32 nodeId) const { return m_Nodes[nodeId].Moved; }
+		void ResetMoved(I32 nodeId) { m_Nodes[nodeId].Moved = false; }
 		void* GetPayload(I32 nodeId) const { return m_Nodes[nodeId].Payload; }
+		const Bounds& GetBounds(I32 nodeId) const { return m_Nodes[nodeId].Bounds; }
 
 	private:
 		void Resize(U32 startIndex, U32 endIndex);
@@ -94,7 +96,7 @@ namespace Engine
 	};
 
 	template<typename Bounds>
-	inline BVHTree<Bounds>::BVHTree()
+	inline BVHTree2D<Bounds>::BVHTree2D()
 	{
 		// Allocate initial buffer for nodes.
 		static U32 initialNodesAmount = 16;
@@ -105,7 +107,7 @@ namespace Engine
 
 	template<typename Bounds>
 	template<typename Callback>
-	inline void Engine::BVHTree<Bounds>::Query(const Callback& callback, const Bounds& bounds)
+	inline void Engine::BVHTree2D<Bounds>::Query(const Callback& callback, const Bounds& bounds)
 	{
 		std::stack<I32> toProcess;
 		toProcess.push(m_TreeRoot);
@@ -133,16 +135,10 @@ namespace Engine
 			}
 
 		}
-
-		I32 currentNode = m_TreeRoot;
-		while (currentNode != BVHNode<Bounds>::NULL_NODE)
-		{
-			if (!bounds.Intersects(currentNode)) break;
-		}
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree<Bounds>::Insert(void* payload, const Bounds& bounds)
+	inline I32 BVHTree2D<Bounds>::Insert(void* payload, const Bounds& bounds)
 	{
 		// Allocate a new leaf.
 		I32 leafIndex = AllocateNode();
@@ -158,19 +154,20 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::Remove(I32 nodeId)
+	inline void BVHTree2D<Bounds>::Remove(I32 nodeId)
 	{
 		RemoveLeaf(nodeId);
 		FreeNode(nodeId);
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::InsertLeaf(I32 leafId)
+	inline void BVHTree2D<Bounds>::InsertLeaf(I32 leafId)
 	{
 		// If this is the first insertion (tree is empty).
 		if (m_TreeRoot == BVHNode<Bounds>::NULL_NODE)
 		{
 			m_TreeRoot = leafId;
+			m_Nodes[m_TreeRoot].Parent = BVHNode<Bounds>::NULL_NODE;
 			return;
 		}
 		// Else we need to find the best place (neighbour)
@@ -188,8 +185,8 @@ namespace Engine
 		m_Nodes[newParent].Height = m_Nodes[bestNeighbour].Height + 1;
 		m_Nodes[newParent].Bounds = Bounds{ leafBounds, m_Nodes[bestNeighbour].Bounds };
 
-		m_Nodes[newParent].LeftChild = leafId;
-		m_Nodes[newParent].RightChild = bestNeighbour;
+		m_Nodes[newParent].LeftChild = bestNeighbour;
+		m_Nodes[newParent].RightChild = leafId;
 		m_Nodes[leafId].Parent = newParent;
 		m_Nodes[bestNeighbour].Parent = newParent;
 
@@ -197,11 +194,11 @@ namespace Engine
 		{
 			if (bestNeighbour == m_Nodes[oldParent].LeftChild)
 			{
-				m_Nodes[newParent].LeftChild = newParent;
+				m_Nodes[oldParent].LeftChild = newParent;
 			}
 			else
 			{
-				m_Nodes[newParent].RightChild = newParent;
+				m_Nodes[oldParent].RightChild = newParent;
 			}
 		}
 		// If the sibling was the root.
@@ -215,7 +212,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::RemoveLeaf(I32 leafId)
+	inline void BVHTree2D<Bounds>::RemoveLeaf(I32 leafId)
 	{
 		// If leaf is root, the become empty.
 		if (leafId == m_TreeRoot)
@@ -263,7 +260,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline bool BVHTree<Bounds>::Move(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
+	inline bool BVHTree2D<Bounds>::Move(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
 	{
 		// The bounds currently stored in the tree
 		// might be larger than expanded version of object's bounds
@@ -277,14 +274,14 @@ namespace Engine
 		expandedBounds.ExpandSigned(dynamicBoundsExpansion);
 
 		const Bounds& treeBounds = m_Nodes[nodeId].Bounds;
-		if (treeBounds.Contains(expandedBounds))
+		if (treeBounds.Contains(bounds))
 		{
 			// Now if tree bounds are not too large,
 			// we do not need to reinsert it
 			// (it may be large if object moved too fast before).
 			Bounds hugeBounds = expandedBounds;
 			glm::vec2 hugeExpansion{ s_BoundsGrowth * 4.0f };
-			hugeBounds.ExpandSigned(hugeExpansion);
+			hugeBounds.Expand(hugeExpansion);
 			if (hugeBounds.Contains(treeBounds))
 			{
 				// tree bounds are not too large.
@@ -301,7 +298,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree<Bounds>::FindBestNeighbour(I32 leafId)
+	inline I32 BVHTree2D<Bounds>::FindBestNeighbour(I32 leafId)
 	{
 		Bounds& leafBounds = m_Nodes[leafId].Bounds;
 		// Find the best neighbour.
@@ -325,7 +322,7 @@ namespace Engine
 			if (m_Nodes[leftChild].IsLeaf())
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[leftChild].Bounds };
-				costLeft = childCombined.GetPerimeter();
+				costLeft = childCombined.GetPerimeter() + inheritanceCost;
 			}
 			else
 			{
@@ -339,7 +336,7 @@ namespace Engine
 			if (m_Nodes[rightChild].IsLeaf())
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[rightChild].Bounds };
-				costRight = childCombined.GetPerimeter();
+				costRight = childCombined.GetPerimeter() + inheritanceCost;
 			}
 			else
 			{
@@ -359,7 +356,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::ReshapeTree(I32 nodeId)
+	inline void BVHTree2D<Bounds>::ReshapeTree(I32 nodeId)
 	{
 		I32 currentId = nodeId;
 		while (currentId != BVHNode<Bounds>::NULL_NODE)
@@ -376,7 +373,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree<Bounds>::RebalanceTree(I32 nodeId)
+	inline I32 BVHTree2D<Bounds>::RebalanceTree(I32 nodeId)
 	{
 		I32 AId = nodeId;
 		BVHNode<Bounds>& A = m_Nodes[AId];
@@ -388,7 +385,7 @@ namespace Engine
 		BVHNode<Bounds>& C = m_Nodes[CId];
 
 		// In a perfect world balance is 0, but this is not a perfect world.
-		I32 balance = B.Height - C.Height;
+		I32 balance = C.Height - B.Height;
 		if (balance > 1)
 		{
 			// Rotate right child up.
@@ -502,7 +499,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::Resize(U32 startIndex, U32 endIndex)
+	inline void BVHTree2D<Bounds>::Resize(U32 startIndex, U32 endIndex)
 	{
 		m_Nodes.resize(m_Nodes.size() + (endIndex - startIndex));
 		// Create a linked list of free nodes.
@@ -516,7 +513,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree<Bounds>::AllocateNode()
+	inline I32 BVHTree2D<Bounds>::AllocateNode()
 	{
 		// If no more free nodes.
 		if (m_FreeHead == BVHNode<Bounds>::NULL_NODE)
@@ -536,7 +533,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline void BVHTree<Bounds>::FreeNode(I32 nodeId)
+	inline void BVHTree2D<Bounds>::FreeNode(I32 nodeId)
 	{
 		m_Nodes[nodeId].Next = m_FreeHead;
 		m_Nodes[nodeId].Height = -1;
@@ -544,7 +541,7 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline F32 BVHTree<Bounds>::ComputeTotalCost()
+	inline F32 BVHTree2D<Bounds>::ComputeTotalCost()
 	{
 		F32 cost = 0.0f;
 		for (auto& node : m_Nodes)
