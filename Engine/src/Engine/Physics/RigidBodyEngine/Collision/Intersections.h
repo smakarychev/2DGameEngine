@@ -6,6 +6,8 @@ namespace Engine
 {
 	struct AABB2D;
 	struct CircleBounds2D;
+	class BoxCollider2D;
+	class EdgeCollider2D;
 
 	bool Intersects(const AABB2D& first, const AABB2D& second);
 	bool Intersects(const CircleBounds2D& first, const CircleBounds2D& second);
