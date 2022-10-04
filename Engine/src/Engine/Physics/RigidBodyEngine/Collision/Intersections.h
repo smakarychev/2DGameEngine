@@ -4,32 +4,34 @@
 
 namespace Engine
 {
-	struct BoxCollider2D;
-	struct CircleCollider2D;
+	struct AABB2D;
+	struct CircleBounds2D;
 
-	bool Intersects(const BoxCollider2D& first, const BoxCollider2D& second);
-	bool Intersects(const CircleCollider2D& first, const CircleCollider2D& second);
-	bool Intersects(const BoxCollider2D& box, const CircleCollider2D& circle);
-	bool Intersects(const CircleCollider2D& circle, const BoxCollider2D& box);
+	bool Intersects(const AABB2D& first, const AABB2D& second);
+	bool Intersects(const CircleBounds2D& first, const CircleBounds2D& second);
+	bool Intersects(const AABB2D& box, const CircleBounds2D& circle);
+	bool Intersects(const CircleBounds2D& circle, const AABB2D& box);
 
-	bool Contains(const BoxCollider2D& first, const BoxCollider2D& second);
-	bool Contains(const CircleCollider2D& first, const CircleCollider2D& second);
-	bool Contains(const BoxCollider2D& box, const CircleCollider2D& circle);
-	bool Contains(const CircleCollider2D& circle, const BoxCollider2D& box);
+	bool Contains(const AABB2D& first, const AABB2D& second);
+	bool Contains(const CircleBounds2D& first, const CircleBounds2D& second);
+	bool Contains(const AABB2D& box, const CircleBounds2D& circle);
+	bool Contains(const CircleBounds2D& circle, const AABB2D& box);
 
-	bool BoxBoxCollision2D(const BoxCollider2D& first, const BoxCollider2D& second);
+	bool AABBCollision2D(const AABB2D& first, const AABB2D& second);
 
-	bool CircleCircleCollision2D(const CircleCollider2D& first, const CircleCollider2D& second);
+	bool CircleCollision2D(const CircleBounds2D& first, const CircleBounds2D& second);
 
-	bool BoxCircleCollision2D(const BoxCollider2D& box, const CircleCollider2D& circle);
+	bool AABBCircleCollision2D(const AABB2D& box, const CircleBounds2D& circle);
 	
-	bool CircleBoxCollision2D(const CircleCollider2D& circle, const BoxCollider2D& box);
+	bool CircleBoxCollision2D(const CircleBounds2D& circle, const AABB2D& box);
 
-	bool BoxBoxContain2D(const BoxCollider2D& first, const BoxCollider2D& second);
+	bool AABBContain2D(const AABB2D& first, const AABB2D& second);
 
-	bool CircleCircleContain2D(const CircleCollider2D& first, const CircleCollider2D& second);
+	bool CircleContain2D(const CircleBounds2D& first, const CircleBounds2D& second);
 
-	bool BoxCircleContain2D(const BoxCollider2D& box, const CircleCollider2D& circle);
+	bool AABBCircleContain2D(const AABB2D& box, const CircleBounds2D& circle);
 
-	bool CircleBoxContain2D(const CircleCollider2D& circle, const BoxCollider2D& box);
+	bool CircleAABBContain2D(const CircleBounds2D& circle, const AABB2D& box);
+
+	bool BoxHalfSpaceCollision2D(const BoxCollider2D& box, const EdgeCollider2D& edge);
 }

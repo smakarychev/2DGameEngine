@@ -2,16 +2,26 @@
 
 #include "Engine/Core/Types.h"
 
+#include "Engine/Physics/RigidBodyEngine/PhysicsMaterial.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/Collider.h"
+
 #include <glm/glm.hpp>
 
 namespace Engine
 {
 	using namespace Types;
-	
+
 	class RigidBody2D
 	{
 	public:
 		RigidBody2D(const glm::vec3& position = glm::vec3{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
+
+		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
+		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
+
+		void SetCollider(Collider2D* collider) { m_Collider = collider; }
+		Collider2D* GetCollider() { return m_Collider; }
+
 
 		void SetPosition(const glm::vec3& pos) { m_Position = pos; }
 		const glm::vec3& GetPosition() const { return m_Position; }
@@ -79,6 +89,9 @@ namespace Engine
 		glm::vec2 TransformToLocal(const glm::vec2& point);
 		glm::vec2 TransformDirectionToLocal(const glm::vec2& dir);
 	private:
+		PhysicsMaterial m_PhysicsMaterial;
+		Collider2D* m_Collider;
+
 		// vec3 for position is a bit strange, for now 3rd value is used as layer.
 		glm::vec3 m_Position;
 		glm::vec2 m_Rotation;

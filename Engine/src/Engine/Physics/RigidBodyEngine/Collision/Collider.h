@@ -8,10 +8,18 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+/*
+TODO: abandon box for general polygon?
+TODO: use filtering instead of 3d position!
+*/
+
 namespace Engine
 {
+	// Represents the bounds of some collider,
+	// collider therefore has an ability
+	// to create a bounds for itself.
 	template <typename Impl>
-	struct Collider2D
+	struct Bounds2D
 	{
 		template <typename OtherImpl>
 		bool Intersects(const OtherImpl& other) const
@@ -26,14 +34,14 @@ namespace Engine
 		}
 	};
 
-	struct BoxCollider2D : public Collider2D<BoxCollider2D>
+	struct AABB2D : public Bounds2D<AABB2D>
 	{
 		glm::vec3 Center;
 		glm::vec2 HalfSize;
-		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
+		AABB2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
 			: Center(center), HalfSize(halfSize)
 		{}
-		BoxCollider2D(const BoxCollider2D& first, const BoxCollider2D& second)
+		AABB2D(const AABB2D& first, const AABB2D& second)
 		{
 			ENGINE_CORE_ASSERT(first.Center.z == second.Center.z, "Boxes exist on the different planes.");
 			glm::vec2 min = {
@@ -68,19 +76,19 @@ namespace Engine
 		}
 	};
 
-	struct CircleCollider2D : public Collider2D<CircleCollider2D>
+	struct CircleBounds2D : public Bounds2D<CircleBounds2D>
 	{
 		glm::vec3 Center;
 		F32 Radius;
-		CircleCollider2D(const glm::vec3& center = glm::vec3{0.0f}, F32 radius = 1.0f)
+		CircleBounds2D(const glm::vec3& center = glm::vec3{0.0f}, F32 radius = 1.0f)
 			: Center(center), Radius(radius)
 		{}
-		CircleCollider2D(const CircleCollider2D& first, const CircleCollider2D& second)
+		CircleBounds2D(const CircleBounds2D& first, const CircleBounds2D& second)
 		{
 			ENGINE_CORE_ASSERT(first.Center.z == second.Center.z, "Circles exist on the different planes.");
-			if (CircleCircleContain2D(first, second))
+			if (CircleContain2D(first, second))
 			{
-				const CircleCollider2D& biggest = first.Radius > second.Radius ? first : second;
+				const CircleBounds2D& biggest = first.Radius > second.Radius ? first : second;
 				Center = biggest.Center;
 				Radius = biggest.Radius;
 				return;
@@ -106,5 +114,56 @@ namespace Engine
 		}
 	};
 
-	// TODO: Add CompositeCollider2D.
+	using DefaultBounds2D = AABB2D;
+
+	class Collider2D
+	{
+	public:
+		enum class Type
+		{
+			Box = 0, Circle = 1, Edge, TypesCount
+		};
+		Collider2D(Type type) : m_Type(type) {}
+		Type GetType() const { return m_Type; }
+		I32 GetTypeInt() const { return static_cast<I32>(m_Type); }
+	protected:
+		Type m_Type;
+	};
+
+	class BoxCollider2D : public Collider2D
+	{
+	public:
+		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
+			: Collider2D(Type::Box),
+			HalfSize(halfSize), Center(center)
+		{}
+		glm::vec2 HalfSize;
+		glm::vec3 Center;
+	};
+	
+	class CircleCollider2D : public Collider2D
+	{
+	public:
+		CircleCollider2D(const glm::vec3& center = glm::vec3{0.0f}, F32 radius = 1.0f)
+			: Collider2D(Type::Circle),
+			Radius(radius), Center(center)
+		{}
+		F32 Radius;
+		glm::vec3 Center;
+	};
+
+	// Line segment.
+	class EdgeCollider2D : public Collider2D
+	{
+	public:
+		EdgeCollider2D(const glm::vec3& start = glm::vec3{-1.0f, 0.0f, 0.0f}, const glm::vec3& end = glm::vec3{ 1.0f, 0.0f, 0.0f })
+			: Collider2D(Type::Edge),
+			Start(start), End(end)
+		{
+			ENGINE_CORE_ASSERT(Start.z == End.z, "Edge must have same z coordinate.");
+		}
+		// Normal is computed when needed, as an outward normal from `Start` to `End`.
+		glm::vec3 Start;
+		glm::vec3 End;
+	};
 }

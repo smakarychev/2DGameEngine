@@ -8,13 +8,13 @@
 namespace Engine
 {
 	template <>
-	class BVHTreeDrawer<BoxCollider2D>
+	class BVHTreeDrawer<AABB2D>
 	{
 	public:
-		static void Draw(const BVHTree2D<BoxCollider2D>& tree);
+		static void Draw(const BVHTree2D<AABB2D>& tree);
 	};
 
-	inline void BVHTreeDrawer<BoxCollider2D>::Draw(const BVHTree2D<BoxCollider2D>& tree)
+	inline void BVHTreeDrawer<AABB2D>::Draw(const BVHTree2D<AABB2D>& tree)
 	{
 		for (const auto& node : tree.m_Nodes)
 		{

@@ -7,47 +7,47 @@
 
 namespace Engine
 {
-	bool Intersects(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool Intersects(const AABB2D& first, const AABB2D& second)
 	{
-		return BoxBoxCollision2D(first, second);
+		return AABBCollision2D(first, second);
 	}
 	
-	bool Intersects(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool Intersects(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
-		return CircleCircleCollision2D(second, first);
+		return CircleCollision2D(second, first);
 	}
 	
-	bool Intersects(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool Intersects(const AABB2D& box, const CircleBounds2D& circle)
 	{
-		return BoxCircleCollision2D(box, circle);
+		return AABBCircleCollision2D(box, circle);
 	}
 	
-	bool Intersects(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool Intersects(const CircleBounds2D& circle, const AABB2D& box)
 	{
-		return BoxCircleCollision2D(box, circle);
+		return AABBCircleCollision2D(box, circle);
 	}
 
-	bool Contains(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool Contains(const AABB2D& first, const AABB2D& second)
 	{
-		return BoxBoxContain2D(first, second);
+		return AABBContain2D(first, second);
 	}
 
-	bool Contains(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool Contains(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
-		return CircleCircleContain2D(first, second);
+		return CircleContain2D(first, second);
 	}
 
-	bool Contains(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool Contains(const AABB2D& box, const CircleBounds2D& circle)
 	{
-		return BoxCircleContain2D(box, circle);
+		return AABBCircleContain2D(box, circle);
 	}
 
-	bool Contains(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool Contains(const CircleBounds2D& circle, const AABB2D& box)
 	{
-		return CircleBoxContain2D(circle, box);
+		return CircleAABBContain2D(circle, box);
 	}
 
-	bool BoxBoxCollision2D(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool AABBCollision2D(const AABB2D& first, const AABB2D& second)
 	{
 		if (first.Center.z != second.Center.z) return false;
 		return
@@ -55,7 +55,7 @@ namespace Engine
 			Math::Abs(first.Center.y - second.Center.y) < (first.HalfSize.y + second.HalfSize.y);
 	}
 
-	bool CircleCircleCollision2D(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool CircleCollision2D(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
 		if (first.Center.z != second.Center.z) return false;
 		glm::vec2 distanceVec = first.Center - second.Center;
@@ -64,7 +64,7 @@ namespace Engine
 		return distanceSquared < radSquared;
 	}
 
-	bool BoxCircleCollision2D(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool AABBCircleCollision2D(const AABB2D& box, const CircleBounds2D& circle)
 	{
 		if (box.Center.z != circle.Center.z) return false;
 		// First, find the closest point of the box to the circle.
@@ -80,12 +80,12 @@ namespace Engine
 		return glm::distance2(closestPoint, glm::vec2(circle.Center)) < circle.Radius * circle.Radius;
 	}
 
-	bool CircleBoxCollision2D(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool CircleBoxCollision2D(const CircleBounds2D& circle, const AABB2D& box)
 	{
-		return BoxCircleCollision2D(box, circle);
+		return AABBCircleCollision2D(box, circle);
 	}
 
-	bool BoxBoxContain2D(const BoxCollider2D& first, const BoxCollider2D& second)
+	bool AABBContain2D(const AABB2D& first, const AABB2D& second)
 	{
 		if (first.Center.z != second.Center.z) return false;
 		return
@@ -93,7 +93,7 @@ namespace Engine
 			Math::Abs(first.Center.y - second.Center.y) < (first.HalfSize.y - second.HalfSize.y);
 	}
 
-	bool CircleCircleContain2D(const CircleCollider2D& first, const CircleCollider2D& second)
+	bool CircleContain2D(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
 		if (first.Center.z != second.Center.z) return false;
 		F32 radDiff = Math::Abs(first.Radius - second.Radius);
@@ -101,7 +101,7 @@ namespace Engine
 			glm::distance2(first.Center, second.Center) < radDiff * radDiff;
 	}
 
-	bool BoxCircleContain2D(const BoxCollider2D& box, const CircleCollider2D& circle)
+	bool AABBCircleContain2D(const AABB2D& box, const CircleBounds2D& circle)
 	{
 		if (box.Center.z != circle.Center.z) return false;
 		return
@@ -110,12 +110,28 @@ namespace Engine
 		return false;
 	}
 
-	bool CircleBoxContain2D(const CircleCollider2D& circle, const BoxCollider2D& box)
+	bool CircleAABBContain2D(const CircleBounds2D& circle, const AABB2D& box)
 	{
 		if (box.Center.z != circle.Center.z) return false;
 		return
 			Math::Abs(box.Center.x - circle.Center.x) + box.HalfSize.x < circle.Radius &&
 			Math::Abs(box.Center.y - circle.Center.y) + box.HalfSize.y < circle.Radius;
+	}
+	
+	bool BoxHalfSpaceCollision2D(const BoxCollider2D& box, const EdgeCollider2D& edge)
+	{
+		if (box.Center.z != edge.Start.z) return false;
+		// Get space normal.
+		glm::vec2 edgeDir = edge.End - edge.Start;
+		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
+		normal = glm::normalize(normal);
+		F32 offset = -glm::dot(normal, glm::vec2(edge.Start));
+		// Compute the projection interval raduis.
+		F32 projection = box.HalfSize.x * Math::Abs(normal.x) + box.HalfSize.y * Math::Abs(normal.y);
+		// Center-edge distance.
+		F32 distance = glm::dot(normal, glm::vec2(box.Center)) - offset;
+		
+		return Math::Abs(distance) < projection;
 	}
 }
 

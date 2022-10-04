@@ -64,9 +64,11 @@ namespace Engine
 				(body->GetLinearAcceleration() + newLinAcceleration) * deltaTime * 0.5f;
 			F32 newAngVelocity = body->GetAngularVelocity() +
 				(body->GetAngularAcceleration() + newAngAcceleration) * deltaTime * 0.5f;
-			body->SetLinearVelocity(newLinVelocity * body->GetLinearDamping());
+
+			body->SetLinearVelocity(newLinVelocity / (1.0f + deltaTime * body->GetLinearDamping()));
 			body->SetLinearAcceleration(newLinAcceleration);
-			body->SetAngularVelocity(newAngVelocity * body->GetAngularDamping());
+
+			body->SetAngularVelocity(newAngVelocity / (1.0f + deltaTime * body->GetAngularDamping()));
 			body->SetAngularAcceleration(newAngAcceleration);
 			
 			body->ResetForce();

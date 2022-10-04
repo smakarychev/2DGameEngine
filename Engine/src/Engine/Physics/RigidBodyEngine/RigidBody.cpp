@@ -5,11 +5,12 @@
 namespace Engine
 {
 	RigidBody2D::RigidBody2D(const glm::vec3& position, F32 mass, F32 inertia) :
-		m_Position(position), m_Rotation(1, 0),
-		m_LinearVelocity(0.0f), m_LinearAcceleration(0.0f), m_LinearDamping(1.0f),
-		m_AngularVelocity(0.0f), m_AngularAcceleration(0.0f), m_AngularDamping(1.0f),
+		m_Position(position), m_Rotation(1.0f, 0.0f),
+		m_LinearVelocity(0.0f), m_LinearAcceleration(0.0f), m_LinearDamping(0.0f),
+		m_AngularVelocity(0.0f), m_AngularAcceleration(0.0f), m_AngularDamping(0.0f),
 		m_Force(0.0f), m_Torque(0.0f),
-		m_InverseMass(1.0f / mass), m_InverseInertiaTensor(1.0f / inertia)
+		m_InverseMass(1.0f / mass), m_InverseInertiaTensor(1.0f / inertia),
+		m_Collider(nullptr)
 	{
 	}
 
