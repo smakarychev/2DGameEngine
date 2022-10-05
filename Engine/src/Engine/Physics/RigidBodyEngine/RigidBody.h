@@ -15,13 +15,13 @@ namespace Engine
 	{
 	public:
 		RigidBody2D(const glm::vec3& position = glm::vec3{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
+		~RigidBody2D();
 
 		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
 		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
 
 		void SetCollider(Collider2D* collider) { m_Collider = collider; }
 		Collider2D* GetCollider() { return m_Collider; }
-
 
 		void SetPosition(const glm::vec3& pos) { m_Position = pos; }
 		const glm::vec3& GetPosition() const { return m_Position; }

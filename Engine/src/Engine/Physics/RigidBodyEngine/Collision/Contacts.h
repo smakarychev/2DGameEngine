@@ -23,24 +23,26 @@ namespace Engine
 
 	class Contact2D
 	{
+		friend class ContactManager;
 	public:
+		// Populates vector of contacts, returns the amount of added contacts.
+		virtual U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) = 0;
+	private:
 		// Shall never be called (it means we failed to derive real type).
 		static Contact2D* Create(Collider2D* first, Collider2D* second) { return nullptr; }
 		static void Destroy(Contact2D* contact) {}
-		// Populates vector of contacts, returns the amount of added contacts.
-		virtual U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) = 0;
 	};
 
 	class BoxBoxContact2D : public Contact2D
 	{
+		friend class ContactManager;
 	public:
 		BoxBoxContact2D(BoxCollider2D* first, BoxCollider2D* second);
 			
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
-		
 		static void Destroy(Contact2D* contact);
-		
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 
 	private:
 		BoxCollider2D* m_First, * m_Second;
@@ -48,14 +50,14 @@ namespace Engine
 
 	class CircleCircleContact2D : public Contact2D
 	{
+		friend class ContactManager;
 	public:
 		CircleCircleContact2D(CircleCollider2D* first, CircleCollider2D* second);
 
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
-
 		static void Destroy(Contact2D* contact);
-
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 
 	private:
 		CircleCollider2D* m_First, * m_Second;
@@ -63,14 +65,14 @@ namespace Engine
 
 	class BoxCircleContact2D : public Contact2D
 	{
+		friend class ContactManager;
 	public:
 		BoxCircleContact2D(BoxCollider2D* box, CircleCollider2D* circle);
 
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
-
 		static void Destroy(Contact2D* contact);
-
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 
 	private:
 		BoxCollider2D* m_Box;
@@ -80,15 +82,14 @@ namespace Engine
 	// TODO: true edge (currently acts like a plane).
 	class EdgeCircleContact2D : public Contact2D
 	{
+		friend class ContactManager;
 	public:
 		EdgeCircleContact2D(EdgeCollider2D* edge, CircleCollider2D* circle);
 
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
-
 		static void Destroy(Contact2D* contact);
-
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
-
 	private:
 		EdgeCollider2D* m_Edge;
 		CircleCollider2D* m_Circle;
@@ -97,15 +98,14 @@ namespace Engine
 	// TODO: true edge (currently acts like a plane).
 	class EdgeBoxContact2D : public Contact2D
 	{
+		friend class ContactManager;
 	public:
 		EdgeBoxContact2D(EdgeCollider2D* edge, BoxCollider2D* box);
 
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
-
 		static void Destroy(Contact2D* contact);
-
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
-
 	private:
 		EdgeCollider2D* m_Edge;
 		BoxCollider2D* m_Box;
@@ -137,6 +137,7 @@ namespace Engine
 			[static_cast<U32>(Collider2D::Type::TypesCount)]
 			[static_cast<U32>(Collider2D::Type::TypesCount)];
 
+		static bool s_IsInit;
 	};
 
 }

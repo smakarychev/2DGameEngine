@@ -2,6 +2,7 @@
 
 #include "Engine/Core/Core.h"
 #include "Engine/Math/MathUtils.h"
+#include "Engine/Memory/MemoryManager.h"
 
 #include "Intersections.h"
 
@@ -116,6 +117,9 @@ namespace Engine
 
 	using DefaultBounds2D = AABB2D;
 
+	class BoxCollider2D;
+	class CircleCollider2D;
+	class EdgeCollider2D;
 	class Collider2D
 	{
 	public:
@@ -124,11 +128,37 @@ namespace Engine
 			Box = 0, Circle = 1, Edge, TypesCount
 		};
 		Collider2D(Type type) : m_Type(type) {}
+		virtual ~Collider2D() = default;
 		Type GetType() const { return m_Type; }
 		I32 GetTypeInt() const { return static_cast<I32>(m_Type); }
+
+		inline static void Destroy(Collider2D* collider);
+
 	protected:
 		Type m_Type;
 	};
+
+	inline void Collider2D::Destroy(Collider2D* collider)
+	{
+		switch (collider->m_Type)
+		{
+		case Type::Box:
+		{
+			Delete<BoxCollider2D>(reinterpret_cast<BoxCollider2D*>(collider)); 
+			break;
+		}
+		case Type::Circle:
+		{
+			Delete<CircleCollider2D>(reinterpret_cast<CircleCollider2D*>(collider));
+			break;
+		}
+		case Type::Edge:
+		{
+			Delete<EdgeCollider2D>(reinterpret_cast<EdgeCollider2D*>(collider));
+			break;
+		}
+		}
+	}
 
 	class BoxCollider2D : public Collider2D
 	{
@@ -138,6 +168,7 @@ namespace Engine
 			HalfSize(halfSize), Center(center)
 		{}
 		glm::vec2 HalfSize;
+		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
 	};
 	
@@ -149,6 +180,7 @@ namespace Engine
 			Radius(radius), Center(center)
 		{}
 		F32 Radius;
+		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
 	};
 
@@ -163,6 +195,7 @@ namespace Engine
 			ENGINE_CORE_ASSERT(Start.z == End.z, "Edge must have same z coordinate.");
 		}
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
+		// Relative to rigidbody.
 		glm::vec3 Start;
 		glm::vec3 End;
 	};

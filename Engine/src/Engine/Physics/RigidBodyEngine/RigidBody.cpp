@@ -14,6 +14,14 @@ namespace Engine
 	{
 	}
 
+	RigidBody2D::~RigidBody2D()
+	{
+		if (m_Collider != nullptr)
+		{
+			Collider2D::Destroy(m_Collider);
+		}
+	}
+
 	void RigidBody2D::AddRotation(F32 angleRad)
 	{
 		glm::vec2 delta = glm::vec2{ glm::cos(angleRad), glm::sin(angleRad) };

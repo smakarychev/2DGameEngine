@@ -22,7 +22,7 @@ namespace Engine
 		);
 	}
 
-	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
 	{
 		// TODO: implement.
 		return 0;
@@ -48,13 +48,16 @@ namespace Engine
 		);
 	}
 
-	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
 	{
-		// Check if there is a collision.
 		if (m_First->Center.z != m_Second->Center.z) return 0;
+		// Transform positions to world space.
+		glm::vec2 firstCenter = bodyA->TransformToWorld(m_First->Center);
+		glm::vec2 secondCenter = bodyB->TransformToWorld(m_Second->Center);
 
-		glm::vec2 distVec = glm::vec2{ m_First->Center.x - m_Second->Center.x,
-			m_First->Center.y - m_Second->Center.y };
+		// Check if there is a collision.
+		glm::vec2 distVec = glm::vec2{ firstCenter.x - secondCenter.x,
+			firstCenter.y - secondCenter.y };
 		F32 minDist = m_First->Radius + m_Second->Radius;
 		F32 minDistSquared = minDist * minDist;
 		F32 distSquared = glm::length2(distVec);
@@ -65,7 +68,7 @@ namespace Engine
 		glm::vec2 normal = distVec / dist;
 		ContactInfo2D contactInfo;
 		contactInfo.Normal = normal;
-		contactInfo.Point = glm::vec2(m_First->Center) + distVec * 0.5f;
+		contactInfo.Point = firstCenter + distVec * 0.5f;
 		contactInfo.PenetrationDepth = minDist - dist;
 		
 		contacts.push_back(contactInfo);
@@ -93,10 +96,41 @@ namespace Engine
 		);
 	}
 
-	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
 	{
-		// TODO: implement.
-		return 0;
+		if (m_Box->Center.z != m_Circle->Center.z) return 0;
+		// Tranform circle to box coordinate space.
+		glm::vec2 circleCenterRel = bodyA->TransformToLocal(bodyB->TransformToWorld(m_Circle->Center));
+		
+		// Clamp each coordinate to the box.
+		// `closestPoint` is a point on box.
+		glm::vec2 closestPoint{ 0.0f };
+		F32 dist = circleCenterRel.x;
+		if (dist >  m_Box->HalfSize.x) dist =  m_Box->HalfSize.x;
+		if (dist < -m_Box->HalfSize.x) dist = -m_Box->HalfSize.x;
+		closestPoint.x = dist;
+
+		dist = circleCenterRel.y;
+		if (dist >  m_Box->HalfSize.y) dist =  m_Box->HalfSize.y;
+		if (dist < -m_Box->HalfSize.y) dist = -m_Box->HalfSize.y;
+		closestPoint.y = dist;
+
+		F32 minDistanceSquared = m_Circle->Radius * m_Circle->Radius;
+		F32 distanceSquared = glm::distance2(closestPoint, circleCenterRel);
+		if (distanceSquared > minDistanceSquared) return 0;
+
+		// Else we have intersection.
+		// Transform closest point to world space.
+		closestPoint = bodyA->TransformToWorld(closestPoint);
+
+		ContactInfo2D contact;
+		contact.Normal = glm::normalize(closestPoint - circleCenterRel);
+		contact.Point = closestPoint;
+		contact.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
+		
+		contacts.push_back(contact);
+		
+		return 1;
 	}
 
 	EdgeCircleContact2D::EdgeCircleContact2D(EdgeCollider2D* edge, CircleCollider2D* circle)
@@ -119,17 +153,22 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
 	{
 		if (m_Edge->End.z != m_Circle->Center.z) return 0;
+		// Transform to world space.
+		glm::vec2 edgeStart = bodyA->TransformToWorld(m_Edge->Start);
+		glm::vec2 edgeEnd = bodyA->TransformToWorld(m_Edge->End);
+		glm::vec2 circleCenter = bodyB->TransformToWorld(m_Circle->Center);
+
 		
 		// Compute edge normal.
-		glm::vec2 edgeDir = m_Edge->End - m_Edge->Start;
+		glm::vec2 edgeDir = edgeEnd - edgeStart;
 		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
 		normal = glm::normalize(normal);
-		F32 offset = -glm::dot(normal, glm::vec2(m_Edge->Start));
+		F32 offset = -glm::dot(normal, glm::vec2(edgeStart));
 
-		F32 distanceToPlane = glm::dot(normal, glm::vec2(m_Circle->Center)) - offset;
+		F32 distanceToPlane = glm::dot(normal, circleCenter) - offset;
 		// Check if there is a collision.
 		if (distanceToPlane * distanceToPlane > m_Circle->Radius * m_Circle->Radius)
 		{
@@ -137,7 +176,7 @@ namespace Engine
 		}
 
 		ContactInfo2D contact;
-		contact.Point = glm::vec2(m_Circle->Center) - normal * distanceToPlane;
+		contact.Point = circleCenter - normal * distanceToPlane;
 		
 		F32 depth = -distanceToPlane;
 		// If circle is on other side of the edge.
@@ -150,6 +189,7 @@ namespace Engine
 
 		contact.Normal = normal;
 		contact.PenetrationDepth = depth;
+		
 		contacts.push_back(contact);
 
 		return 1;
@@ -175,22 +215,30 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
 	{
-		if (!BoxHalfSpaceCollision2D(*m_Box, *m_Edge)) return 0;
+		if (m_Edge->Start.z != m_Box->Center.z) return 0;
+		// Transform to world space.
+		glm::vec2 edgeStart = bodyA->TransformToWorld(m_Edge->Start);
+		glm::vec2 edgeEnd = bodyA->TransformToWorld(m_Edge->End);
+		glm::vec2 boxCenter = bodyB->TransformToWorld(m_Box->Center);
+		
+		if (!BoxHalfSpaceCollision2D(
+			BoxCollider2D(glm::vec3(boxCenter, 0.0f), m_Box->HalfSize),
+			EdgeCollider2D(glm::vec3(edgeStart, 0.0f), glm::vec3(edgeEnd, 0.0f)))) return 0;
 
 		// Check every vertex against edge.
 		glm::vec2 vertices[4] = {
-			glm::vec2(m_Box->Center) + glm::vec2{-m_Box->HalfSize.x, -m_Box->HalfSize.y},
-			glm::vec2(m_Box->Center) + glm::vec2{ m_Box->HalfSize.x, -m_Box->HalfSize.y},
-			glm::vec2(m_Box->Center) + glm::vec2{ m_Box->HalfSize.x,  m_Box->HalfSize.y},
-			glm::vec2(m_Box->Center) + glm::vec2{-m_Box->HalfSize.x,  m_Box->HalfSize.y}
+			boxCenter + glm::vec2{-m_Box->HalfSize.x, -m_Box->HalfSize.y},
+			boxCenter + glm::vec2{ m_Box->HalfSize.x, -m_Box->HalfSize.y},
+			boxCenter + glm::vec2{ m_Box->HalfSize.x,  m_Box->HalfSize.y},
+			boxCenter + glm::vec2{-m_Box->HalfSize.x,  m_Box->HalfSize.y}
 		};
 		
-		glm::vec2 edgeDir = m_Edge->End - m_Edge->Start;
+		glm::vec2 edgeDir = edgeEnd - edgeStart;
 		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
 		normal = glm::normalize(normal);
-		F32 offset = -glm::dot(normal, glm::vec2(m_Edge->Start));
+		F32 offset = -glm::dot(normal, edgeStart);
 
 		U32 foundContacts = 0;
 		for (U32 i = 0; i < 4; i++)
@@ -205,6 +253,7 @@ namespace Engine
 				contact.PenetrationDepth = offset - vertexDistance;
 				
 				contacts.push_back(contact);
+				
 				foundContacts++;
 			}
 		}
@@ -216,8 +265,16 @@ namespace Engine
 		[static_cast<U32>(Collider2D::Type::TypesCount)]
 		[static_cast<U32>(Collider2D::Type::TypesCount)];
 
+	bool ContactManager::s_IsInit = false;
+
 	Contact2D* ContactManager::Create(Collider2D* a, Collider2D* b)
 	{
+		if (!s_IsInit)
+		{
+			Init();
+			s_IsInit = true;
+		}
+
 		U32 aTypeInt = a->GetTypeInt();
 		U32 bTypeInt = b->GetTypeInt();
 		if (s_Registry[aTypeInt][bTypeInt].IsPrimary)
