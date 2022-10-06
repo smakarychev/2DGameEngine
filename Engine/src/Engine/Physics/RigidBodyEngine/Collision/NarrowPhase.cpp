@@ -6,7 +6,7 @@
 namespace Engine
 {
 	NarrowPhase2D::NarrowPhase2D(BroadPhase2D<>& broadPhase)
-		:m_BroadPhase(broadPhase)
+		: m_BroadPhase(broadPhase)
 	{
 	}
 
@@ -26,8 +26,13 @@ namespace Engine
 			Collider2D* colliderB = contact.Bodies[1]->GetCollider();
 
 			Contact2D* narrowContact = ContactManager::Create(colliderA, colliderB);
-			narrowContact->GenerateContacts(confirmedContacts, contact.Bodies[0], contact.Bodies[1]);		
+			narrowContact->GenerateContacts(confirmedContacts);		
 		}
+		/*for (auto& contact : confirmedContacts)
+		{
+			RigidBody2D* secondBody = contact.Bodies.second;
+			secondBody->SetPosition(secondBody->GetPosition() - glm::vec3(contact.Normal * contact.PenetrationDepth, secondBody->GetPosition().z));
+		}*/
 	}
 }
 

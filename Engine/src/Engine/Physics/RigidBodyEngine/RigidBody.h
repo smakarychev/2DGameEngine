@@ -11,6 +11,15 @@ namespace Engine
 {
 	using namespace Types;
 
+	struct RigidBodyDef2D
+	{
+		glm::vec3 Position = glm::vec3{ 0.0f };
+		F32 Mass = 1.0f;
+		F32 Inertia = 1.0f;
+		PhysicsMaterial PhysicsMaterial;
+		ColliderDef2D ColliderDef;
+	};
+
 	class RigidBody2D
 	{
 	public:
@@ -84,10 +93,10 @@ namespace Engine
 		// Apply the given force at some point (in world space).
 		void ApplyForce(const glm::vec2& force, const glm::vec2& point);
 
-		glm::vec2 TransformToWorld(const glm::vec2& point);
-		glm::vec2 TransformDirectionToWorld(const glm::vec2& dir);
-		glm::vec2 TransformToLocal(const glm::vec2& point);
-		glm::vec2 TransformDirectionToLocal(const glm::vec2& dir);
+		glm::vec2 TransformToWorld(const glm::vec2& point) const;
+		glm::vec2 TransformDirectionToWorld(const glm::vec2& dir) const;
+		glm::vec2 TransformToLocal(const glm::vec2& point) const;
+		glm::vec2 TransformDirectionToLocal(const glm::vec2& dir) const;
 	private:
 		PhysicsMaterial m_PhysicsMaterial;
 		Collider2D* m_Collider;

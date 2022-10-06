@@ -11,10 +11,17 @@ namespace Engine
 	{
 	}
 
-	RigidBody2D& RigidBody2DWorld::CreateBody(glm::vec3 position, F32 mass, F32 inertia)
+	RigidBody2D& RigidBody2DWorld::CreateBody(const RigidBodyDef2D& rbDef)
 	{
-		m_Bodies.emplace_back(CreateRef<RigidBody2D>(position, mass, inertia));
-		return *m_Bodies.back();
+		m_Bodies.emplace_back(CreateRef<RigidBody2D>(rbDef.Position, rbDef.Mass, rbDef.Inertia));
+		RigidBody2D& newBody = *m_Bodies.back();
+		newBody.SetPhysicsMaterial(rbDef.PhysicsMaterial);
+		if (rbDef.ColliderDef.Collider != nullptr)
+		{
+			newBody.SetCollider(rbDef.ColliderDef.Collider->Clone());
+			newBody.GetCollider()->SetAttachedRigidBody(&newBody);
+		}
+		return newBody;
 	}
 
 	void RigidBody2DWorld::Update(F32 deltaTime)

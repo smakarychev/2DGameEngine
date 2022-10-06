@@ -18,7 +18,7 @@ namespace Engine
 		RigidBody2DWorld(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
 
 		// All rigid bodies shall be created by this method.
-		RigidBody2D& CreateBody(glm::vec3 position = glm::vec3{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
+		RigidBody2D& CreateBody(const RigidBodyDef2D& rbDef);
 		
 		void Update(F32 deltaTime);
 

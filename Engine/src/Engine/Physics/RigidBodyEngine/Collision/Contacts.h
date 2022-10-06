@@ -19,6 +19,7 @@ namespace Engine
 		glm::vec2 Point;
 		glm::vec2 Normal;
 		F32 PenetrationDepth;
+		BodiesInfo Bodies;
 	};
 
 	class Contact2D
@@ -26,7 +27,7 @@ namespace Engine
 		friend class ContactManager;
 	public:
 		// Populates vector of contacts, returns the amount of added contacts.
-		virtual U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) = 0;
+		virtual U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) = 0;
 	private:
 		// Shall never be called (it means we failed to derive real type).
 		static Contact2D* Create(Collider2D* first, Collider2D* second) { return nullptr; }
@@ -39,7 +40,7 @@ namespace Engine
 	public:
 		BoxBoxContact2D(BoxCollider2D* first, BoxCollider2D* second);
 			
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);
@@ -54,7 +55,7 @@ namespace Engine
 	public:
 		CircleCircleContact2D(CircleCollider2D* first, CircleCollider2D* second);
 
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);
@@ -69,7 +70,7 @@ namespace Engine
 	public:
 		BoxCircleContact2D(BoxCollider2D* box, CircleCollider2D* circle);
 
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);
@@ -86,7 +87,7 @@ namespace Engine
 	public:
 		EdgeCircleContact2D(EdgeCollider2D* edge, CircleCollider2D* circle);
 
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);
@@ -102,7 +103,7 @@ namespace Engine
 	public:
 		EdgeBoxContact2D(EdgeCollider2D* edge, BoxCollider2D* box);
 
-		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB) override;
+		U32 GenerateContacts(std::vector<ContactInfo2D>& contacts) override;
 	private:
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);

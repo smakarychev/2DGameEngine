@@ -49,7 +49,6 @@
 /* Utility rendering (drawers) */
 #include "Engine/Rendering/Drawers/BVHTreeDrawer.h"
 
-
 /* UI */
 #include "Engine/Imgui/ImguiLayer.h"
 #include "Engine/Imgui/ImguiCommon.h"
@@ -77,4 +76,6 @@
 #include "Engine/Physics/RigidBodyEngine/Collision/BroadPhase.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/BVHTree.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Collider.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Intersections.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/NarrowPhase.h"

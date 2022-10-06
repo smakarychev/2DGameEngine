@@ -1,9 +1,14 @@
 #pragma once
 
+#include "Engine/Core/Types.h"
+
+#include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
 namespace Engine
 {
+	using namespace Types;
+
 	struct AABB2D;
 	struct CircleBounds2D;
 	class BoxCollider2D;
@@ -36,4 +41,8 @@ namespace Engine
 	bool CircleAABBContain2D(const CircleBounds2D& circle, const AABB2D& box);
 
 	bool BoxHalfSpaceCollision2D(const BoxCollider2D& box, const EdgeCollider2D& edge);
+
+	// Axis is expected to be normalized.
+	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis);
+
 }

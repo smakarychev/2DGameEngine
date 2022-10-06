@@ -46,7 +46,7 @@ namespace Engine
 		AddTorque((point.x - m_Position.x) * force.y - (point.y - m_Position.y) * force.x);
 	}
 	
-	glm::vec2 RigidBody2D::TransformToWorld(const glm::vec2& point)
+	glm::vec2 RigidBody2D::TransformToWorld(const glm::vec2& point) const
 	{
 		return glm::vec2{
 			point.x * m_Rotation.x - point.y * m_Rotation.y + m_Position.x, 
@@ -54,7 +54,7 @@ namespace Engine
 		};
 	}
 	
-	glm::vec2 RigidBody2D::TransformDirectionToWorld(const glm::vec2& dir)
+	glm::vec2 RigidBody2D::TransformDirectionToWorld(const glm::vec2& dir) const
 	{
 		return glm::vec2{
 			dir.x * m_Rotation.x - dir.y * m_Rotation.y,
@@ -62,7 +62,7 @@ namespace Engine
 		};
 	}
 
-	glm::vec2 RigidBody2D::TransformToLocal(const glm::vec2& point)
+	glm::vec2 RigidBody2D::TransformToLocal(const glm::vec2& point) const
 	{
 		glm::vec2 translated = point - glm::vec2(m_Position);
 		return glm::vec2{
@@ -71,7 +71,7 @@ namespace Engine
 		};
 	}
 
-	glm::vec2 RigidBody2D::TransformDirectionToLocal(const glm::vec2& dir)
+	glm::vec2 RigidBody2D::TransformDirectionToLocal(const glm::vec2& dir) const
 	{
 		return glm::vec2{
 			 dir.x * m_Rotation.x + dir.y * m_Rotation.y,

@@ -117,9 +117,20 @@ namespace Engine
 
 	using DefaultBounds2D = AABB2D;
 
+	// Forward declarations.
+
+	class RigidBody2D;
 	class BoxCollider2D;
 	class CircleCollider2D;
 	class EdgeCollider2D;
+	class Collider2D;
+
+	struct ColliderDef2D
+	{
+		// This collider will be copied.
+		Collider2D* Collider = nullptr;
+	};
+
 	class Collider2D
 	{
 	public:
@@ -131,42 +142,25 @@ namespace Engine
 		virtual ~Collider2D() = default;
 		Type GetType() const { return m_Type; }
 		I32 GetTypeInt() const { return static_cast<I32>(m_Type); }
+		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
+		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
 
-		inline static void Destroy(Collider2D* collider);
+		static void Destroy(Collider2D* collider);
+
+		virtual Collider2D* Clone() { return nullptr; }
 
 	protected:
 		Type m_Type;
+		RigidBody2D* m_AttachedRigidBody = nullptr;
 	};
 
-	inline void Collider2D::Destroy(Collider2D* collider)
-	{
-		switch (collider->m_Type)
-		{
-		case Type::Box:
-		{
-			Delete<BoxCollider2D>(reinterpret_cast<BoxCollider2D*>(collider)); 
-			break;
-		}
-		case Type::Circle:
-		{
-			Delete<CircleCollider2D>(reinterpret_cast<CircleCollider2D*>(collider));
-			break;
-		}
-		case Type::Edge:
-		{
-			Delete<EdgeCollider2D>(reinterpret_cast<EdgeCollider2D*>(collider));
-			break;
-		}
-		}
-	}
+	
 
 	class BoxCollider2D : public Collider2D
 	{
 	public:
-		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
-			: Collider2D(Type::Box),
-			HalfSize(halfSize), Center(center)
-		{}
+		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
+		Collider2D* Clone() override;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
@@ -175,10 +169,8 @@ namespace Engine
 	class CircleCollider2D : public Collider2D
 	{
 	public:
-		CircleCollider2D(const glm::vec3& center = glm::vec3{0.0f}, F32 radius = 1.0f)
-			: Collider2D(Type::Circle),
-			Radius(radius), Center(center)
-		{}
+		CircleCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, F32 radius = 1.0f);
+		Collider2D* Clone() override;
 		F32 Radius;
 		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
@@ -188,12 +180,9 @@ namespace Engine
 	class EdgeCollider2D : public Collider2D
 	{
 	public:
-		EdgeCollider2D(const glm::vec3& start = glm::vec3{-1.0f, 0.0f, 0.0f}, const glm::vec3& end = glm::vec3{ 1.0f, 0.0f, 0.0f })
-			: Collider2D(Type::Edge),
-			Start(start), End(end)
-		{
-			ENGINE_CORE_ASSERT(Start.z == End.z, "Edge must have same z coordinate.");
-		}
+		EdgeCollider2D(const glm::vec3& start = glm::vec3{ -1.0f, 0.0f, 0.0f }, const glm::vec3& end = glm::vec3{ 1.0f, 0.0f, 0.0f });
+			
+		Collider2D* Clone() override;
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
 		// Relative to rigidbody.
 		glm::vec3 Start;

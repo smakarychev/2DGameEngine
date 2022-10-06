@@ -22,10 +22,69 @@ namespace Engine
 		);
 	}
 
-	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
+	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
 	{
-		// TODO: implement.
-		return 0;
+		// SAT.
+		glm::vec2 normals[4] {
+			m_First->GetAttachedRigidBody()->TransformDirectionToWorld({ 1.0f, 0.0f }),
+			m_First->GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f }),
+			m_Second->GetAttachedRigidBody()->TransformDirectionToWorld({ 1.0f, 0.0f }),
+			m_Second->GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f }),
+		};
+
+		F32 smallestOverlap = std::numeric_limits<F32>::max();
+		I32 smallestNormalI = -1;
+		for (I32 i = 0; i < 4; i++)
+		{
+			F32 currentOverlap = BoxBoxOnAxisOverlap2D(*m_First, *m_Second, normals[i]);
+			if (currentOverlap < 0) return 0;
+			if (currentOverlap < smallestOverlap)
+			{
+				smallestOverlap = currentOverlap;
+				smallestNormalI = i;
+			}
+		}
+
+		// Find the vertex we collide with.
+		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
+		glm::vec2 secondCenter = m_Second->GetAttachedRigidBody()->TransformToWorld(m_Second->Center);
+		BoxCollider2D* primary = nullptr;
+		BoxCollider2D* secondary = nullptr;
+		std::array<U32, 2> secondaryNormals;
+		glm::vec2 distanceVec;
+		if (smallestNormalI < 2)
+		{
+			primary = m_First;
+			secondary = m_Second;
+			distanceVec = secondCenter - firstCenter;
+			secondaryNormals = { 2, 3 };
+		}
+		else
+		{
+			primary = m_Second;
+			secondary = m_First;
+			distanceVec = firstCenter - secondCenter;
+			secondaryNormals = { 0, 1 };
+		}
+
+		glm::vec2 normal = normals[smallestNormalI];
+		if (glm::dot(normal, distanceVec) > 0.0f) normal = -normal;
+
+		// Find the vertex we collide with.
+		glm::vec2 vertex = secondary->HalfSize;
+		if (glm::dot(normals[secondaryNormals[0]], normal) < 0) vertex.x = -vertex.x;
+		if (glm::dot(normals[secondaryNormals[1]], normal) < 0) vertex.y = -vertex.y;
+
+		// Create contact info.
+		ContactInfo2D contactInfo;
+		contactInfo.Normal = normal;
+		contactInfo.Point = secondary->GetAttachedRigidBody()->TransformToWorld(vertex);
+		contactInfo.PenetrationDepth = smallestOverlap;
+		contactInfo.Bodies.first = const_cast<RigidBody2D*>(primary->GetAttachedRigidBody());
+		contactInfo.Bodies.second = const_cast<RigidBody2D*>(secondary->GetAttachedRigidBody());
+
+		contacts.push_back(contactInfo);
+		return 1;
 	}
 	
 	CircleCircleContact2D::CircleCircleContact2D(CircleCollider2D* first, CircleCollider2D* second)
@@ -48,12 +107,11 @@ namespace Engine
 		);
 	}
 
-	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
+	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
 	{
-		if (m_First->Center.z != m_Second->Center.z) return 0;
 		// Transform positions to world space.
-		glm::vec2 firstCenter = bodyA->TransformToWorld(m_First->Center);
-		glm::vec2 secondCenter = bodyB->TransformToWorld(m_Second->Center);
+		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
+		glm::vec2 secondCenter = m_Second->GetAttachedRigidBody()->TransformToWorld(m_Second->Center);
 
 		// Check if there is a collision.
 		glm::vec2 distVec = glm::vec2{ firstCenter.x - secondCenter.x,
@@ -70,7 +128,9 @@ namespace Engine
 		contactInfo.Normal = normal;
 		contactInfo.Point = firstCenter + distVec * 0.5f;
 		contactInfo.PenetrationDepth = minDist - dist;
-		
+		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_First->GetAttachedRigidBody());
+		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
+
 		contacts.push_back(contactInfo);
 
 		return 1;
@@ -96,11 +156,12 @@ namespace Engine
 		);
 	}
 
-	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
+	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
 	{
-		if (m_Box->Center.z != m_Circle->Center.z) return 0;
 		// Tranform circle to box coordinate space.
-		glm::vec2 circleCenterRel = bodyA->TransformToLocal(bodyB->TransformToWorld(m_Circle->Center));
+		glm::vec2 circleCenter = m_Circle->GetAttachedRigidBody()->TransformToWorld(m_Circle->Center);
+		glm::vec2 circleCenterRel = m_Box->GetAttachedRigidBody()->
+			TransformToLocal(circleCenter);
 		
 		// Clamp each coordinate to the box.
 		// `closestPoint` is a point on box.
@@ -121,14 +182,18 @@ namespace Engine
 
 		// Else we have intersection.
 		// Transform closest point to world space.
-		closestPoint = bodyA->TransformToWorld(closestPoint);
+		closestPoint = m_Box->GetAttachedRigidBody()->TransformToWorld(closestPoint);
 
-		ContactInfo2D contact;
-		contact.Normal = glm::normalize(closestPoint - circleCenterRel);
-		contact.Point = closestPoint;
-		contact.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
-		
-		contacts.push_back(contact);
+		ContactInfo2D contactInfo;
+		contactInfo.Normal = closestPoint - circleCenter;
+		if (contactInfo.Normal.x != 0.0 || contactInfo.Normal.y != 0)
+			contactInfo.Normal = glm::normalize(contactInfo.Normal);
+		contactInfo.Point = closestPoint;
+		contactInfo.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
+		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
+		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+
+		contacts.push_back(contactInfo);
 		
 		return 1;
 	}
@@ -153,13 +218,12 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
+	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
 	{
-		if (m_Edge->End.z != m_Circle->Center.z) return 0;
 		// Transform to world space.
-		glm::vec2 edgeStart = bodyA->TransformToWorld(m_Edge->Start);
-		glm::vec2 edgeEnd = bodyA->TransformToWorld(m_Edge->End);
-		glm::vec2 circleCenter = bodyB->TransformToWorld(m_Circle->Center);
+		glm::vec2 edgeStart = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->Start);
+		glm::vec2 edgeEnd = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->End);
+		glm::vec2 circleCenter = m_Circle->GetAttachedRigidBody()->TransformToWorld(m_Circle->Center);
 
 		
 		// Compute edge normal.
@@ -175,8 +239,8 @@ namespace Engine
 			return 0;
 		}
 
-		ContactInfo2D contact;
-		contact.Point = circleCenter - normal * distanceToPlane;
+		ContactInfo2D contactInfo;
+		contactInfo.Point = circleCenter - normal * distanceToPlane;
 		
 		F32 depth = -distanceToPlane;
 		// If circle is on other side of the edge.
@@ -187,10 +251,12 @@ namespace Engine
 		}
 		depth += m_Circle->Radius;
 
-		contact.Normal = normal;
-		contact.PenetrationDepth = depth;
-		
-		contacts.push_back(contact);
+		contactInfo.Normal = normal;
+		contactInfo.PenetrationDepth = depth;
+		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+
+		contacts.push_back(contactInfo);
 
 		return 1;
 	}
@@ -215,17 +281,15 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts, RigidBody2D* bodyA, RigidBody2D* bodyB)
-	{
-		if (m_Edge->Start.z != m_Box->Center.z) return 0;
+	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	{	
+		if (!BoxHalfSpaceCollision2D(*m_Box, *m_Edge)) return 0;
+
+		// TODO: do not do it twice (first time in line above).
 		// Transform to world space.
-		glm::vec2 edgeStart = bodyA->TransformToWorld(m_Edge->Start);
-		glm::vec2 edgeEnd = bodyA->TransformToWorld(m_Edge->End);
-		glm::vec2 boxCenter = bodyB->TransformToWorld(m_Box->Center);
-		
-		if (!BoxHalfSpaceCollision2D(
-			BoxCollider2D(glm::vec3(boxCenter, 0.0f), m_Box->HalfSize),
-			EdgeCollider2D(glm::vec3(edgeStart, 0.0f), glm::vec3(edgeEnd, 0.0f)))) return 0;
+		glm::vec2 edgeStart = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->Start);
+		glm::vec2 edgeEnd = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->End);
+		glm::vec2 boxCenter = m_Box->GetAttachedRigidBody()->TransformToWorld(m_Box->Center);
 
 		// Check every vertex against edge.
 		glm::vec2 vertices[4] = {
@@ -247,12 +311,14 @@ namespace Engine
 			if (vertexDistance <= offset)
 			{
 				// Create contact data.
-				ContactInfo2D contact;
-				contact.Normal = normal;
-				contact.Point = normal * (vertexDistance - offset) + vertices[i];
-				contact.PenetrationDepth = offset - vertexDistance;
-				
-				contacts.push_back(contact);
+				ContactInfo2D contactInfo;
+				contactInfo.Normal = normal;
+				contactInfo.Point = normal * (vertexDistance - offset) + vertices[i];
+				contactInfo.PenetrationDepth = offset - vertexDistance;
+				contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+				contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
+
+				contacts.push_back(contactInfo);
 				
 				foundContacts++;
 			}

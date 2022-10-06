@@ -4,6 +4,7 @@
 
 #include "Collider.h"
 
+#include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 
 namespace Engine
 {
@@ -49,7 +50,6 @@ namespace Engine
 
 	bool AABBCollision2D(const AABB2D& first, const AABB2D& second)
 	{
-		if (first.Center.z != second.Center.z) return false;
 		return
 			Math::Abs(first.Center.x - second.Center.x) < (first.HalfSize.x + second.HalfSize.x) &&
 			Math::Abs(first.Center.y - second.Center.y) < (first.HalfSize.y + second.HalfSize.y);
@@ -57,7 +57,6 @@ namespace Engine
 
 	bool CircleCollision2D(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
-		if (first.Center.z != second.Center.z) return false;
 		glm::vec2 distanceVec = first.Center - second.Center;
 		F32 distanceSquared = glm::length2(distanceVec);
 		F32 radSquared = (first.Radius - second.Radius) * (first.Radius - second.Radius);
@@ -66,7 +65,6 @@ namespace Engine
 
 	bool AABBCircleCollision2D(const AABB2D& box, const CircleBounds2D& circle)
 	{
-		if (box.Center.z != circle.Center.z) return false;
 		// First, find the closest point of the box to the circle.
 		glm::vec2 closestPoint = box.Center;
 		glm::vec2 min = glm::vec2(box.Center) - box.HalfSize;
@@ -87,7 +85,6 @@ namespace Engine
 
 	bool AABBContain2D(const AABB2D& first, const AABB2D& second)
 	{
-		if (first.Center.z != second.Center.z) return false;
 		return
 			Math::Abs(first.Center.x - second.Center.x) < (first.HalfSize.x - second.HalfSize.x) &&
 			Math::Abs(first.Center.y - second.Center.y) < (first.HalfSize.y - second.HalfSize.y);
@@ -95,7 +92,6 @@ namespace Engine
 
 	bool CircleContain2D(const CircleBounds2D& first, const CircleBounds2D& second)
 	{
-		if (first.Center.z != second.Center.z) return false;
 		F32 radDiff = Math::Abs(first.Radius - second.Radius);
 		return
 			glm::distance2(first.Center, second.Center) < radDiff * radDiff;
@@ -103,7 +99,6 @@ namespace Engine
 
 	bool AABBCircleContain2D(const AABB2D& box, const CircleBounds2D& circle)
 	{
-		if (box.Center.z != circle.Center.z) return false;
 		return
 			Math::Abs(box.Center.x - circle.Center.x) + circle.Radius < box.HalfSize.x &&
 			Math::Abs(box.Center.y - circle.Center.y) + circle.Radius < box.HalfSize.y;
@@ -112,7 +107,6 @@ namespace Engine
 
 	bool CircleAABBContain2D(const CircleBounds2D& circle, const AABB2D& box)
 	{
-		if (box.Center.z != circle.Center.z) return false;
 		return
 			Math::Abs(box.Center.x - circle.Center.x) + box.HalfSize.x < circle.Radius &&
 			Math::Abs(box.Center.y - circle.Center.y) + box.HalfSize.y < circle.Radius;
@@ -120,18 +114,51 @@ namespace Engine
 	
 	bool BoxHalfSpaceCollision2D(const BoxCollider2D& box, const EdgeCollider2D& edge)
 	{
-		if (box.Center.z != edge.Start.z) return false;
+		// Convert to world space.
+		glm::vec2 boxCenter = box.GetAttachedRigidBody()->TransformToWorld(box.Center);
+		glm::vec2 edgeStart = edge.GetAttachedRigidBody()->TransformToWorld(edge.Start);
+		glm::vec2 edgeEnd = edge.GetAttachedRigidBody()->TransformToWorld(edge.End);
+
 		// Get space normal.
-		glm::vec2 edgeDir = edge.End - edge.Start;
+		glm::vec2 edgeDir = edgeEnd - edgeStart;
 		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
 		normal = glm::normalize(normal);
-		F32 offset = -glm::dot(normal, glm::vec2(edge.Start));
+		F32 offset = -glm::dot(normal, edgeStart);
 		// Compute the projection interval raduis.
 		F32 projection = box.HalfSize.x * Math::Abs(normal.x) + box.HalfSize.y * Math::Abs(normal.y);
 		// Center-edge distance.
-		F32 distance = glm::dot(normal, glm::vec2(box.Center)) - offset;
+		F32 distance = glm::dot(normal, boxCenter) - offset;
 		
 		return Math::Abs(distance) < projection;
+	}
+	
+	F32 TransformToAxis(const BoxCollider2D& box, const glm::vec2& axis)
+	{
+		return
+			box.HalfSize.x *
+			Math::Abs(
+				glm::dot(
+					axis,
+					box.GetAttachedRigidBody()->TransformDirectionToWorld({ 1.0f, 0.0f })
+				)) +
+			box.HalfSize.y *
+			Math::Abs(
+				glm::dot(
+					axis,
+					box.GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f })
+			));
+	}
+
+	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis)
+	{
+		// Project half sizes and compare to distance.
+		F32 firstSizeProj = TransformToAxis(first, axis);
+		F32 secondSizeProj = TransformToAxis(second, axis);
+		glm::vec2 firstCenter = first.GetAttachedRigidBody()->TransformToWorld(first.Center);
+		glm::vec2 secondCenter = second.GetAttachedRigidBody()->TransformToWorld(second.Center);
+		glm::vec2 distanceVec = firstCenter - secondCenter;
+		F32 distance = Math::Abs(glm::dot(distanceVec, axis));
+		return firstSizeProj + secondSizeProj - distance;
 	}
 }
 
