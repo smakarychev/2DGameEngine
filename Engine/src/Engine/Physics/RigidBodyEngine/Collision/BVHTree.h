@@ -74,6 +74,7 @@ namespace Engine
 		void* GetPayload(I32 nodeId) const { return m_Nodes[nodeId].Payload; }
 		const Bounds& GetBounds(I32 nodeId) const { return m_Nodes[nodeId].Bounds; }
 
+		F32 ComputeTotalCost() const;
 	private:
 		void Resize(U32 startIndex, U32 endIndex);
 		void InsertLeaf(I32 leafId);
@@ -83,14 +84,13 @@ namespace Engine
 		I32 RebalanceTree(I32 nodeId);
 		I32 AllocateNode();
 		void FreeNode(I32 nodeId);
-		F32 ComputeTotalCost();
 	private:
 		// Used to enlarge bounds so fewer reinsertions performed.
 		static constexpr auto s_BoundsGrowth = 0.1f;
 		// Used to greatly enlarge bounds of rapidly moving objects.
 		static constexpr auto s_DynamicBoundsGrowth = 4.0f;
 		std::vector<BVHNode<Bounds>> m_Nodes;
-		I32 m_FreeHead = BVHNode<Bounds>::NULL_NODE;
+		I32 m_FreeList = BVHNode<Bounds>::NULL_NODE;
 		I32 m_FreeNodesCount = 0;
 		I32 m_TreeRoot = BVHNode<Bounds>::NULL_NODE;
 	};
@@ -101,7 +101,7 @@ namespace Engine
 		// Allocate initial buffer for nodes.
 		static U32 initialNodesAmount = 16;
 		Resize(0, initialNodesAmount);
-		m_FreeHead = 0;
+		m_FreeList = 0;
 		m_FreeNodesCount = I32(m_Nodes.size());
 	}
 
@@ -171,19 +171,19 @@ namespace Engine
 			return;
 		}
 		// Else we need to find the best place (neighbour)
-		// for the given leaf, based on some cost function.
-
-		Bounds& leafBounds = m_Nodes[leafId].Bounds;
+		// for the given leafId, based on some cost function.
 
 		// Find the best neighbour.
 		I32 bestNeighbour = FindBestNeighbour(leafId);
 
-		// Construct new parent.
+		// Construct new Parent.
 		I32 oldParent = m_Nodes[bestNeighbour].Parent;
 		I32 newParent = AllocateNode();
 		m_Nodes[newParent].Parent = oldParent;
 		m_Nodes[newParent].Height = m_Nodes[bestNeighbour].Height + 1;
+		const Bounds& leafBounds = m_Nodes[leafId].Bounds;
 		m_Nodes[newParent].Bounds = Bounds{ leafBounds, m_Nodes[bestNeighbour].Bounds };
+		m_Nodes[newParent].Payload = nullptr;
 
 		m_Nodes[newParent].LeftChild = bestNeighbour;
 		m_Nodes[newParent].RightChild = leafId;
@@ -300,7 +300,7 @@ namespace Engine
 	template<typename Bounds>
 	inline I32 BVHTree2D<Bounds>::FindBestNeighbour(I32 leafId)
 	{
-		Bounds& leafBounds = m_Nodes[leafId].Bounds;
+		const Bounds& leafBounds = m_Nodes[leafId].Bounds;
 		// Find the best neighbour.
 		I32 currentNode = m_TreeRoot;
 		while (m_Nodes[currentNode].IsLeaf() == false)
@@ -347,9 +347,9 @@ namespace Engine
 			}
 
 			// Early exit.
-			if (cost <= costLeft && cost <= costRight) break;
+			if (cost < costLeft && cost < costRight) break;
 			// Else descend.
-			if (costLeft < cost) currentNode = leftChild;
+			if (costLeft < costRight) currentNode = leftChild;
 			else currentNode = rightChild;
 		}
 		return currentNode;
@@ -372,6 +372,7 @@ namespace Engine
 		}
 	}
 
+	// Straight from box2d.
 	template<typename Bounds>
 	inline I32 BVHTree2D<Bounds>::RebalanceTree(I32 nodeId)
 	{
@@ -393,7 +394,7 @@ namespace Engine
 			I32 GId = C.RightChild;
 			BVHNode<Bounds>& F = m_Nodes[FId];
 			BVHNode<Bounds>& G = m_Nodes[GId];
-			
+
 			// Swap A and C.
 			C.LeftChild = AId;
 			C.Parent = A.Parent;
@@ -438,7 +439,7 @@ namespace Engine
 				C.Height = 1 + Math::Max(A.Height, G.Height);
 			}
 			return CId;
-		}	
+		}
 
 
 		else if (balance < -1)
@@ -475,7 +476,7 @@ namespace Engine
 			if (D.Height > E.Height)
 			{
 				B.RightChild = DId;
-				A.RightChild = EId;
+				A.LeftChild = EId;
 				E.Parent = AId;
 				A.Bounds = Bounds{ C.Bounds, E.Bounds };
 				B.Bounds = Bounds{ A.Bounds, D.Bounds };
@@ -485,8 +486,8 @@ namespace Engine
 			else
 			{
 				B.RightChild = EId;
-				A.RightChild = DId;
-				E.Parent = AId;
+				A.LeftChild = DId;
+				D.Parent = AId;
 				A.Bounds = Bounds{ C.Bounds, D.Bounds };
 				B.Bounds = Bounds{ A.Bounds, E.Bounds };
 				A.Height = 1 + Math::Max(C.Height, D.Height);
@@ -516,16 +517,16 @@ namespace Engine
 	inline I32 BVHTree2D<Bounds>::AllocateNode()
 	{
 		// If no more free nodes.
-		if (m_FreeHead == BVHNode<Bounds>::NULL_NODE)
+		if (m_FreeList == BVHNode<Bounds>::NULL_NODE)
 		{
 			U32 currentCapacity = U32(m_Nodes.size());
 			Resize(currentCapacity, 2 * currentCapacity);
-			m_FreeHead = currentCapacity;
+			m_FreeList = currentCapacity;
 			m_FreeNodesCount = currentCapacity;
 		}
 
-		U32 freeLeaf = m_FreeHead;
-		m_FreeHead = m_Nodes[m_FreeHead].Next;
+		U32 freeLeaf = m_FreeList;
+		m_FreeList = m_Nodes[m_FreeList].Next;
 		m_Nodes[freeLeaf].Parent = BVHNode<Bounds>::NULL_NODE;
 		m_Nodes[freeLeaf].Height = 0;
 		m_FreeNodesCount--;
@@ -535,18 +536,19 @@ namespace Engine
 	template<typename Bounds>
 	inline void BVHTree2D<Bounds>::FreeNode(I32 nodeId)
 	{
-		m_Nodes[nodeId].Next = m_FreeHead;
+		m_Nodes[nodeId].Next = m_FreeList;
 		m_Nodes[nodeId].Height = -1;
-		m_FreeHead = nodeId;
+		m_FreeList = nodeId;
+		m_FreeNodesCount++;
 	}
 
 	template<typename Bounds>
-	inline F32 BVHTree2D<Bounds>::ComputeTotalCost()
+	inline F32 BVHTree2D<Bounds>::ComputeTotalCost() const
 	{
 		F32 cost = 0.0f;
 		for (auto& node : m_Nodes)
 		{
-			if (node.IsLeaf() == false) cost += node.Bounds.GetPerimeter();
+			if (node.Height > 0) cost += node.Bounds.GetPerimeter();
 		}
 		return cost;
 	}
