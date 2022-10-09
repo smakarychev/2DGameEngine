@@ -34,7 +34,6 @@ namespace Engine
 	void RigidBody2D::ApplyForceLocal(const glm::vec2& force, const glm::vec2& point)
 	{
 		// Transform local space to world space.
-		// TODO: scale?
 		glm::vec2 transformedPoint = { point.x * m_Rotation.x - point.y * m_Rotation.y, point.x * m_Rotation.y + point.y * m_Rotation.x };
 		AddForce(force);
 		AddTorque(transformedPoint.x * force.y - transformedPoint.y * force.x);
@@ -49,7 +48,7 @@ namespace Engine
 	glm::vec2 RigidBody2D::TransformToWorld(const glm::vec2& point) const
 	{
 		return glm::vec2{
-			point.x * m_Rotation.x - point.y * m_Rotation.y + m_Position.x, 
+			point.x * m_Rotation.x - point.y * m_Rotation.y + m_Position.x,
 			point.x * m_Rotation.y + point.y * m_Rotation.x + m_Position.y
 		};
 	}

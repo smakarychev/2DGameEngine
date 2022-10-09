@@ -1,6 +1,8 @@
 #include "enginepch.h"
 #include "Contacts.h"
 
+#include "Engine/Math/LinearAlgebra.h"
+
 namespace Engine
 {
 	BoxBoxContact2D::BoxBoxContact2D(BoxCollider2D* first, BoxCollider2D* second)
@@ -80,8 +82,8 @@ namespace Engine
 		contactInfo.Normal = normal;
 		contactInfo.Point = secondary->GetAttachedRigidBody()->TransformToWorld(vertex);
 		contactInfo.PenetrationDepth = smallestOverlap;
-		contactInfo.Bodies.first = const_cast<RigidBody2D*>(primary->GetAttachedRigidBody());
-		contactInfo.Bodies.second = const_cast<RigidBody2D*>(secondary->GetAttachedRigidBody());
+		contactInfo.Bodies.First = const_cast<RigidBody2D*>(primary->GetAttachedRigidBody());
+		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(secondary->GetAttachedRigidBody());
 
 		contacts.push_back(contactInfo);
 		return 1;
@@ -128,8 +130,8 @@ namespace Engine
 		contactInfo.Normal = normal;
 		contactInfo.Point = firstCenter + distVec * 0.5f;
 		contactInfo.PenetrationDepth = minDist - dist;
-		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_First->GetAttachedRigidBody());
-		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
+		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_First->GetAttachedRigidBody());
+		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
 
 		contacts.push_back(contactInfo);
 
@@ -190,8 +192,8 @@ namespace Engine
 			contactInfo.Normal = glm::normalize(contactInfo.Normal);
 		contactInfo.Point = closestPoint;
 		contactInfo.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
-		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
-		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
+		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
 
 		contacts.push_back(contactInfo);
 		
@@ -224,11 +226,10 @@ namespace Engine
 		glm::vec2 edgeStart = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->Start);
 		glm::vec2 edgeEnd = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->End);
 		glm::vec2 circleCenter = m_Circle->GetAttachedRigidBody()->TransformToWorld(m_Circle->Center);
-
 		
 		// Compute edge normal.
 		glm::vec2 edgeDir = edgeEnd - edgeStart;
-		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
+		glm::vec2 normal = glm::vec2{ -edgeDir.y, edgeDir.x };
 		normal = glm::normalize(normal);
 		F32 offset = -glm::dot(normal, glm::vec2(edgeStart));
 
@@ -253,8 +254,8 @@ namespace Engine
 
 		contactInfo.Normal = normal;
 		contactInfo.PenetrationDepth = depth;
-		contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
-		contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
 
 		contacts.push_back(contactInfo);
 
@@ -300,7 +301,7 @@ namespace Engine
 		};
 		
 		glm::vec2 edgeDir = edgeEnd - edgeStart;
-		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
+		glm::vec2 normal = glm::vec2{ -edgeDir.y, edgeDir.x };
 		normal = glm::normalize(normal);
 		F32 offset = -glm::dot(normal, edgeStart);
 
@@ -315,8 +316,8 @@ namespace Engine
 				contactInfo.Normal = normal;
 				contactInfo.Point = normal * (vertexDistance - offset) + vertices[i];
 				contactInfo.PenetrationDepth = offset - vertexDistance;
-				contactInfo.Bodies.first = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
-				contactInfo.Bodies.second = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
+				contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+				contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
 
 				contacts.push_back(contactInfo);
 				
@@ -353,6 +354,14 @@ namespace Engine
 		}
 	}
 
+	void ContactManager::Destroy(Contact2D* contact)
+	{
+		std::array<Collider2D*, 2> colliders = contact->GetColliders();
+		U32 aTypeInt = colliders[0]->GetTypeInt();
+		U32 bTypeInt = colliders[1]->GetTypeInt();
+		s_Registry[aTypeInt][bTypeInt].DestroyFn(contact);
+	}
+
 	// Create matrix of dipatch functions.
 	void ContactManager::Init()
 	{
@@ -381,6 +390,119 @@ namespace Engine
 			s_Registry[typeBI][typeAI].DestroyFn = destroyFn;
 			s_Registry[typeBI][typeAI].IsPrimary = false;
 		}
+	}
+
+	void ContactResolver::Resolve(const ContactInfo2D& contactInfo)
+	{
+		RigidBody2D* first  = contactInfo.Bodies.First;
+		RigidBody2D* second = contactInfo.Bodies.Second;
+
+		glm::vec2 relativeVel = first->GetLinearVelocity() - second->GetLinearVelocity();
+		// Collision resolves by itself.
+		if (glm::dot(relativeVel, contactInfo.Normal) > 0) return;
+
+		F32 restitution = contactInfo.GetRestitution();
+		F32 impulse = -(1.0f + restitution) * glm::dot(relativeVel, contactInfo.Normal);
+		impulse /= first->GetInverseMass() + second->GetInverseMass();
+
+		first->SetLinearVelocity(first->GetLinearVelocity()   + impulse * first->GetInverseMass()  * contactInfo.Normal);
+		second->SetLinearVelocity(second->GetLinearVelocity() - impulse * second->GetInverseMass() * contactInfo.Normal);
+
+		//x Very temporal thing.
+		if (first->HasFiniteMass())
+			first->SetPosition(first->GetPosition()   + glm::vec3(contactInfo.Normal * contactInfo.PenetrationDepth * 0.5f, first->GetPosition().z));
+		if (second->HasFiniteMass())
+			second->SetPosition(second->GetPosition() - glm::vec3(contactInfo.Normal * contactInfo.PenetrationDepth * 0.5f, second->GetPosition().z));
+		//if (!contactInfo.Bodies.First->HasFiniteMass() && !contactInfo.Bodies.Second->HasFiniteMass()) return;
+		//const glm::vec2& normal = contactInfo.Normal;
+		//// TODO: use collider center instead of body center?
+		//// Calculate collider centers relative to the contact.
+		//glm::vec2 relPos[2];
+		//relPos[0] = contactInfo.Point - glm::vec2(contactInfo.Bodies.First->GetPosition());
+		//if (contactInfo.Bodies.Second != nullptr)
+		//{
+		//	relPos[1] = contactInfo.Point - glm::vec2(contactInfo.Bodies.Second->GetPosition());
+		//}
+		//// If my math is correct (it is), lines below are always zero.
+		///* 
+		//glm::vec2 relativePos = contactInfo.Point - glm::vec2(contactInfo.Bodies.First->GetPosition());
+		//// R x N x R (with 2d magic).
+		//glm::vec2 deltaVelWorldVec{
+		//	relativePos.x * normal.y * normal.y - relativePos.y * normal.x * normal.y,
+		//	relativePos.y * normal.x * normal.x - relativePos.x * normal.y * normal.x
+		//};
+		//deltaVelWorldVec *= contactInfo.Bodies.First->GetInverseInertia();
+		//F32 deltaVel = glm::dot(deltaVelWorldVec, normal);
+		//*/
+
+		//F32 deltaVel = contactInfo.Bodies.First->GetInverseMass();
+		//if (contactInfo.Bodies.Second != nullptr)
+		//{
+		//	deltaVel += contactInfo.Bodies.Second->GetInverseMass();
+		//}
+
+		//// Get closing velocity as sum of transverse and radial.
+		//glm::vec2 closingVelWorld =
+		//	Math::Cross2D(contactInfo.Bodies.First->GetAngularVelocity(), relPos[0]);
+		//closingVelWorld += contactInfo.Bodies.First->GetLinearVelocity();
+		//
+		//if (contactInfo.Bodies.Second != nullptr)
+		//{
+		//	closingVelWorld -=
+		//		Math::Cross2D(contactInfo.Bodies.Second->GetAngularVelocity(), relPos[1]);
+		//	closingVelWorld -= contactInfo.Bodies.Second->GetLinearVelocity();
+		//}
+		//
+		//// Get closing velocity in contact's coordinate system.
+		//// NOTE: in frictionless collisions we only need the x component,
+		//// so we can simplify it to be n dot v.
+		//glm::vec2 contactVel {
+		//	 normal.x * closingVelWorld.x + normal.y * closingVelWorld.y,
+		//	-normal.y * closingVelWorld.x + normal.x * closingVelWorld.y,
+		//};
+		//// TODO: make the whole method depend on time.
+		//F32 deltaTime = 1.0f / 60.0f; // TODO: temp.
+		//// The change in velocity we need, to resolve contact.
+		//F32 desiredDeltaVel = -contactVel.x * (1.0f + contactInfo.GetRestitution()) * deltaTime;
+		//// Calculate impuse in contact's cooridinate system.
+		//glm::vec2 contactImpulse { desiredDeltaVel / deltaVel, 0.0f };
+		//// Convert it to world space (explicit matrix by vector mult).
+		//glm::vec2 impulse {
+		//	normal.x * contactImpulse.x - normal.y * contactImpulse.y,
+		//	normal.y * contactImpulse.x + normal.x * contactImpulse.y,
+		//};
+		//// Calculate velocity changes according to the impulse.
+		//glm::vec2 linearVelChange = impulse * contactInfo.Bodies.First->GetInverseMass();
+		//F32 angularVelChange = Math::Cross2D(impulse, relPos[0]) * contactInfo.Bodies.First->GetInverseInertia();
+		//contactInfo.Bodies.First->SetLinearVelocity(contactInfo.Bodies.First->GetLinearVelocity() + linearVelChange);
+		//contactInfo.Bodies.First->SetAngularVelocity(contactInfo.Bodies.First->GetAngularVelocity() + angularVelChange);
+
+		//if (contactInfo.Bodies.Second != nullptr)
+		//{
+		//	impulse = -impulse;
+		//	glm::vec2 linearVelChange = impulse * contactInfo.Bodies.Second->GetInverseMass();
+		//	F32 angularVelChange = Math::Cross2D(impulse, relPos[0]) * contactInfo.Bodies.Second->GetInverseInertia();
+		//	contactInfo.Bodies.Second->SetLinearVelocity(contactInfo.Bodies.Second->GetLinearVelocity() + linearVelChange);
+		//	contactInfo.Bodies.Second->SetAngularVelocity(contactInfo.Bodies.Second->GetAngularVelocity() + angularVelChange);
+		//}
+
+
+		//if (contactInfo.PenetrationDepth <= 0.0f) return;
+
+		//// Move each object relative to its mass.
+		//F32 totalInverseMass = contactInfo.Bodies.First->GetInverseMass();
+		//if (contactInfo.Bodies.Second) totalInverseMass += contactInfo.Bodies.Second->GetInverseMass();
+
+		//// If all particles have infinite mass, nothing can be done.
+		//if (totalInverseMass <= 0) return;
+
+		//// Find the amount of penetration resolution per unit of inverse mass.
+		//glm::vec2 movePerInvMass = contactInfo.Normal * (contactInfo.PenetrationDepth / totalInverseMass);
+
+		//// Apply the penetration resolution.
+		//contactInfo.Bodies.First->SetPosition(glm::vec3((glm::vec2(contactInfo.Bodies.First->GetPosition()) + movePerInvMass * contactInfo.Bodies.First->GetInverseMass()), 0.0f));
+		//// Particles[1]'s resolution is in opposite direction (if Particles[1] is present).
+		//if (contactInfo.Bodies.Second) contactInfo.Bodies.Second->SetPosition(glm::vec3((glm::vec2(contactInfo.Bodies.Second->GetPosition()) - movePerInvMass * contactInfo.Bodies.Second->GetInverseMass()), 0.0f));
 	}
 
 }

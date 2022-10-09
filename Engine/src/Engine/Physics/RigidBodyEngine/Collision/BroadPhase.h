@@ -7,13 +7,8 @@
 
 #include <array>
 
-/**
-* 
-* Heavily inspired by box2d (very heavily). 
-* Use callback in query (instead of returning a vector of elements / indices)
+/*
 * Use enlarged aabbs for less replace operations
-* 
-* 
 */
 
 namespace Engine
@@ -26,11 +21,19 @@ namespace Engine
 		std::array<I32, 2> NodeIds;
 	};
 
+	struct PotentialContactNode2D
+	{
+		PotentialContact2D Contact = { nullptr, nullptr, -1, -1 };
+		PotentialContactNode2D* Next = nullptr;
+		PotentialContactNode2D* Prev = nullptr;
+	};
+
 	// TODO: find a better name?
 	template <typename Bounds = Engine::DefaultBounds2D>
 	class BroadPhase2D
 	{
 	public:
+		~BroadPhase2D();
 		// Returns the undelying tree structure.
 		const BVHTree2D<Bounds> GetBVHTree() const { return m_Tree; }
 		
@@ -53,9 +56,11 @@ namespace Engine
 		// Find all contacts (pairs of objects, that possibly collide).
 		void FindContacts();
 
-		const std::vector<PotentialContact2D>& GetContacts();
+		const PotentialContactNode2D* GetContacts() const;
+		U32 GetNumberOfContacts() const { return m_NumberOfContacts; }
 
 		void RemoveContact(const PotentialContact2D& contact);
+		PotentialContactNode2D* AddContact(const PotentialContact2D& contact);
 
 	private:
 		void QueryCallback(I32 otherNode);
@@ -65,19 +70,25 @@ namespace Engine
 		// Since only the moving objects can generate contacts.
 		std::vector<I32> m_MovingBodies;
 
-		std::vector<PotentialContact2D> m_Contacts;
-
-		struct ContactMapElement
-		{
-			RigidBody2D* Body;
-			I32 ContactId;
-
-		};
-		std::unordered_map<RigidBody2D*, std::vector<ContactMapElement>> m_ContactsMap;
+		PotentialContactNode2D* m_ContactNodes = nullptr;
+		std::unordered_map<RigidBody2D*, std::vector<PotentialContactNode2D*>> m_ContactsMap;
+		U32 m_NumberOfContacts = 0;
 
 		// Node that may form a pair.
 		I32 m_CurrentlyTestedNode = BVHNode<Bounds>::NULL_NODE;
 	};
+
+	template<typename Bounds>
+	inline BroadPhase2D<Bounds>::~BroadPhase2D()
+	{
+		PotentialContactNode2D* currentNode = m_ContactNodes;
+		while (currentNode != nullptr)
+		{
+			PotentialContactNode2D* next = currentNode->Next;
+			Delete<PotentialContactNode2D>(currentNode);
+			currentNode = next;
+		}
+	}
 
 	template<typename Bounds>
 	inline void BroadPhase2D<Bounds>::Query(const Bounds& bounds)
@@ -133,14 +144,12 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline const std::vector<PotentialContact2D>& BroadPhase2D<Bounds>::GetContacts()
+	inline const PotentialContactNode2D* BroadPhase2D<Bounds>::GetContacts() const
 	{
 		// We remove contacts as need removing,
 		// return contacts as need returning,
 		// and we kill 'em as need killing.
-		
-		std::erase_if(m_Contacts, [](auto& contact) { return contact.NodeIds[0] == -1 && contact.NodeIds[1] == -1; });
-		return m_Contacts;
+		return m_ContactNodes;
 	}
 
 	template<typename Bounds>
@@ -148,21 +157,52 @@ namespace Engine
 	{
 		RigidBody2D* primaryBody = contact.Bodies[0];
 		RigidBody2D* otherBody = contact.Bodies[1];
-		U32 index = 0;
+		PotentialContactNode2D* toDelete = nullptr;
 		auto it = m_ContactsMap[primaryBody].begin();
 		while (it != m_ContactsMap[primaryBody].end())
 		{
-			if (it->Body == otherBody)
+			if (&(*it)->Contact == &contact)
 			{
-				index = it->ContactId;
+				toDelete = *it;
 				break;
 			}
 			it++;
 		}
 		// Remove from map.
 		m_ContactsMap[primaryBody].erase(it);
-		// Mark contact as deleted.
-		m_Contacts[index].NodeIds[0] = m_Contacts[index].NodeIds[1] = -1;
+		ENGINE_ASSERT(toDelete != nullptr, "Trying to delete unknown contact");
+		// Delete node.
+		if (toDelete == m_ContactNodes)
+		{
+			m_ContactNodes = toDelete->Next;
+		}
+		if (toDelete->Prev != nullptr)
+		{
+			toDelete->Prev->Next = toDelete->Next;
+		}
+		if (toDelete->Next != nullptr)
+		{
+			toDelete->Next->Prev = toDelete->Prev;
+		}
+		Delete<PotentialContactNode2D>(toDelete);
+		m_NumberOfContacts--;
+	}
+
+	template<typename Bounds>
+	inline PotentialContactNode2D* BroadPhase2D<Bounds>::AddContact(const PotentialContact2D& contact)
+	{
+		// Allocate new node.
+		PotentialContactNode2D* newNode = New<PotentialContactNode2D>();
+		newNode->Contact = contact;
+		// Insert node to the list.
+		newNode->Next = m_ContactNodes;
+		if (m_ContactNodes != nullptr)
+		{
+			m_ContactNodes->Prev = newNode;
+		}
+		m_ContactNodes = newNode;
+		m_NumberOfContacts++;
+		return newNode;
 	}
 
 	template<typename Bounds>
@@ -175,26 +215,22 @@ namespace Engine
 		// TODO: maybe find a better way.
 		RigidBody2D* primaryBody = reinterpret_cast<RigidBody2D*>(m_Tree.GetPayload(m_CurrentlyTestedNode));
 		RigidBody2D* otherBody = reinterpret_cast<RigidBody2D*>(m_Tree.GetPayload(otherNode));
-		bool alreadyExists = false;
-		for (auto& body : m_ContactsMap[primaryBody])
+		for (auto& contactNode : m_ContactsMap[primaryBody])
 		{
-			if (body.Body == otherBody)
+			if (contactNode->Contact.Bodies[1] == otherBody)
 			{
-				alreadyExists = true; 
 				return;
 			}
 		}
-		for (auto& body : m_ContactsMap[otherBody])
+		for (auto& contactNode : m_ContactsMap[otherBody])
 		{
-			if (body.Body == primaryBody)
+			if (contactNode->Contact.Bodies[1] == primaryBody)
 			{
-				alreadyExists = true;
 				return;
 			}
 		}
-
-		m_Contacts.push_back({ primaryBody, otherBody, m_CurrentlyTestedNode, otherNode });
-		m_ContactsMap[primaryBody].push_back(ContactMapElement{ otherBody, static_cast<I32>(m_Contacts.size() - 1) });
+		PotentialContactNode2D* newNode = AddContact({ primaryBody, otherBody, m_CurrentlyTestedNode, otherNode });
+		m_ContactsMap[primaryBody].push_back(newNode);
 	}
 
 }

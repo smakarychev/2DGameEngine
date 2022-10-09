@@ -10,23 +10,33 @@ namespace Engine
 	{
 	}
 
-	void NarrowPhase2D::Collide(const std::vector<PotentialContact2D>& potentialContacts)
+	void NarrowPhase2D::Collide(const PotentialContactNode2D* potentialContacts)
 	{
 		std::vector<ContactInfo2D> confirmedContacts;
-		for (auto& contact : potentialContacts)
+		const PotentialContactNode2D* currentContact = potentialContacts;
+		while (currentContact != nullptr)
 		{
 			// Check if there is still bounds collision.
-			if (m_BroadPhase.CheckCollision(contact.NodeIds[0], contact.NodeIds[1]) == false)
+			if (m_BroadPhase.CheckCollision(currentContact->Contact.NodeIds[0], currentContact->Contact.NodeIds[1]) == false)
 			{
-				m_BroadPhase.RemoveContact(contact);
+				m_BroadPhase.RemoveContact(currentContact->Contact);
+				currentContact = currentContact->Next;
 				continue;
 			}
 
-			Collider2D* colliderA = contact.Bodies[0]->GetCollider();
-			Collider2D* colliderB = contact.Bodies[1]->GetCollider();
+			Collider2D* colliderA = currentContact->Contact.Bodies[0]->GetCollider();
+			Collider2D* colliderB = currentContact->Contact.Bodies[1]->GetCollider();
 
 			Contact2D* narrowContact = ContactManager::Create(colliderA, colliderB);
-			narrowContact->GenerateContacts(confirmedContacts);		
+			narrowContact->GenerateContacts(confirmedContacts);
+			ContactManager::Destroy(narrowContact);
+
+			currentContact = currentContact->Next;
+		}
+		for (auto& contact : confirmedContacts)
+		{
+			ContactResolver::Resolve(contact);
+			
 		}
 		/*for (auto& contact : confirmedContacts)
 		{

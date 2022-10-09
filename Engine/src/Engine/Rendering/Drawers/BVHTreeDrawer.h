@@ -30,11 +30,11 @@ namespace Engine
 		}
 		for (const auto& node : tree.m_Nodes)
 		{
-			if (node.Height != -1 && node.IsLeaf() == false)
+			if (node.Height > 0)
 			{
 				Renderer2D::DrawQuad({
 					.Position{node.Bounds.Center},
-					.Scale{node.Bounds.HalfSize * 2.0f * (1.0f + 0.01f * node.Height)},
+					.Scale{node.Bounds.HalfSize * 2.0f * 1.01f},
 					.Color{Math::Clamp(0.2f * node.Height, 0.0f, 1.0f), Math::Clamp(0.8f - 0.2f * node.Height, 0.0f, 1.0f), 0.0f, 0.5f},
 					.Type{RendererAPI::PrimitiveType::Line} }
 				);

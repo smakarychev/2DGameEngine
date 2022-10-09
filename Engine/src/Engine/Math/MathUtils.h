@@ -87,7 +87,7 @@ namespace Engine
 		}
 
 		template <typename T>
-		inline T Max(const T& first, const T& second)
+		inline constexpr T Max(const T& first, const T& second)
 		{
 			return std::max<T>(first, second);
 		}

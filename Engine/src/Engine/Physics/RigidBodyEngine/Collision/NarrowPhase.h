@@ -14,9 +14,8 @@ namespace Engine
 	{
 	public:
 		NarrowPhase2D(BroadPhase2D<>& broadPhase);
-		void Collide(const std::vector<PotentialContact2D>& potentialContacts);
+		void Collide(const PotentialContactNode2D* potentialContacts);
 	private:
-		ContactManager m_ContactManager;
 		BroadPhase2D<>& m_BroadPhase;
 	};
 }

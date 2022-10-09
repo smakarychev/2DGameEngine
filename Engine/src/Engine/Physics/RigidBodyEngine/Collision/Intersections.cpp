@@ -121,7 +121,7 @@ namespace Engine
 
 		// Get space normal.
 		glm::vec2 edgeDir = edgeEnd - edgeStart;
-		glm::vec2 normal = glm::vec2{ edgeDir.y, -edgeDir.x };
+		glm::vec2 normal = glm::vec2{ -edgeDir.y, edgeDir.x };
 		normal = glm::normalize(normal);
 		F32 offset = -glm::dot(normal, edgeStart);
 		// Compute the projection interval raduis.
