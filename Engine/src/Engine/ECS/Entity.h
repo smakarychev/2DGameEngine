@@ -22,7 +22,7 @@ namespace Engine
 		bool IsActive = true;
 
 		// All possible components (remember, it is testing).
-		std::shared_ptr<Component::Tranform2D>		Transform2D;
+		std::shared_ptr<Component::Transform2D>		Transform2D;
 		std::shared_ptr<Component::RigidBody2D>		RigidBody2D;
 		std::shared_ptr<Component::Mesh2D>			Mesh2D;
 		std::shared_ptr<Component::LifeSpan>		LifeSpan;

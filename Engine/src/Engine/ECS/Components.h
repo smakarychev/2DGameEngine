@@ -22,15 +22,15 @@ namespace Engine
 				Position(pos), Rotation(rot), Scale(scale) {}
 		};
 
-		struct Tranform2D
+		struct Transform2D
 		{
 			glm::vec3 Position;
 			glm::vec2 Scale;
 			F32 Rotation;
-			Tranform2D(const glm::vec3& pos, const glm::vec2& scale, F32 rotation) :
+			Transform2D(const glm::vec3& pos, const glm::vec2& scale, F32 rotation) :
 				Position(pos), Scale(scale), Rotation(rotation)	
 			{ }
-			Tranform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation) :
+			Transform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation) :
 				Position(glm::vec3(pos, 0.0f)), Scale(scale), Rotation(rotation)	
 			{ }
 		};

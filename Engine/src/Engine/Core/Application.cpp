@@ -42,7 +42,7 @@ namespace Engine {
 
 	void Application::OnUpdate()
 	{
-
+	
 		m_Window->OnUpdate();
 
 		m_ImguiLayer->BeginFrame();

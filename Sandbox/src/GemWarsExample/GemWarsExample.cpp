@@ -72,7 +72,7 @@ void GemWarsExample::SpawnPlayer()
 {
     Entity* entity = &m_Manager.AddEntity("player");
     F32 playerRadius = 0.2f;
-    entity->Transform2D = CreateRef<Component::Tranform2D>(glm::vec2{ 0.0f, 0.0f }, glm::vec2{ playerRadius }, 0.0f);
+    entity->Transform2D = CreateRef<Component::Transform2D>(glm::vec2{ 0.0f, 0.0f }, glm::vec2{ playerRadius }, 0.0f);
     entity->RigidBody2D = CreateRef<Component::RigidBody2D>(playerRadius, 2.0f);
     entity->Mesh2D = CreateRef<Component::Mesh2D>(8, nullptr, glm::vec4{ 0.78f, 0.55f, 0.16f, 1.0f });
     entity->Input = CreateRef<Component::Input>();
@@ -102,7 +102,7 @@ void GemWarsExample::sEnemySpawner()
             glm::vec2 allowedXRegion = glm::vec2{ m_Bounds.BottomLeft.x + enemyRadius, m_Bounds.TopRight.x - enemyRadius };
             glm::vec2 allowedYRegion = glm::vec2{ m_Bounds.BottomLeft.y + enemyRadius, m_Bounds.TopRight.y - enemyRadius };
             glm::vec2 enemyPosition = glm::vec2(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y));
-            enemy.Transform2D = CreateRef<Component::Tranform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
+            enemy.Transform2D = CreateRef<Component::Transform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
             enemy.RigidBody2D = CreateRef<Component::RigidBody2D>(enemyRadius, Random::Float(2.0, 5.0f), Random::Float(glm::radians(30.0f), glm::radians(90.0f)));
             while (Collide(enemy, *m_Player))
             {
@@ -139,7 +139,7 @@ void GemWarsExample::SpawnParticles(Entity& entity)
         glm::vec2 particleVelocity = glm::normalize(particlePos - entity.Transform2D->Position);
 
         Entity& particle = m_Manager.AddEntity("particle");
-        particle.Transform2D = CreateRef<Component::Tranform2D>(particlePos, particlesSize, 0.0f);
+        particle.Transform2D = CreateRef<Component::Transform2D>(particlePos, particlesSize, 0.0f);
         particle.RigidBody2D = CreateRef<Component::RigidBody2D>(particlesSize.x, particleSpeed);
         particle.RigidBody2D->Velocity = particleVelocity;
         particle.Mesh2D = CreateRef<Component::Mesh2D>(numberOfParticles, nullptr, entity.Mesh2D->Tint);
@@ -157,7 +157,7 @@ void GemWarsExample::SpawnBullet(Entity& entity, const glm::vec2& target)
     bulletVelocity = glm::normalize(bulletVelocity);
     glm::vec2 bulletPosition = glm::vec2(entity.Transform2D->Position) + entity.RigidBody2D->CollisionRadius * bulletVelocity;
     Entity& bullet = m_Manager.AddEntity("bullet");
-    bullet.Transform2D = CreateRef<Component::Tranform2D>(bulletPosition, glm::vec2{ bulletRadius }, 0.0f);
+    bullet.Transform2D = CreateRef<Component::Transform2D>(bulletPosition, glm::vec2{ bulletRadius }, 0.0f);
     bullet.RigidBody2D = CreateRef<Component::RigidBody2D>(bulletRadius, bulletSpeed);
     bullet.RigidBody2D->Velocity = bulletVelocity;
     bullet.Mesh2D = CreateRef<Component::Mesh2D>(4, nullptr, glm::vec4(0.6f, 0.9f, 0.2f, 1.0f));
