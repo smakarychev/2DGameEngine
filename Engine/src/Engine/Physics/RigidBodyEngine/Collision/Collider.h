@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Core/Core.h"
+#include "Engine/Common/Geometry2D.h"
 #include "Engine/Math/MathUtils.h"
 #include "Engine/Memory/MemoryManager.h"
 
@@ -147,7 +148,9 @@ namespace Engine
 
 		static void Destroy(Collider2D* collider);
 
-		virtual Collider2D* Clone() { return nullptr; }
+		virtual Collider2D* Clone() = 0;
+		
+		virtual DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const = 0;
 
 	protected:
 		Type m_Type;
@@ -161,6 +164,7 @@ namespace Engine
 	public:
 		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
 		Collider2D* Clone() override;
+		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
@@ -171,6 +175,7 @@ namespace Engine
 	public:
 		CircleCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, F32 radius = 1.0f);
 		Collider2D* Clone() override;
+		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		F32 Radius;
 		// Center is relative to it's rigidbody.
 		glm::vec3 Center;
@@ -181,8 +186,8 @@ namespace Engine
 	{
 	public:
 		EdgeCollider2D(const glm::vec3& start = glm::vec3{ -1.0f, 0.0f, 0.0f }, const glm::vec3& end = glm::vec3{ 1.0f, 0.0f, 0.0f });
-			
 		Collider2D* Clone() override;
+		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
 		// Relative to rigidbody.
 		glm::vec3 Start;
