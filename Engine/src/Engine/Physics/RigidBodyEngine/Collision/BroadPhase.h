@@ -56,13 +56,16 @@ namespace Engine
 		// Find all contacts (pairs of objects, that possibly collide).
 		void FindContacts();
 
+		// Get user payload stored in bvh.
+		void* GetPayload(I32 nodeId) const;
+
 		const PotentialContactNode2D* GetContacts() const;
 		U32 GetNumberOfContacts() const { return m_NumberOfContacts; }
 
 		void RemoveContact(const PotentialContact2D& contact);
-		PotentialContactNode2D* AddContact(const PotentialContact2D& contact);
 
 	private:
+		PotentialContactNode2D* AddContact(const PotentialContact2D& contact);
 		void QueryCallback(I32 otherNode);
 	private:
 		BVHTree2D<Bounds> m_Tree;
@@ -141,6 +144,12 @@ namespace Engine
 			m_Tree.ResetMoved(movingId);
 		}
 		m_MovingBodies.clear();
+	}
+
+	template<typename Bounds>
+	inline void* BroadPhase2D<Bounds>::GetPayload(I32 nodeId) const
+	{
+		return m_Tree.GetPayload(nodeId);
 	}
 
 	template<typename Bounds>

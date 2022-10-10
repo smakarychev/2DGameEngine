@@ -9,7 +9,7 @@ namespace Engine
 {
 	using namespace Types;
 
-	// TODO: abandon narrow phase for contact manager (basically just a name change)?
+	//? abandon narrow phase for contact manager (basically just a name change)?
 	class NarrowPhase2D
 	{
 	public:

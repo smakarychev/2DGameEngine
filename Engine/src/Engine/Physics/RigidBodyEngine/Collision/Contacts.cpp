@@ -396,6 +396,8 @@ namespace Engine
 	{
 		RigidBody2D* first  = contactInfo.Bodies.First;
 		RigidBody2D* second = contactInfo.Bodies.Second;
+		//x temp
+		if (!(first->HasFiniteMass() || second->HasFiniteMass())) return;
 
 		glm::vec2 relativeVel = first->GetLinearVelocity() - second->GetLinearVelocity();
 		// Collision resolves by itself.
@@ -409,10 +411,13 @@ namespace Engine
 		second->SetLinearVelocity(second->GetLinearVelocity() - impulse * second->GetInverseMass() * contactInfo.Normal);
 
 		//x Very temporal thing.
-		if (first->HasFiniteMass())
-			first->SetPosition(first->GetPosition()   + glm::vec3(contactInfo.Normal * contactInfo.PenetrationDepth * 0.5f, first->GetPosition().z));
-		if (second->HasFiniteMass())
-			second->SetPosition(second->GetPosition() - glm::vec3(contactInfo.Normal * contactInfo.PenetrationDepth * 0.5f, second->GetPosition().z));
+		F32 totalInverseMass = first->GetInverseMass() + second->GetInverseMass();
+		// Find the amount of penetration resolution per unit of inverse mass.
+		glm::vec2 movePerInvMass = contactInfo.Normal * (contactInfo.PenetrationDepth / totalInverseMass);
+		// Apply the penetration resolution.
+		first->SetPosition(glm::vec3((glm::vec2(first->GetPosition()) + movePerInvMass * first->GetInverseMass()), 0.0f));
+		second->SetPosition(glm::vec3((glm::vec2(second->GetPosition()) + movePerInvMass * second->GetInverseMass()), 0.0f));
+
 		//if (!contactInfo.Bodies.First->HasFiniteMass() && !contactInfo.Bodies.Second->HasFiniteMass()) return;
 		//const glm::vec2& normal = contactInfo.Normal;
 		//// TODO: use collider center instead of body center?

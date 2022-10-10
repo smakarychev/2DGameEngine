@@ -310,44 +310,41 @@ namespace Engine
 
 			// `area` instead of perimeter to be consistent with 3d case.
 			F32 area = m_Nodes[currentNode].Bounds.GetPerimeter();
-			Bounds combined = Bounds{ leafBounds, m_Nodes[currentNode].Bounds };
-			F32 combinedArea = combined.GetPerimeter();
 			// Cost of inserting the leaf to this node.
-			// TODO: 2.0 ?
-			F32 cost = 2.0f * combinedArea;
-			F32 inheritanceCost = 2.0f * (combinedArea - area);
+			//? 2.0 ?
+			F32 costThreshold = 2.0f * area;
 
 			// Determine the cost of descending to childs.
 			F32 costLeft = 0.0f;
 			if (m_Nodes[leftChild].IsLeaf())
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[leftChild].Bounds };
-				costLeft = childCombined.GetPerimeter() + inheritanceCost;
+				costLeft = childCombined.GetPerimeter();
 			}
 			else
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[leftChild].Bounds };
 				F32 oldArea = m_Nodes[leftChild].Bounds.GetPerimeter();
 				F32 newArea = childCombined.GetPerimeter();
-				costLeft = (newArea - oldArea) + inheritanceCost;
+				costLeft = (newArea - oldArea);
 			}
 
 			F32 costRight = 0.0f;
 			if (m_Nodes[rightChild].IsLeaf())
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[rightChild].Bounds };
-				costRight = childCombined.GetPerimeter() + inheritanceCost;
+				costRight = childCombined.GetPerimeter();
 			}
 			else
 			{
 				Bounds childCombined{ leafBounds, m_Nodes[rightChild].Bounds };
 				F32 oldArea = m_Nodes[rightChild].Bounds.GetPerimeter();
 				F32 newArea = childCombined.GetPerimeter();
-				costRight = (newArea - oldArea) + inheritanceCost;
+				costRight = (newArea - oldArea);
 			}
 
 			// Early exit.
-			if (cost < costLeft && cost < costRight) break;
+			if (costThreshold < costLeft && costThreshold < costRight) break;
 			// Else descend.
 			if (costLeft < costRight) currentNode = leftChild;
 			else currentNode = rightChild;

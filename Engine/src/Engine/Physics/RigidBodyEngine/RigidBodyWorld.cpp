@@ -7,7 +7,7 @@
 namespace Engine
 {
 	RigidBody2DWorld::RigidBody2DWorld(const glm::vec2& gravity)
-		: m_Gravity(gravity)
+		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase)
 	{
 	}
 
@@ -20,6 +20,10 @@ namespace Engine
 		{
 			newBody.SetCollider(rbDef.ColliderDef.Collider->Clone());
 			newBody.GetCollider()->SetAttachedRigidBody(&newBody);
+			// Add body to broad phase and safe returned nodeId for later modification of bvh tree.
+			// TODO: store only bodies that are dynamic / kinematic.
+			I32 nodeId = m_BroadPhase.InsertRigidBody(&newBody, newBody.GetCollider()->GenerateBounds(newBody.GetTransform()));
+			m_BroadPhaseNodes.push_back(nodeId);
 		}
 		return newBody;
 	}
@@ -27,6 +31,10 @@ namespace Engine
 	void RigidBody2DWorld::Update(F32 deltaTime)
 	{
 		VelocityVerletIntegration(deltaTime);
+		SynchronizeBroadPhase(deltaTime);
+		//TODO: not the final version.
+		m_BroadPhase.FindContacts();
+		m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
 	}
 
 	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)
@@ -91,6 +99,15 @@ namespace Engine
 			{
 				globalForce->ApplyForce(*body);
 			}
+		}
+	}
+
+	void RigidBody2DWorld::SynchronizeBroadPhase(F32 deltaTime)
+	{
+		for (auto nodeId : m_BroadPhaseNodes)
+		{
+			RigidBody2D* body = reinterpret_cast<RigidBody2D*>(m_BroadPhase.GetPayload(nodeId));
+			m_BroadPhase.MoveRigidBody(nodeId, body->GetCollider()->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
 		}
 	}
 
