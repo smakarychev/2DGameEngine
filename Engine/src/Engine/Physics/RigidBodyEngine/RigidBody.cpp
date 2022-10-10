@@ -45,37 +45,29 @@ namespace Engine
 		AddTorque((point.x - m_Position.x) * force.y - (point.y - m_Position.y) * force.x);
 	}
 	
+	Transform2D RigidBody2D::GetTransform() const
+	{
+		return { .Translation {m_Position.x, m_Position.y}, .Rotation{m_Rotation.x, m_Rotation.y} };
+	}
+
 	glm::vec2 RigidBody2D::TransformToWorld(const glm::vec2& point) const
 	{
-		return glm::vec2{
-			point.x * m_Rotation.x - point.y * m_Rotation.y + m_Position.x,
-			point.x * m_Rotation.y + point.y * m_Rotation.x + m_Position.y
-		};
+		return GetTransform().Transform(point);
 	}
 	
 	glm::vec2 RigidBody2D::TransformDirectionToWorld(const glm::vec2& dir) const
 	{
-		return glm::vec2{
-			dir.x * m_Rotation.x - dir.y * m_Rotation.y,
-			dir.x * m_Rotation.y + dir.y * m_Rotation.x
-		};
+		return GetTransform().TransformDirection(dir);
 	}
 
 	glm::vec2 RigidBody2D::TransformToLocal(const glm::vec2& point) const
 	{
-		glm::vec2 translated = point - glm::vec2(m_Position);
-		return glm::vec2{
-			 translated.x * m_Rotation.x + translated.y * m_Rotation.y,
-			-translated.x * m_Rotation.y + translated.y * m_Rotation.x
-		};
+		return GetTransform().InverseTransform(point);
 	}
 
 	glm::vec2 RigidBody2D::TransformDirectionToLocal(const glm::vec2& dir) const
 	{
-		return glm::vec2{
-			 dir.x * m_Rotation.x + dir.y * m_Rotation.y,
-			-dir.x * m_Rotation.y + dir.y * m_Rotation.x
-		};
+		return GetTransform().InverseTransformDirection(dir);
 	}
 	
 	

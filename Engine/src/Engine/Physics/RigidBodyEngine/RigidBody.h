@@ -4,6 +4,7 @@
 
 #include "Engine/Physics/RigidBodyEngine/PhysicsMaterial.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Collider.h"
+#include "Engine/Common/Geometry2D.h"
 
 #include <glm/glm.hpp>
 
@@ -93,6 +94,8 @@ namespace Engine
 		// Apply the given force at some point (in world space).
 		void ApplyForce(const glm::vec2& force, const glm::vec2& point);
 
+		// Returns tranform, associated with rigidbody.
+		Transform2D GetTransform() const;
 		glm::vec2 TransformToWorld(const glm::vec2& point) const;
 		glm::vec2 TransformDirectionToWorld(const glm::vec2& dir) const;
 		glm::vec2 TransformToLocal(const glm::vec2& point) const;
