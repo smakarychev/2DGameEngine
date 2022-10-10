@@ -465,12 +465,13 @@ namespace Engine
 
 	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation)
 	{
+		vertex.Position *= glm::vec3(scale, 1.0f);
 		vertex.Position = glm::vec3{
 			rotation.x * vertex.Position.x - rotation.y * vertex.Position.y,
 			rotation.y * vertex.Position.x + rotation.x * vertex.Position.y,
 			vertex.Position.z
 		};
-		vertex.Position = vertex.Position * glm::vec3(scale, 1.0) + position;
+		vertex.Position += position;
 	}
 
 	void Renderer2D::InitVertexColorData(BatchVertex& vertex, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint, const glm::vec2& textureTiling)
