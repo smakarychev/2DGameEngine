@@ -9,16 +9,16 @@
 
 namespace Engine
 {
-	std::shared_ptr<Shader> Shader::ReadShaderFromFile(const std::filesystem::path& path)
+	Ref<Shader> Shader::ReadShaderFromFile(const std::filesystem::path& path)
 	{
 
 		return ShaderLoader::LoadShaderFromFile(path);
 	}
 
-	std::shared_ptr<Shader> Shader::CreateShaderFromSource(const std::string& name, const std::string& source)
+	Ref<Shader> Shader::CreateShaderFromSource(const std::string& name, const std::string& source)
 	{
 
-		return std::shared_ptr<Shader>(New<OpenGLShader>(name, source), Delete<OpenGLShader>);
+		return CreateRef<OpenGLShader>(name, source);
 	}
 }
 

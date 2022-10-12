@@ -299,7 +299,7 @@ namespace Engine
 				if (Input::GetMouseButton(Mouse::Button1))
 				{
 					F32 deltaDistance = yOffset * ZoomSpeed() * dt;
-					m_Distance += yOffset * ZoomSpeed() * dt;
+					m_Distance += deltaDistance;
 					if (m_Distance < 0.0) m_Distance = 1;
 					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->m_OrthoZoom = m_Distance;

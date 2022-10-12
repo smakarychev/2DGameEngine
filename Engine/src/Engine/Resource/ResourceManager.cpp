@@ -128,7 +128,7 @@ namespace Engine
 				msdfgen::BitmapConstRef<msdfgen::byte, 3> bitmap = generator.atlasStorage();
 				Texture::TextureData data;
 				data.Channels = 3;
-				data.Width = bitmap.width; data.Height = bitmap.height;
+				data.Width = U32(bitmap.width); data.Height = U32(bitmap.height);
 				data.Data = const_cast<U8*>(bitmap.pixels);
 				data.Minification = Texture::Filter::Linear;
 				data.Magnification = Texture::Filter::Linear;

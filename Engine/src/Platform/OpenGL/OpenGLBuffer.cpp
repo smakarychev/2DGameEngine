@@ -89,7 +89,8 @@ namespace Engine
 		{
 			glEnableVertexArrayAttrib(m_Id, m_AttributeIndex);
 			glVertexArrayAttribBinding(m_Id, m_AttributeIndex, m_VertexBufferIndex);
-			glVertexArrayAttribFormat(m_Id,
+			glVertexArrayAttribFormat(
+				(GLint)m_Id,
 				m_AttributeIndex,
 				layoutElement.Count,
 				GetOpenGLAPIType(layoutElement.Type),

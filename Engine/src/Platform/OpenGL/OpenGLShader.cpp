@@ -11,6 +11,11 @@ namespace Engine
 		CreateShaderProgram(shadersSources);
 	}
 
+	OpenGLShader::~OpenGLShader()
+	{
+		glDeleteProgram(m_Id);
+	}
+
 	void OpenGLShader::Bind()
 	{
 		glUseProgram(m_Id);

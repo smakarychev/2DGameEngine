@@ -193,7 +193,7 @@ namespace Engine
 		U64 begin = intervals.front().Interval.Begin;
 		U64 end = intervals.front().Interval.End;
 		U64 currentMark = intervals.front().Mark;
-		for (int i = 1; i < intervals.size(); i++)
+		for (U32 i = 1; i < intervals.size(); i++)
 		{
 			if (intervals[i].Mark != currentMark)
 			{

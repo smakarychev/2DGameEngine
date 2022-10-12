@@ -98,7 +98,7 @@ namespace Engine
 			return std::min<T>(first, second);
 		}
 
-		template <typename T>
+		template <typename T = float>
 		inline constexpr T Pi()
 		{
 			return static_cast<T>(3.14159265358979323846);

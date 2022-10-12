@@ -106,7 +106,9 @@ namespace Engine
 		}
 
 		// Here we add block to the level only if it buddy is not free.
-		while (level >= 0)
+		//while (level >= 0)
+		// The expression above is always true.
+		for (;;)
 		{
 			if (level != 0 && IsBlockFree(globalBuddyIndex))
 			{

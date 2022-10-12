@@ -30,8 +30,8 @@ namespace Engine
 			dataFormat = GL_RGB;
 		}
 
-		glTextureStorage2D(m_Id, 1, internalFormat, textureData.Width, textureData.Height);
-		glTextureSubImage2D(m_Id, 0, 0, 0, textureData.Width, textureData.Height, dataFormat, GL_UNSIGNED_BYTE, textureData.Data);
+		glTextureStorage2D(m_Id, 1, internalFormat, (GLsizei)textureData.Width, (GLsizei)textureData.Height);
+		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GL_UNSIGNED_BYTE, textureData.Data);
 
 		if (textureData.GenerateBitmaps)
 		{

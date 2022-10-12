@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Core/Core.h"
 #include "Engine/Core/Types.h"
 
 #include <glm/glm.hpp>
@@ -28,8 +29,9 @@ namespace Engine
 	class Shader
 	{
 	public:
-		static std::shared_ptr<Shader> ReadShaderFromFile(const std::filesystem::path& path);
-		static std::shared_ptr<Shader> CreateShaderFromSource(const std::string& name, const std::string& source);
+		virtual ~Shader() {}
+		static Ref<Shader> ReadShaderFromFile(const std::filesystem::path& path);
+		static Ref<Shader> CreateShaderFromSource(const std::string& name, const std::string& source);
 
 		virtual U32 GetId() const = 0;
 
