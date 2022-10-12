@@ -33,7 +33,7 @@ namespace Engine
 		I32 GetFirstFree();
 
 		// Returns underlying union.
-		FreeElement& Get(I32 n);
+		FreeElement Get(I32 n);
 
 		U32 GetNumberOfFreeElements() const;
 
@@ -105,7 +105,7 @@ namespace Engine
 	}
 
 	template<typename T>
-	FreeList<T>::FreeElement& FreeList<T>::Get(I32 n)
+	FreeList<T>::FreeElement FreeList<T>::Get(I32 n)
 	{
 		return m_Data[n];
 	}
