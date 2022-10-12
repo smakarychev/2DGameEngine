@@ -38,14 +38,13 @@ namespace Engine
 
 	struct AABB2D : public Bounds2D<AABB2D>
 	{
-		glm::vec3 Center;
+		glm::vec2 Center;
 		glm::vec2 HalfSize;
-		AABB2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
+		AABB2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
 			: Center(center), HalfSize(halfSize)
 		{}
 		AABB2D(const AABB2D& first, const AABB2D& second)
 		{
-			ENGINE_CORE_ASSERT(first.Center.z == second.Center.z, "Boxes exist on the different planes.");
 			glm::vec2 min = {
 				Math::Min(first.Center.x - first.HalfSize.x, second.Center.x - second.HalfSize.x),
 				Math::Min(first.Center.y - first.HalfSize.y, second.Center.y - second.HalfSize.y)
@@ -54,7 +53,7 @@ namespace Engine
 				Math::Max(first.Center.x + first.HalfSize.x, second.Center.x + second.HalfSize.x),
 				Math::Max(first.Center.y + first.HalfSize.y, second.Center.y + second.HalfSize.y)
 			};
-			Center = glm::vec3((min + max) * 0.5f, first.Center.z);
+			Center = glm::vec2((min + max) * 0.5f);
 			HalfSize = (max - min) * 0.5f;
 		}
 
@@ -80,14 +79,13 @@ namespace Engine
 
 	struct CircleBounds2D : public Bounds2D<CircleBounds2D>
 	{
-		glm::vec3 Center;
+		glm::vec2 Center;
 		F32 Radius;
-		CircleBounds2D(const glm::vec3& center = glm::vec3{0.0f}, F32 radius = 1.0f)
+		CircleBounds2D(const glm::vec2& center = glm::vec2{0.0f}, F32 radius = 1.0f)
 			: Center(center), Radius(radius)
 		{}
 		CircleBounds2D(const CircleBounds2D& first, const CircleBounds2D& second)
 		{
-			ENGINE_CORE_ASSERT(first.Center.z == second.Center.z, "Circles exist on the different planes.");
 			if (CircleContain2D(first, second))
 			{
 				const CircleBounds2D& biggest = first.Radius > second.Radius ? first : second;
@@ -95,7 +93,7 @@ namespace Engine
 				Radius = biggest.Radius;
 				return;
 			}
-			glm::vec3 centerOffset = second.Center - first.Center;
+			glm::vec2 centerOffset = second.Center - first.Center;
 			F32 distance = glm::distance(first.Center, second.Center);
 			Radius = (first.Radius + second.Radius + distance) * 0.5f;
 			Center = first.Center;
@@ -162,35 +160,35 @@ namespace Engine
 	class BoxCollider2D : public Collider2D
 	{
 	public:
-		BoxCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
+		BoxCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
-		glm::vec3 Center;
+		glm::vec2 Center;
 	};
 	
 	class CircleCollider2D : public Collider2D
 	{
 	public:
-		CircleCollider2D(const glm::vec3& center = glm::vec3{ 0.0f }, F32 radius = 1.0f);
+		CircleCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, F32 radius = 1.0f);
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		F32 Radius;
 		// Center is relative to it's rigidbody.
-		glm::vec3 Center;
+		glm::vec2 Center;
 	};
 
 	// Line segment.
 	class EdgeCollider2D : public Collider2D
 	{
 	public:
-		EdgeCollider2D(const glm::vec3& start = glm::vec3{ -1.0f, 0.0f, 0.0f }, const glm::vec3& end = glm::vec3{ 1.0f, 0.0f, 0.0f });
+		EdgeCollider2D(const glm::vec2& start = glm::vec2{ -1.0f, 0.0f }, const glm::vec2& end = glm::vec2{ 1.0f, 0.0f });
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
 		// Relative to rigidbody.
-		glm::vec3 Start;
-		glm::vec3 End;
+		glm::vec2 Start;
+		glm::vec2 End;
 	};
 }

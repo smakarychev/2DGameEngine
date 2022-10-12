@@ -21,7 +21,7 @@ namespace Engine
 			if (node.IsLeaf())
 			{
 				Renderer2D::DrawQuad({ 
-					.Position{node.Bounds.Center},
+					.Position{node.Bounds.Center, 0.0f},
 					.Scale{node.Bounds.HalfSize * 2.0f},
 					.Color{0.0f, 0.0f, 0.8f, 0.8f},
 					.Type{RendererAPI::PrimitiveType::Line} }
@@ -33,9 +33,9 @@ namespace Engine
 			if (node.Height > 0)
 			{
 				Renderer2D::DrawQuad({
-					.Position{node.Bounds.Center},
+					.Position{node.Bounds.Center, 0.0f},
 					.Scale{node.Bounds.HalfSize * 2.0f * 1.01f},
-					.Color{Math::Clamp(0.2f * node.Height, 0.0f, 1.0f), Math::Clamp(0.8f - 0.2f * node.Height, 0.0f, 1.0f), 0.0f, 0.5f},
+					.Color{Math::Clamp(0.1f * node.Height, 0.0f, 1.0f), Math::Clamp(0.8f - 0.1f * node.Height, 0.0f, 1.0f), 0.0f, 0.5f},
 					.Type{RendererAPI::PrimitiveType::Line} }
 				);
 			}

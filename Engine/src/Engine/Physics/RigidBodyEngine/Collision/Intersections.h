@@ -44,5 +44,6 @@ namespace Engine
 
 	// Axis is expected to be normalized.
 	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis);
+	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis, const glm::vec2& distanceVec);
 
 }

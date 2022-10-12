@@ -3,7 +3,6 @@
 #include "Engine/Core/Core.h"
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 #include "BVHTree.h"
-#include "Engine/Common/FreeList.h"
 
 #include <array>
 
@@ -23,7 +22,7 @@ namespace Engine
 
 	struct PotentialContactNode2D
 	{
-		PotentialContact2D Contact = { nullptr, nullptr, -1, -1 };
+		PotentialContact2D Contact = { { nullptr, nullptr }, {-1, -1} };
 		PotentialContactNode2D* Next = nullptr;
 		PotentialContactNode2D* Prev = nullptr;
 	};
@@ -238,7 +237,7 @@ namespace Engine
 				return;
 			}
 		}
-		PotentialContactNode2D* newNode = AddContact({ primaryBody, otherBody, m_CurrentlyTestedNode, otherNode });
+		PotentialContactNode2D* newNode = AddContact({ {primaryBody, otherBody},{ m_CurrentlyTestedNode, otherNode } });
 		m_ContactsMap[primaryBody].push_back(newNode);
 	}
 

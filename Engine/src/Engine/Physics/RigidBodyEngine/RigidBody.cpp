@@ -4,7 +4,7 @@
 
 namespace Engine
 {
-	RigidBody2D::RigidBody2D(const glm::vec3& position, F32 mass, F32 inertia) :
+	RigidBody2D::RigidBody2D(const glm::vec2& position, F32 mass, F32 inertia) :
 		m_Position(position), m_Rotation(1.0f, 0.0f),
 		m_LinearVelocity(0.0f), m_LinearAcceleration(0.0f), m_LinearDamping(0.0f),
 		m_AngularVelocity(0.0f), m_AngularAcceleration(0.0f), m_AngularDamping(0.0f),

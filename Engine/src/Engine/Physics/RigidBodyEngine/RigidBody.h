@@ -14,7 +14,7 @@ namespace Engine
 
 	struct RigidBodyDef2D
 	{
-		glm::vec3 Position = glm::vec3{ 0.0f };
+		glm::vec2 Position = glm::vec2{ 0.0f };
 		F32 Mass = 1.0f;
 		F32 Inertia = 1.0f;
 		PhysicsMaterial PhysicsMaterial;
@@ -24,7 +24,7 @@ namespace Engine
 	class RigidBody2D
 	{
 	public:
-		RigidBody2D(const glm::vec3& position = glm::vec3{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
+		RigidBody2D(const glm::vec2& position = glm::vec2{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
 		~RigidBody2D();
 
 		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
@@ -33,8 +33,8 @@ namespace Engine
 		void SetCollider(Collider2D* collider) { m_Collider = collider; }
 		Collider2D* GetCollider() { return m_Collider; }
 
-		void SetPosition(const glm::vec3& pos) { m_Position = pos; }
-		const glm::vec3& GetPosition() const { return m_Position; }
+		void SetPosition(const glm::vec2& pos) { m_Position = pos; }
+		const glm::vec2& GetPosition() const { return m_Position; }
 
 		void SetLinearVelocity(const glm::vec2& vel) { m_LinearVelocity = vel; }
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
@@ -105,7 +105,7 @@ namespace Engine
 		Collider2D* m_Collider;
 
 		// vec3 for position is a bit strange, for now 3rd value is used as layer.
-		glm::vec3 m_Position;
+		glm::vec2 m_Position;
 		glm::vec2 m_Rotation;
 
 		glm::vec2 m_LinearVelocity;

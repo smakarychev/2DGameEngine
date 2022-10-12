@@ -4,22 +4,20 @@
 
 namespace Engine
 {
-	BoxCollider2D::BoxCollider2D(const glm::vec3& center, const glm::vec2& halfSize)
+	BoxCollider2D::BoxCollider2D(const glm::vec2& center, const glm::vec2& halfSize)
 		: Collider2D(Type::Box),
 		HalfSize(halfSize), Center(center)
 	{}
 
-	CircleCollider2D::CircleCollider2D(const glm::vec3& center, F32 radius)
+	CircleCollider2D::CircleCollider2D(const glm::vec2& center, F32 radius)
 		: Collider2D(Type::Circle),
 		Radius(radius), Center(center)
 	{}
 
-	EdgeCollider2D::EdgeCollider2D(const glm::vec3& start, const glm::vec3& end)
+	EdgeCollider2D::EdgeCollider2D(const glm::vec2& start, const glm::vec2& end)
 		: Collider2D(Type::Edge),
 		Start(start), End(end)
-	{
-		ENGINE_CORE_ASSERT(Start.z == End.z, "Edge must have same z coordinate.");
-	}
+	{}
 
 	Collider2D* BoxCollider2D::Clone()
 	{
@@ -42,7 +40,7 @@ namespace Engine
 			max = glm::vec2{ Math::Max(max.x, transformed.x), Math::Max(max.y, transformed.y) };
 			min = glm::vec2{ Math::Min(min.x, transformed.x), Math::Min(min.y, transformed.y) };
 		}
-		return AABB2D{ glm::vec3((max + min) * 0.5f, Center.z), (max - min) * 0.5f };
+		return AABB2D{ (max + min) * 0.5f, (max - min) * 0.5f };
 	}
 
 	Collider2D* CircleCollider2D::Clone()
@@ -52,7 +50,7 @@ namespace Engine
 
 	DefaultBounds2D CircleCollider2D::GenerateBounds(const Transform2D& transform) const
 	{
-		return AABB2D{ glm::vec3(transform.Transform(Center), Center.z), {Radius, Radius} };
+		return AABB2D{ transform.Transform(Center), {Radius, Radius} };
 	}
 
 	Collider2D* EdgeCollider2D::Clone()
@@ -72,7 +70,7 @@ namespace Engine
 			Math::Min(worldEnd.x, worldStart.x),
 			Math::Min(worldEnd.y, worldStart.y)
 		};
-		return AABB2D{ glm::vec3((max + min) * 0.5f, End.z), (max - min) * 0.5f };
+		return AABB2D{ (max + min) * 0.5f, (max - min) * 0.5f };
 	}
 
 	void Collider2D::Destroy(Collider2D* collider)

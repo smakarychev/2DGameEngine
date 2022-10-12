@@ -503,7 +503,7 @@ namespace Engine
 		// Create a linked list of free nodes.
 		for (U32 i = startIndex; i < endIndex - 1; i++)
 		{
-			m_Nodes[i].Next = i + 1;
+			m_Nodes[i].Next = I32(i + 1);
 			m_Nodes[i].Height = -1;
 		}
 		m_Nodes.back().Next = BVHNode<Bounds>::NULL_NODE;
@@ -518,8 +518,8 @@ namespace Engine
 		{
 			U32 currentCapacity = U32(m_Nodes.size());
 			Resize(currentCapacity, 2 * currentCapacity);
-			m_FreeList = currentCapacity;
-			m_FreeNodesCount = currentCapacity;
+			m_FreeList = I32(currentCapacity);
+			m_FreeNodesCount = I32(currentCapacity);
 		}
 
 		U32 freeLeaf = m_FreeList;

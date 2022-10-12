@@ -34,11 +34,15 @@ namespace Engine
 			m_Second->GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f }),
 		};
 
+		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
+		glm::vec2 secondCenter = m_Second->GetAttachedRigidBody()->TransformToWorld(m_Second->Center);
+		glm::vec2 distanceVec = firstCenter - secondCenter;
+
 		F32 smallestOverlap = std::numeric_limits<F32>::max();
 		I32 smallestNormalI = -1;
 		for (I32 i = 0; i < 4; i++)
 		{
-			F32 currentOverlap = BoxBoxOnAxisOverlap2D(*m_First, *m_Second, normals[i]);
+			F32 currentOverlap = BoxBoxOnAxisOverlap2D(*m_First, *m_Second, normals[i], distanceVec);
 			if (currentOverlap < 0) return 0;
 			if (currentOverlap < smallestOverlap)
 			{
@@ -48,12 +52,9 @@ namespace Engine
 		}
 
 		// Find the vertex we collide with.
-		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
-		glm::vec2 secondCenter = m_Second->GetAttachedRigidBody()->TransformToWorld(m_Second->Center);
 		BoxCollider2D* primary = nullptr;
 		BoxCollider2D* secondary = nullptr;
 		std::array<U32, 2> secondaryNormals;
-		glm::vec2 distanceVec;
 		if (smallestNormalI < 2)
 		{
 			primary = m_First;
@@ -415,8 +416,8 @@ namespace Engine
 		// Find the amount of penetration resolution per unit of inverse mass.
 		glm::vec2 movePerInvMass = contactInfo.Normal * (contactInfo.PenetrationDepth / totalInverseMass);
 		// Apply the penetration resolution.
-		first->SetPosition(glm::vec3((glm::vec2(first->GetPosition()) + movePerInvMass * first->GetInverseMass()), 0.0f));
-		second->SetPosition(glm::vec3((glm::vec2(second->GetPosition()) + movePerInvMass * second->GetInverseMass()), 0.0f));
+		first->SetPosition(first->GetPosition()   + movePerInvMass * first->GetInverseMass());
+		second->SetPosition(second->GetPosition() - movePerInvMass * second->GetInverseMass());
 
 		//if (!contactInfo.Bodies.First->HasFiniteMass() && !contactInfo.Bodies.Second->HasFiniteMass()) return;
 		//const glm::vec2& normal = contactInfo.Normal;

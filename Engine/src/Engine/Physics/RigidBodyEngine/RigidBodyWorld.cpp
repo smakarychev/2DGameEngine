@@ -47,9 +47,9 @@ namespace Engine
 		// First update positions and rotations.
 		for (auto& body : m_Bodies)
 		{
-			glm::vec3 newPosition = body->GetPosition() +
-				glm::vec3{ body->GetLinearVelocity(), 0.0f } * deltaTime +
-				glm::vec3{ body->GetLinearAcceleration(), 0.0f } * deltaTime * deltaTime * 0.5f;
+			glm::vec2 newPosition = body->GetPosition() +
+				body->GetLinearVelocity() * deltaTime +
+				body->GetLinearAcceleration() * deltaTime * deltaTime * 0.5f;
 			F32 deltaRotation = body->GetAngularVelocity() * deltaTime +
 				body->GetAngularAcceleration() * deltaTime * deltaTime * 0.5f;
 			body->AddRotation(deltaRotation);

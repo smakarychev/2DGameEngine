@@ -67,15 +67,15 @@ namespace Engine
 	{
 		// First, find the closest point of the box to the circle.
 		glm::vec2 closestPoint = box.Center;
-		glm::vec2 min = glm::vec2(box.Center) - box.HalfSize;
-		glm::vec2 max = glm::vec2(box.Center) - box.HalfSize;
+		glm::vec2 min = box.Center - box.HalfSize;
+		glm::vec2 max = box.Center - box.HalfSize;
 		if (closestPoint.x < min.x) closestPoint.x = min.x;
 		else if (closestPoint.x > max.x) closestPoint.x = max.x;
 		if (closestPoint.y < min.y) closestPoint.y = min.y;
 		else if (closestPoint.y > max.y) closestPoint.y = max.y;
 		// If distance between closest point and center of circle
 		// is less than circle's raduis, then there is intersection.
-		return glm::distance2(closestPoint, glm::vec2(circle.Center)) < circle.Radius * circle.Radius;
+		return glm::distance2(closestPoint, circle.Center) < circle.Radius * circle.Radius;
 	}
 
 	bool CircleBoxCollision2D(const CircleBounds2D& circle, const AABB2D& box)
@@ -157,6 +157,15 @@ namespace Engine
 		glm::vec2 firstCenter = first.GetAttachedRigidBody()->TransformToWorld(first.Center);
 		glm::vec2 secondCenter = second.GetAttachedRigidBody()->TransformToWorld(second.Center);
 		glm::vec2 distanceVec = firstCenter - secondCenter;
+		F32 distance = Math::Abs(glm::dot(distanceVec, axis));
+		return firstSizeProj + secondSizeProj - distance;
+	}
+
+	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis, const glm::vec2& distanceVec)
+	{
+		// Project half sizes and compare to distance.
+		F32 firstSizeProj = TransformToAxis(first, axis);
+		F32 secondSizeProj = TransformToAxis(second, axis);
 		F32 distance = Math::Abs(glm::dot(distanceVec, axis));
 		return firstSizeProj + secondSizeProj - distance;
 	}
