@@ -127,6 +127,7 @@ namespace Engine
 			BatchData PolygonBatch;
 			BatchData TextBatch;
 			BatchDataLines LineBatch;
+			~BatchRendererData() {}
 		};
 
 		struct DrawInfo
@@ -148,6 +149,8 @@ namespace Engine
 		};
 
 	public:
+		Renderer2D() {}
+		~Renderer2D() {}
 		static void Init();
 		static void ShutDown();
 

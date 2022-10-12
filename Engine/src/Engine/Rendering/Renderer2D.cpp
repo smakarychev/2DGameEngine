@@ -509,17 +509,18 @@ namespace Engine
 
 	void Renderer2D::ShutDown()
 	{
-		s_BatchData.BatchShader.~shared_ptr();
-		s_BatchData.TextShader.~shared_ptr();
-		s_BatchData.LineShader.~shared_ptr();
-		s_BatchData.QuadBatch.VAO.~shared_ptr();
-		s_BatchData.PolygonBatch.VAO.~shared_ptr();
-		s_BatchData.TextBatch.VAO.~shared_ptr();
-		s_BatchData.LineBatch.VAO.~shared_ptr();
+		s_BatchData.BatchShader.reset();
+		s_BatchData.TextShader.reset();
+		s_BatchData.LineShader.reset();
+		s_BatchData.QuadBatch.VAO.reset();
+		s_BatchData.PolygonBatch.VAO.reset();
+		s_BatchData.TextBatch.VAO.reset();
+		s_BatchData.LineBatch.VAO.reset();
 		DeleteArr<U8>(s_BatchData.QuadBatch.VerticesMemory, s_BatchData.QuadBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.VerticesMemory, s_BatchData.PolygonBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.PolygonBatch.IndicesMemory, s_BatchData.PolygonBatch.MaxIndices * sizeof(U32));
 		DeleteArr<U8>(s_BatchData.TextBatch.VerticesMemory, s_BatchData.TextBatch.MaxVertices * sizeof(BatchVertex));
 		DeleteArr<U8>(s_BatchData.LineBatch.VerticesMemory, s_BatchData.LineBatch.MaxVertices * sizeof(BatchVertexLine));
+		ENGINE_CORE_INFO("Renderer2D shutdown");
 	}
 }
