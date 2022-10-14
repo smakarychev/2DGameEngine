@@ -74,4 +74,16 @@ namespace Engine
 		}
 
 	};
+
+	struct Line2D
+	{
+		F32 Offset = 0.0f;
+		glm::vec2 Normal = glm::vec2{ 1.0f, 0.0f };
+	};
+
+	struct LineSegment2D
+	{
+		glm::vec2 Start = glm::vec2{ -1.0f, 0.0f };
+		glm::vec2 End   = glm::vec2{ 1.0f, 0.0f };
+	};
 }

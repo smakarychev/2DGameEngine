@@ -18,7 +18,7 @@ namespace Engine
 	class RigidBody2DWorld
 	{
 	public:
-		RigidBody2DWorld(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
+		RigidBody2DWorld(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f }, U32 iterations = 4);
 
 		// All rigid bodies shall be created by this method.
 		RigidBody2D& CreateBody(const RigidBodyDef2D& rbDef);
@@ -32,6 +32,7 @@ namespace Engine
 		void AddForce(Ref<RigidBody2DForceGenerator> forceGenerator, RigidBody2D& body);
 
 		void SetGravity(const glm::vec2& gravity) { m_Gravity = gravity; }
+		void SetIterations(U32 iterations) { m_NarrowPhaseIterations = iterations; }
 		const std::vector<Ref<RigidBody2D>>& GetBodies() const { return m_Bodies; }
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
@@ -54,8 +55,10 @@ namespace Engine
 		std::vector<I32> m_BroadPhaseNodes;
 
 		NarrowPhase2D m_NarrowPhase;
+		U32 m_NarrowPhaseIterations;
 			
 		glm::vec2 m_Gravity;
+
 
 	};
 }

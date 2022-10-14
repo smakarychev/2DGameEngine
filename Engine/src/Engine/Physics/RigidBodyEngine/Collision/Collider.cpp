@@ -2,6 +2,8 @@
 
 #include "Collider.h"
 
+#include "Engine/Physics/RigidBodyEngine/RigidBody.h"
+
 namespace Engine
 {
 	BoxCollider2D::BoxCollider2D(const glm::vec2& center, const glm::vec2& halfSize)
@@ -18,6 +20,28 @@ namespace Engine
 		: Collider2D(Type::Edge),
 		Start(start), End(end)
 	{}
+
+	glm::vec2 BoxCollider2D::GetFaceDirection(I32 vertexId) const
+	{
+		static constexpr std::array<glm::vec2, 4> localDirs {
+			glm::vec2{ -1.0f, 0.0f },
+			glm::vec2{ 0.0f, -1.0f },
+			glm::vec2{ 1.0f,  0.0f },
+			glm::vec2{ 0.0f,  1.0f }
+		};
+		return m_AttachedRigidBody->GetTransform().TransformDirection(localDirs[vertexId]);
+	}
+
+	glm::vec2 BoxCollider2D::GetVertex(I32 vertexId) const
+	{
+		switch (vertexId)
+		{
+		case 0: return m_AttachedRigidBody->GetTransform().Transform({ Center.x - HalfSize.x, Center.y - HalfSize.y });
+		case 1: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y - HalfSize.y });
+		case 2: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y + HalfSize.y });
+		case 3: return m_AttachedRigidBody->GetTransform().Transform({ Center.x - HalfSize.x, Center.y + HalfSize.y });
+		}
+	}
 
 	Collider2D* BoxCollider2D::Clone()
 	{

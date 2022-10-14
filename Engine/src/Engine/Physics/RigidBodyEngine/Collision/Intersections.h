@@ -11,8 +11,17 @@ namespace Engine
 
 	struct AABB2D;
 	struct CircleBounds2D;
+	struct Transform2D;
+	struct LineSegment2D;
+	struct Line2D;
 	class BoxCollider2D;
 	class EdgeCollider2D;
+
+	struct SATQuery
+	{
+		F32 Distance = -std::numeric_limits<F32>::max();
+		I32 FaceIndex = -1;
+	};
 
 	bool Intersects(const AABB2D& first, const AABB2D& second);
 	bool Intersects(const CircleBounds2D& first, const CircleBounds2D& second);
@@ -46,4 +55,14 @@ namespace Engine
 	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis);
 	F32 BoxBoxOnAxisOverlap2D(const BoxCollider2D& first, const BoxCollider2D& second, const glm::vec2& axis, const glm::vec2& distanceVec);
 
+	// Returns the support of the box in direction of the axis, the axis is expected to be normalized.
+	glm::vec2 GetSupport(const BoxCollider2D& box,  const glm::vec2& axis, const Transform2D& transform);
+	// Performs SAT query, returns the largest distance and associated vertex.
+	SATQuery SATFaceDirections(const BoxCollider2D& first, const BoxCollider2D& second, const Transform2D& tfA, const Transform2D& tfB);
+	// Returns the index of face in box `seekBox` that is incident to `refFace` (in global coordinates).
+	I32 FindIncidentFaceIndex(const BoxCollider2D& seekBox, 
+		const glm::vec2& refFace,
+		const Transform2D& seekTf);
+	// Performs the clipping of line segment by line, returns the number of points in resulting line segment.
+	U32 ClipLineSegmentToLine(LineSegment2D& clippingResult, const LineSegment2D& lineSegment, const Line2D& line);
 }

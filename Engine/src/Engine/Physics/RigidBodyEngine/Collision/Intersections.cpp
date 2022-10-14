@@ -169,5 +169,131 @@ namespace Engine
 		F32 distance = Math::Abs(glm::dot(distanceVec, axis));
 		return firstSizeProj + secondSizeProj - distance;
 	}
+	
+	glm::vec2 GetSupport(const BoxCollider2D& box, const glm::vec2& axis, const Transform2D& transform)
+	{
+		std::array<glm::vec2, 4> verticesLocal{
+			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y - box.HalfSize.x},
+			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y - box.HalfSize.x},
+			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y + box.HalfSize.x},
+			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y + box.HalfSize.x},
+		};
+		F32 bestProjection = -std::numeric_limits<F32>::max();
+		glm::vec2 bestVertex = { bestProjection, bestProjection };
+		for (U32 i = 0; i < verticesLocal.size(); i++)
+		{
+			glm::vec2 vertex = transform.Transform(verticesLocal[i]);
+			F32 projection = glm::dot(vertex, axis);
+			if (projection > bestProjection)
+			{
+				bestProjection = projection;
+				bestVertex = vertex;
+			}
+		}
+		return bestVertex;
+	}
+	
+	SATQuery SATFaceDirections(const BoxCollider2D& first, const BoxCollider2D& second, const Transform2D& tfA, const Transform2D& tfB)
+	{
+		constexpr std::array<glm::vec2, 4> normalsLocal{
+			glm::vec2{ 0.0f, -1.0f},
+			glm::vec2{ 1.0f,  0.0f},
+			glm::vec2{ 0.0f,  1.0f},
+			glm::vec2{-1.0f,  0.0f},
+		};
+
+		std::array<glm::vec2, 4> verticesLocal{
+			glm::vec2{first.Center.x - first.HalfSize.x, first.Center.y - first.HalfSize.y},
+			glm::vec2{first.Center.x + first.HalfSize.x, first.Center.y - first.HalfSize.y},
+			glm::vec2{first.Center.x + first.HalfSize.x, first.Center.y + first.HalfSize.y},
+			glm::vec2{first.Center.x - first.HalfSize.x, first.Center.y + first.HalfSize.y},
+		};
+
+		F32 bestDistance = -std::numeric_limits<F32>::max();
+		I32 bestFaceI = -1;
+		for (U32 i = 0; i < normalsLocal.size(); i++)
+		{
+			glm::vec2 normal = tfA.TransformDirection(normalsLocal[i]);
+			glm::vec2 supportVec = GetSupport(second, -normal, tfB);
+			// Distance between vertex and plane with dir of normal.
+			F32 planeOffset = -glm::dot(normal, tfA.Transform(verticesLocal[i]));
+			F32 distance = glm::dot(normal, supportVec) + planeOffset;
+			// The largest distance is the pen depth (and is negative if there is pen).
+			if (distance > bestDistance)
+			{
+				bestDistance = distance;
+				bestFaceI = i;
+			}
+		}
+		return SATQuery{ .Distance = bestDistance, .FaceIndex = bestFaceI };
+	}
+	I32 FindIncidentFaceIndex(const BoxCollider2D& seekBox,
+		const glm::vec2& refFace,
+		const Transform2D& seekTf)
+	{
+		constexpr std::array<glm::vec2, 4> normalsLocal{
+			glm::vec2{ 0.0f, -1.0f},
+			glm::vec2{ 1.0f,  0.0f},
+			glm::vec2{ 0.0f,  1.0f},
+			glm::vec2{-1.0f,  0.0f},
+		};
+
+		glm::vec2 refNormal{ -refFace.y, refFace.x };
+		F32 bestDot = std::numeric_limits<F32>::max();
+		I32 bestFaceI = -1;
+		for (U32 i = 0; i < normalsLocal.size(); i++)
+		{
+			glm::vec2 normal = seekTf.TransformDirection(normalsLocal[i]);
+			F32 dot = glm::dot(normal, refNormal);
+			if (dot < bestDot)
+			{
+				bestDot = dot;
+				bestFaceI = i;
+			}
+		}
+		return bestFaceI;
+	}
+	
+	U32 ClipLineSegmentToLine(LineSegment2D& clippingResult, const LineSegment2D& lineSegment, const Line2D& line)
+	{
+		// Find distances from ends of lineSegment to the line.
+		F32 distanceA = glm::dot(lineSegment.Start, line.Normal) + line.Offset;
+		F32 distanceB = glm::dot(lineSegment.End, line.Normal) + line.Offset;
+
+		// Else all points are clipped.
+		if (distanceA > 0.0f && distanceB > 0.0f)
+		{
+			return 0;
+		}
+		else
+		{
+			if (distanceA * distanceB < 0.0f)
+			{
+				// Perform clipping.
+				// Based of similiar triangles.
+				if (distanceA < 0.0f)
+				{
+					// `start` remains.
+					F32 clippedT = -distanceA / (distanceB - distanceA);
+					glm::vec2 clipped = lineSegment.Start + clippedT * (lineSegment.End - lineSegment.Start);
+					clippingResult.Start = lineSegment.Start;
+					clippingResult.End = clipped;
+				}
+				else
+				{
+					// `end` remains.
+					F32 clippedT = distanceA / (-distanceB + distanceA);
+					glm::vec2 clipped = lineSegment.Start + clippedT * (lineSegment.End - lineSegment.Start);
+					clippingResult.Start = lineSegment.End;
+					clippingResult.End = clipped;
+				}
+			}
+			else
+			{
+				clippingResult = lineSegment;
+			}
+			return 2;
+		}
+	}
 }
 

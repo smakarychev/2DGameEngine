@@ -1,4 +1,5 @@
 #include "enginepch.h"
+
 #include "Contacts.h"
 
 #include "Engine/Math/LinearAlgebra.h"
@@ -24,70 +25,85 @@ namespace Engine
 		);
 	}
 
-	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 BoxBoxContact2D::GenerateContacts(std::vector<ContactManifold2D>& manifolds)
 	{
 		// SAT.
-		glm::vec2 normals[4] {
-			m_First->GetAttachedRigidBody()->TransformDirectionToWorld({ 1.0f, 0.0f }),
-			m_First->GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f }),
-			m_Second->GetAttachedRigidBody()->TransformDirectionToWorld({ 1.0f, 0.0f }),
-			m_Second->GetAttachedRigidBody()->TransformDirectionToWorld({ 0.0f, 1.0f }),
-		};
+		SATQuery satA = SATFaceDirections(*m_First, *m_Second, 
+			m_First->GetAttachedRigidBody()->GetTransform(), m_Second->GetAttachedRigidBody()->GetTransform());
+		if (satA.Distance > 0.0f) return 0;
 
-		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
-		glm::vec2 secondCenter = m_Second->GetAttachedRigidBody()->TransformToWorld(m_Second->Center);
-		glm::vec2 distanceVec = firstCenter - secondCenter;
-
-		F32 smallestOverlap = std::numeric_limits<F32>::max();
-		I32 smallestNormalI = -1;
-		for (I32 i = 0; i < 4; i++)
-		{
-			F32 currentOverlap = BoxBoxOnAxisOverlap2D(*m_First, *m_Second, normals[i], distanceVec);
-			if (currentOverlap < 0) return 0;
-			if (currentOverlap < smallestOverlap)
-			{
-				smallestOverlap = currentOverlap;
-				smallestNormalI = i;
-			}
-		}
-
-		// Find the vertex we collide with.
+		SATQuery satB = SATFaceDirections(*m_Second, *m_First,
+			m_Second->GetAttachedRigidBody()->GetTransform(), m_First->GetAttachedRigidBody()->GetTransform());
+		if (satB.Distance > 0.0f) return 0;
+		
+		// We need the axis with smallest depth.
+		SATQuery sat;
 		BoxCollider2D* primary = nullptr;
 		BoxCollider2D* secondary = nullptr;
-		std::array<U32, 2> secondaryNormals;
-		if (smallestNormalI < 2)
+		// Add some bias to satA for coherency.
+		static constexpr auto satBias = 0.001f;
+		if (satA.Distance > satB.Distance + satBias)
 		{
+			sat = satA;
 			primary = m_First;
 			secondary = m_Second;
-			distanceVec = secondCenter - firstCenter;
-			secondaryNormals = { 2, 3 };
 		}
 		else
 		{
+			sat = satB;
 			primary = m_Second;
 			secondary = m_First;
-			distanceVec = firstCenter - secondCenter;
-			secondaryNormals = { 0, 1 };
 		}
+		glm::vec2 refFaceDir = primary->GetFaceDirection(sat.FaceIndex);
+		I32 incidentFaceI = FindIncidentFaceIndex(*secondary,
+			refFaceDir,
+			secondary->GetAttachedRigidBody()->GetTransform());
+		glm::vec2 incidentFaceDir = secondary->GetFaceDirection(incidentFaceI);
 
-		glm::vec2 normal = normals[smallestNormalI];
-		if (glm::dot(normal, distanceVec) > 0.0f) normal = -normal;
 
-		// Find the vertex we collide with.
-		glm::vec2 vertex = secondary->HalfSize;
-		if (glm::dot(normals[secondaryNormals[0]], normal) < 0) vertex.x = -vertex.x;
-		if (glm::dot(normals[secondaryNormals[1]], normal) < 0) vertex.y = -vertex.y;
+		// Clip incident face by side planes of reference face.
+		// Note that ref face in a normal / anti-normal of side planes.
+		//? Move to other place?
+		LineSegment2D incidentFace{
+			.Start = secondary->GetVertex(incidentFaceI),
+			.End = secondary->GetVertex(incidentFaceI < 3 ? incidentFaceI + 1 : 0)
+		};
+		Line2D sideA{
+			.Offset = -glm::dot(primary->GetVertex(sat.FaceIndex), refFaceDir),
+			.Normal = refFaceDir
+		};
+		Line2D sideB{
+			.Offset = glm::dot(primary->GetVertex(sat.FaceIndex < 3 ? sat.FaceIndex + 1 : 0), refFaceDir),
+			.Normal = -refFaceDir
+		};
 
-		// Create contact info.
-		ContactInfo2D contactInfo;
-		contactInfo.Normal = normal;
-		contactInfo.Point = secondary->GetAttachedRigidBody()->TransformToWorld(vertex);
-		contactInfo.PenetrationDepth = smallestOverlap;
-		contactInfo.Bodies.First = const_cast<RigidBody2D*>(primary->GetAttachedRigidBody());
-		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(secondary->GetAttachedRigidBody());
+		ClipLineSegmentToLine(incidentFace, incidentFace, sideA);
+		ClipLineSegmentToLine(incidentFace, incidentFace, sideB);
 
-		contacts.push_back(contactInfo);
-		return 1;
+		// Keep all points below reference face.
+		std::array<glm::vec2, 2> clippedPoints{ incidentFace.Start, incidentFace.End };
+		glm::vec2 refFaceNormal = glm::vec2{ -refFaceDir.y, refFaceDir.x };
+		F32 refFaceOffset = -glm::dot(refFaceNormal, primary->GetVertex(sat.FaceIndex));
+		ContactManifold2D manifold;
+		manifold.Bodies[0] = const_cast<RigidBody2D*>(primary->GetAttachedRigidBody());
+		manifold.Bodies[1] = const_cast<RigidBody2D*>(secondary->GetAttachedRigidBody());
+		manifold.ContactNormal = -refFaceNormal;
+		manifold.ContactCount = 0;
+		for (U32 i = 0; i < clippedPoints.size(); i++)
+		{
+			// Compute distance to reference face.
+			F32 distance = glm::dot(clippedPoints[i], refFaceNormal) + refFaceOffset;
+			if (distance > 0.0f) continue;
+			//TODO: Move contact point onto the ref face (this helps coherence).
+
+			ContactInfo2D contactInfo;
+			contactInfo.Point = clippedPoints[i];
+			contactInfo.PenetrationDepth = -distance;
+			manifold.Contacts[manifold.ContactCount] = contactInfo;
+			manifold.ContactCount++;
+		}
+		manifolds.push_back(manifold);
+		return manifold.ContactCount;
 	}
 	
 	CircleCircleContact2D::CircleCircleContact2D(CircleCollider2D* first, CircleCollider2D* second)
@@ -110,7 +126,7 @@ namespace Engine
 		);
 	}
 
-	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 CircleCircleContact2D::GenerateContacts(std::vector<ContactManifold2D>& manifolds)
 	{
 		// Transform positions to world space.
 		glm::vec2 firstCenter = m_First->GetAttachedRigidBody()->TransformToWorld(m_First->Center);
@@ -127,16 +143,18 @@ namespace Engine
 		// Else we have a collision.
 		F32 dist = Math::Sqrt(distSquared);
 		glm::vec2 normal = distVec / dist;
+		ContactManifold2D manifold;
+		manifold.Bodies[0] = const_cast<RigidBody2D*>(m_First->GetAttachedRigidBody());
+		manifold.Bodies[1] = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
+		manifold.ContactNormal = normal;
+		manifold.ContactCount = 1;
 		ContactInfo2D contactInfo;
-		contactInfo.Normal = normal;
 		contactInfo.Point = firstCenter + distVec * 0.5f;
 		contactInfo.PenetrationDepth = minDist - dist;
-		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_First->GetAttachedRigidBody());
-		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
-
-		contacts.push_back(contactInfo);
-
-		return 1;
+		manifold.Contacts[0] = contactInfo;
+		
+		manifolds.push_back(manifold);
+		return manifold.ContactCount;
 	}
 
 	BoxCircleContact2D::BoxCircleContact2D(BoxCollider2D* box, CircleCollider2D* circle)
@@ -159,7 +177,7 @@ namespace Engine
 		);
 	}
 
-	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 BoxCircleContact2D::GenerateContacts(std::vector<ContactManifold2D>& manifolds)
 	{
 		// Tranform circle to box coordinate space.
 		glm::vec2 circleCenter = m_Circle->GetAttachedRigidBody()->TransformToWorld(m_Circle->Center);
@@ -187,18 +205,21 @@ namespace Engine
 		// Transform closest point to world space.
 		closestPoint = m_Box->GetAttachedRigidBody()->TransformToWorld(closestPoint);
 
+		ContactManifold2D manifold;
+		manifold.Bodies[0] = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
+		manifold.Bodies[1] = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+		manifold.ContactCount = 1;
+		manifold.ContactNormal = closestPoint - circleCenter;
+		if (manifold.ContactNormal.x != 0.0 || manifold.ContactNormal.y != 0)
+			manifold.ContactNormal = glm::normalize(manifold.ContactNormal);
+		
 		ContactInfo2D contactInfo;
-		contactInfo.Normal = closestPoint - circleCenter;
-		if (contactInfo.Normal.x != 0.0 || contactInfo.Normal.y != 0)
-			contactInfo.Normal = glm::normalize(contactInfo.Normal);
 		contactInfo.Point = closestPoint;
 		contactInfo.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
-		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
-		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+		manifold.Contacts[0] = contactInfo;
 
-		contacts.push_back(contactInfo);
-		
-		return 1;
+		manifolds.push_back(manifold);
+		return manifold.ContactCount;
 	}
 
 	EdgeCircleContact2D::EdgeCircleContact2D(EdgeCollider2D* edge, CircleCollider2D* circle)
@@ -221,7 +242,7 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 EdgeCircleContact2D::GenerateContacts(std::vector<ContactManifold2D>& manifolds)
 	{
 		// Transform to world space.
 		glm::vec2 edgeStart = m_Edge->GetAttachedRigidBody()->TransformToWorld(m_Edge->Start);
@@ -253,14 +274,17 @@ namespace Engine
 		}
 		depth += m_Circle->Radius;
 
-		contactInfo.Normal = normal;
 		contactInfo.PenetrationDepth = depth;
-		contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
-		contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
 
-		contacts.push_back(contactInfo);
+		ContactManifold2D manifold;
+		manifold.Bodies[0] = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+		manifold.Bodies[1] = const_cast<RigidBody2D*>(m_Circle->GetAttachedRigidBody());
+		manifold.ContactNormal = normal;
+		manifold.ContactCount = 1;
+		manifold.Contacts[0] = contactInfo;
 
-		return 1;
+		manifolds.push_back(manifold);
+		return manifold.ContactCount;
 	}
 	
 	EdgeBoxContact2D::EdgeBoxContact2D(EdgeCollider2D* edge, BoxCollider2D* box)
@@ -283,7 +307,7 @@ namespace Engine
 		);
 	}
 	
-	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactInfo2D>& contacts)
+	U32 EdgeBoxContact2D::GenerateContacts(std::vector<ContactManifold2D>& manifolds)
 	{	
 		if (!BoxHalfSpaceCollision2D(*m_Box, *m_Edge)) return 0;
 
@@ -306,7 +330,11 @@ namespace Engine
 		normal = glm::normalize(normal);
 		F32 offset = -glm::dot(normal, edgeStart);
 
-		U32 foundContacts = 0;
+		ContactManifold2D manifold;
+		manifold.Bodies[0] = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
+		manifold.Bodies[1] = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody()); manifold.ContactCount = 0;
+		manifold.ContactNormal = normal;
+		manifold.ContactCount = 0;
 		for (U32 i = 0; i < 4; i++)
 		{
 			F32 vertexDistance = glm::dot(vertices[i], normal);
@@ -314,19 +342,16 @@ namespace Engine
 			{
 				// Create contact data.
 				ContactInfo2D contactInfo;
-				contactInfo.Normal = normal;
 				contactInfo.Point = normal * (vertexDistance - offset) + vertices[i];
 				contactInfo.PenetrationDepth = offset - vertexDistance;
-				contactInfo.Bodies.First = const_cast<RigidBody2D*>(m_Edge->GetAttachedRigidBody());
-				contactInfo.Bodies.Second = const_cast<RigidBody2D*>(m_Box->GetAttachedRigidBody());
-
-				contacts.push_back(contactInfo);
-				
-				foundContacts++;
+				manifold.Contacts[manifold.ContactCount] = contactInfo;
+				manifold.ContactCount++;
+				if (manifold.ContactCount == 2) break;
 			}
 		}
 
-		return foundContacts;
+		manifolds.push_back(manifold);
+		return manifold.ContactCount;
 	}
 
 	ContactRegistation ContactManager::s_Registry
@@ -393,31 +418,39 @@ namespace Engine
 		}
 	}
 
-	void ContactResolver::Resolve(const ContactInfo2D& contactInfo)
+	void ContactResolver::Resolve(const ContactManifold2D& manifold)
 	{
-		RigidBody2D* first  = contactInfo.Bodies.First;
-		RigidBody2D* second = contactInfo.Bodies.Second;
+		RigidBody2D* first  = manifold.Bodies[0];
+		RigidBody2D* second = manifold.Bodies[1];
 		//x temp
 		if (!(first->HasFiniteMass() || second->HasFiniteMass())) return;
+		//! This requires some rework.
+		for (U32 i = 0; i < manifold.ContactCount; i++)
+		{
+			glm::vec2 relativeVel = first->GetLinearVelocity() - second->GetLinearVelocity();
+			F32 jv = glm::dot(relativeVel, manifold.ContactNormal);
+			// Collision resolves by itself.
+			if (jv > 0) return;
 
-		glm::vec2 relativeVel = first->GetLinearVelocity() - second->GetLinearVelocity();
-		// Collision resolves by itself.
-		if (glm::dot(relativeVel, contactInfo.Normal) > 0) return;
+			F32 baumgarte = 0.01f / (1.0f / 60.0f) * manifold.Contacts[i].PenetrationDepth;
+			F32 restitution = manifold.GetRestitution();
+			//F32 impulse = -(1.0f + restitution) * jv + baumgarte;
+			F32 impulse = -(1.0f + restitution) * jv;
+			impulse /= first->GetInverseMass() + second->GetInverseMass();
 
-		F32 restitution = contactInfo.GetRestitution();
-		F32 impulse = -(1.0f + restitution) * glm::dot(relativeVel, contactInfo.Normal);
-		impulse /= first->GetInverseMass() + second->GetInverseMass();
+			first->SetLinearVelocity(first->GetLinearVelocity() + impulse * first->GetInverseMass() * manifold.ContactNormal);
+			second->SetLinearVelocity(second->GetLinearVelocity() - impulse * second->GetInverseMass() * manifold.ContactNormal);
 
-		first->SetLinearVelocity(first->GetLinearVelocity()   + impulse * first->GetInverseMass()  * contactInfo.Normal);
-		second->SetLinearVelocity(second->GetLinearVelocity() - impulse * second->GetInverseMass() * contactInfo.Normal);
+			//x Very temporal thing.
+			F32 totalInverseMass = first->GetInverseMass() + second->GetInverseMass();
 
-		//x Very temporal thing.
-		F32 totalInverseMass = first->GetInverseMass() + second->GetInverseMass();
-		// Find the amount of penetration resolution per unit of inverse mass.
-		glm::vec2 movePerInvMass = contactInfo.Normal * (contactInfo.PenetrationDepth / totalInverseMass);
-		// Apply the penetration resolution.
-		first->SetPosition(first->GetPosition()   + movePerInvMass * first->GetInverseMass());
-		second->SetPosition(second->GetPosition() - movePerInvMass * second->GetInverseMass());
+			// Find the amount of penetration resolution per unit of inverse mass.
+			glm::vec2 movePerInvMass = manifold.ContactNormal * (manifold.Contacts[i].PenetrationDepth / totalInverseMass);
+			// Apply the penetration resolution.
+			first->SetPosition(first->GetPosition() + movePerInvMass * first->GetInverseMass());
+			second->SetPosition(second->GetPosition() - movePerInvMass * second->GetInverseMass());
+		}
+		
 
 		//if (!contactInfo.Bodies.First->HasFiniteMass() && !contactInfo.Bodies.Second->HasFiniteMass()) return;
 		//const glm::vec2& normal = contactInfo.Normal;

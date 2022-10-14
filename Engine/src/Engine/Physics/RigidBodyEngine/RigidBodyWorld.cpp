@@ -6,8 +6,8 @@
 
 namespace Engine
 {
-	RigidBody2DWorld::RigidBody2DWorld(const glm::vec2& gravity)
-		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase)
+	RigidBody2DWorld::RigidBody2DWorld(const glm::vec2& gravity, U32 iterations)
+		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_NarrowPhaseIterations(iterations)
 	{
 	}
 
@@ -34,7 +34,8 @@ namespace Engine
 		SynchronizeBroadPhase(deltaTime);
 		//TODO: not the final version.
 		m_BroadPhase.FindContacts();
-		m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
+		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
+			m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
 	}
 
 	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)

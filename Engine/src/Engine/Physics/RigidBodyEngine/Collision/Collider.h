@@ -163,6 +163,8 @@ namespace Engine
 		BoxCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		glm::vec2 GetFaceDirection(I32 vertexId) const;
+		glm::vec2 GetVertex(I32 vertexId) const;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;

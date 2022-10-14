@@ -35,7 +35,7 @@ namespace Engine
 		};
 		// It is assumed that Payload is of type RigidBody2D.
 		void* Payload = nullptr;
-		bool Moved = true;
+		bool Moved = false;
 
 		bool IsLeaf() const
 		{
