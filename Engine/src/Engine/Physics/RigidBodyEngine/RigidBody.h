@@ -12,20 +12,40 @@ namespace Engine
 {
 	using namespace Types;
 
+	// Note: currently the only distinction is static / non static.
+	enum class RigidBodyType2D { Dynamic, Kinematic, Static };
+
 	struct RigidBodyDef2D
 	{
-		glm::vec2 Position = glm::vec2{ 0.0f };
+		enum Flags { None = 0, RestrictRotation = Bit(1) };
+		struct Rotation
+		{
+			glm::vec2 RotationVec;
+			Rotation(const glm::vec2& rotation) : RotationVec(rotation) {}
+			Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad)) {}
+		};
+		glm::vec2 Position { 0.0f };
+		Rotation Rotation { 0.0f };
 		F32 Mass = 1.0f;
 		F32 Inertia = 1.0f;
-		PhysicsMaterial PhysicsMaterial;
-		ColliderDef2D ColliderDef;
+		glm::vec2 LinearVelocity { 0.0f };
+		F32 AngularVelocty { 0.0f };
+		F32 LinearDamping { 0.0f };
+		F32 AngularDamping { 0.0f };
+
+		RigidBodyType2D Type { RigidBodyType2D::Static };
+		PhysicsMaterial PhysicsMaterial {};
+		ColliderDef2D ColliderDef {};
+		Flags Flags = None;
 	};
 
 	class RigidBody2D
 	{
 	public:
-		RigidBody2D(const glm::vec2& position = glm::vec2{ 0.0f }, F32 mass = 1.0f, F32 inertia = 1.0f);
+		RigidBody2D(const RigidBodyDef2D& rbDef);
 		~RigidBody2D();
+
+		RigidBodyType2D GetType() const { return m_Type; }
 
 		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
 		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
@@ -38,9 +58,6 @@ namespace Engine
 
 		void SetLinearVelocity(const glm::vec2& vel) { m_LinearVelocity = vel; }
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
-
-		void SetLinearAcceleration(const glm::vec2& acc) { m_LinearAcceleration = acc; }
-		const glm::vec2& GetLinearAcceleration() const { return m_LinearAcceleration; }
 
 		void SetMass(F32 mass) { m_InverseMass = 1.0f / mass; }
 		void SetInverseMass(F32 invMass) { m_InverseMass = invMass; }
@@ -64,9 +81,6 @@ namespace Engine
 
 		void SetAngularVelocity(F32 vel) { m_AngularVelocity = vel; }
 		F32 GetAngularVelocity() const { return m_AngularVelocity; }
-
-		void SetAngularAcceleration(F32 acc) { m_AngularAcceleration = acc; }
-		F32 GetAngularAcceleration() const { return m_AngularAcceleration; }
 
 		void SetIntertiaTensor(F32 inertia) { m_InverseInertiaTensor = 1.0f / inertia; }
 		void SetInverseInertiaTensor(F32 invIntertia) { m_InverseInertiaTensor = invIntertia; }
@@ -101,6 +115,7 @@ namespace Engine
 		glm::vec2 TransformToLocal(const glm::vec2& point) const;
 		glm::vec2 TransformDirectionToLocal(const glm::vec2& dir) const;
 	private:
+		RigidBodyType2D m_Type;
 		PhysicsMaterial m_PhysicsMaterial;
 		Collider2D* m_Collider;
 
@@ -109,11 +124,9 @@ namespace Engine
 		glm::vec2 m_Rotation;
 
 		glm::vec2 m_LinearVelocity;
-		glm::vec2 m_LinearAcceleration;
 		F32 m_LinearDamping;
 		
 		F32 m_AngularVelocity;
-		F32 m_AngularAcceleration;
 		F32 m_AngularDamping;
 		
 		glm::vec2 m_Force;

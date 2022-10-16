@@ -173,10 +173,10 @@ namespace Engine
 	glm::vec2 GetSupport(const BoxCollider2D& box, const glm::vec2& axis, const Transform2D& transform)
 	{
 		std::array<glm::vec2, 4> verticesLocal{
-			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y - box.HalfSize.x},
-			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y - box.HalfSize.x},
-			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y + box.HalfSize.x},
-			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y + box.HalfSize.x},
+			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y - box.HalfSize.y},
+			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y - box.HalfSize.y},
+			glm::vec2{box.Center.x + box.HalfSize.x, box.Center.y + box.HalfSize.y},
+			glm::vec2{box.Center.x - box.HalfSize.x, box.Center.y + box.HalfSize.y},
 		};
 		F32 bestProjection = -std::numeric_limits<F32>::max();
 		glm::vec2 bestVertex = { bestProjection, bestProjection };

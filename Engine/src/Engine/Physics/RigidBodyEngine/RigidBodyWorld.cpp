@@ -13,12 +13,11 @@ namespace Engine
 
 	RigidBody2D& RigidBody2DWorld::CreateBody(const RigidBodyDef2D& rbDef)
 	{
-		m_Bodies.emplace_back(CreateRef<RigidBody2D>(rbDef.Position, rbDef.Mass, rbDef.Inertia));
+		m_Bodies.emplace_back(CreateRef<RigidBody2D>(rbDef));
 		RigidBody2D& newBody = *m_Bodies.back();
 		newBody.SetPhysicsMaterial(rbDef.PhysicsMaterial);
 		if (rbDef.ColliderDef.Collider != nullptr)
 		{
-			newBody.SetCollider(rbDef.ColliderDef.Collider->Clone());
 			newBody.GetCollider()->SetAttachedRigidBody(&newBody);
 			// Add body to broad phase and safe returned nodeId for later modification of bvh tree.
 			// TODO: store only bodies that are dynamic / kinematic.
@@ -30,66 +29,71 @@ namespace Engine
 
 	void RigidBody2DWorld::Update(F32 deltaTime)
 	{
-		VelocityVerletIntegration(deltaTime);
 		SynchronizeBroadPhase(deltaTime);
-		//TODO: not the final version.
-		m_BroadPhase.FindContacts();
+
+		ApplyGlobalForces();
+		m_Registry.ApplyForces();
+		// Update velocities based on forces.
+		for (auto& body : m_Bodies)
+		{
+			glm::vec2 linAcc{ 0.0f };
+			F32 angAcc{ 0.0f };
+			// If body has finite mass, convert its force to acceleration.
+			if (body->HasFiniteMass())
+			{
+				linAcc += m_Gravity;
+				linAcc += body->GetForce() * body->GetInverseMass();
+			}
+			// Same logic for inertia tensor and angular acceleration.
+			if (body->HasFiniteInertiaTensor())
+			{
+				angAcc += body->GetTorque() * body->GetInverseInertia();
+			}
+
+			glm::vec2 newLinVel = body->GetLinearVelocity() + linAcc * deltaTime;
+			F32 newAngVel = body->GetAngularVelocity() + angAcc * deltaTime;
+			// Apply damping.
+			newLinVel = newLinVel / (1.0f + deltaTime * body->GetLinearDamping());
+			newAngVel = newAngVel / (1.0f + deltaTime * body->GetAngularDamping());
+			// Update body vels.
+			body->SetLinearVelocity(newLinVel);
+			body->SetAngularVelocity(newAngVel);
+		}
+
+		// Perform warm start / pre steps. TODO
+		ContactResolver::WarmStart();
+		m_BroadPhase.FindContacts([&narrowPhase = m_NarrowPhase](const PotentialContact2D& contact) {narrowPhase.Callback(contact); });
+		m_NarrowPhase.Collide();
+		ContactResolver::PreSolve(m_NarrowPhase.GetContactInfoList(), m_NarrowPhase.GetContactsCount());
+		// Resolve velocity constraints.
 		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
-			m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
+		{
+			ContactResolver::ResolveVelocity();
+		}
+		// Update positions based on velocities.
+		for (auto& body : m_Bodies)
+		{
+			glm::vec2 newPos = body->GetPosition() + body->GetLinearVelocity() * deltaTime;
+			F32 deltaRot = body->GetAngularVelocity() * deltaTime;
+			body->SetPosition(newPos);
+			body->AddRotation(deltaRot);
+			body->SetRotation(glm::normalize(body->GetRotation()));
+
+			body->ResetForce();
+			body->ResetTorque();
+		}
+		// Resolve position constraints. TODO
+		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
+		{
+			/*m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
+			ContactResolver::PreSolve(m_NarrowPhase.GetContactManifolds());*/
+			if (ContactResolver::ResolvePosition()) break;
+		}
 	}
 
 	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)
 	{
 		m_GlobalForces.push_back(forceGenerator);
-	}
-	
-	void RigidBody2DWorld::VelocityVerletIntegration(F32 deltaTime)
-	{
-		// First update positions and rotations.
-		for (auto& body : m_Bodies)
-		{
-			glm::vec2 newPosition = body->GetPosition() +
-				body->GetLinearVelocity() * deltaTime +
-				body->GetLinearAcceleration() * deltaTime * deltaTime * 0.5f;
-			F32 deltaRotation = body->GetAngularVelocity() * deltaTime +
-				body->GetAngularAcceleration() * deltaTime * deltaTime * 0.5f;
-			body->AddRotation(deltaRotation);
-			body->SetPosition(newPosition);
-			body->SetRotation(glm::normalize(body->GetRotation()));
-		}
-		// Then apply forces.
-		ApplyGlobalForces();
-		m_Registry.ApplyForces();
-		// Then update acceleration and velocity (both linear and angular).
-		for (auto& body : m_Bodies)
-		{
-			glm::vec2 newLinAcceleration = glm::vec2{ 0.0f };
-			F32 newAngAcceleration = 0.0f;
-			// If body has finite mass, convert its force to acceleration.
-			if (body->HasFiniteMass())
-			{
-				newLinAcceleration += m_Gravity;
-				newLinAcceleration += body->GetForce() * body->GetInverseMass();
-			}
-			// Same logic for inertia tensor and angular acceleration.
-			if (body->HasFiniteInertiaTensor())
-			{
-				newAngAcceleration += body->GetTorque();
-			}
-			glm::vec2 newLinVelocity = body->GetLinearVelocity() +
-				(body->GetLinearAcceleration() + newLinAcceleration) * deltaTime * 0.5f;
-			F32 newAngVelocity = body->GetAngularVelocity() +
-				(body->GetAngularAcceleration() + newAngAcceleration) * deltaTime * 0.5f;
-
-			body->SetLinearVelocity(newLinVelocity / (1.0f + deltaTime * body->GetLinearDamping()));
-			body->SetLinearAcceleration(newLinAcceleration);
-
-			body->SetAngularVelocity(newAngVelocity / (1.0f + deltaTime * body->GetAngularDamping()));
-			body->SetAngularAcceleration(newAngAcceleration);
-			
-			body->ResetForce();
-			body->ResetTorque();
-		}
 	}
 
 	void RigidBody2DWorld::ApplyGlobalForces()

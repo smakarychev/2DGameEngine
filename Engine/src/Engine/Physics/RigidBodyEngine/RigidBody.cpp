@@ -4,14 +4,31 @@
 
 namespace Engine
 {
-	RigidBody2D::RigidBody2D(const glm::vec2& position, F32 mass, F32 inertia) :
-		m_Position(position), m_Rotation(1.0f, 0.0f),
-		m_LinearVelocity(0.0f), m_LinearAcceleration(0.0f), m_LinearDamping(0.0f),
-		m_AngularVelocity(0.0f), m_AngularAcceleration(0.0f), m_AngularDamping(0.0f),
+	RigidBody2D::RigidBody2D(const RigidBodyDef2D& rbDef) :
+		m_Position(rbDef.Position), m_Rotation(rbDef.Rotation.RotationVec),
+		m_LinearVelocity(rbDef.LinearVelocity), m_LinearDamping(rbDef.LinearDamping),
+		m_AngularVelocity(rbDef.AngularVelocty), m_AngularDamping(rbDef.AngularDamping),
 		m_Force(0.0f), m_Torque(0.0f),
-		m_InverseMass(1.0f / mass), m_InverseInertiaTensor(1.0f / inertia),
-		m_Collider(nullptr)
+		m_InverseMass(1.0f / rbDef.Mass), m_InverseInertiaTensor(1.0f / rbDef.Inertia),
+		m_Type(rbDef.Type),
+		m_Collider(rbDef.ColliderDef.Collider->Clone()),
+		m_PhysicsMaterial(rbDef.PhysicsMaterial)
 	{
+		if (rbDef.Flags & RigidBodyDef2D::RestrictRotation)
+		{
+			m_InverseInertiaTensor = 0.0f;
+		}
+		switch (m_Type)
+		{
+		case Engine::RigidBodyType2D::Dynamic:
+			break;
+		case Engine::RigidBodyType2D::Kinematic:
+			break;
+		case Engine::RigidBodyType2D::Static:
+			m_InverseMass = 0.0f;
+			m_InverseInertiaTensor = 0.0f;
+			break;
+		}
 	}
 
 	RigidBody2D::~RigidBody2D()

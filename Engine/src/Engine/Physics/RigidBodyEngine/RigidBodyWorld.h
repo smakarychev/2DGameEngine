@@ -37,7 +37,6 @@ namespace Engine
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
 	private:
-		void VelocityVerletIntegration(F32 deltaTime);
 		void ApplyGlobalForces();
 		void SynchronizeBroadPhase(F32 deltaTime);
 	private:
