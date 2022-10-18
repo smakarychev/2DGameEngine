@@ -28,7 +28,8 @@ namespace Engine
 	{
 		ContactManifold2D* Manifold = nullptr;
 		std::array<RigidBody2D*, 2> Bodies;
-		F32 AccumulatedImpulse = 0.0f;
+		std::array<F32, 2> AccumulatedNormalImpulses { 0.0f };
+		std::array<F32, 2> AccumulatedTangentImpulses { 0.0f };
 		// Ids of the nodes in bvh tree (broad phase).
 		std::array<I32, 2> NodeIds;
 		F32 GetRestitution() const
@@ -36,6 +37,12 @@ namespace Engine
 			return std::max(
 				Bodies[0]->GetPhysicsMaterial().Restitution,
 				Bodies[1]->GetPhysicsMaterial().Restitution);
+		}
+		F32 GetFriction() const
+		{
+			return std::max(
+				Bodies[0]->GetPhysicsMaterial().Friction,
+				Bodies[1]->GetPhysicsMaterial().Friction);
 		}
 	};
 
@@ -49,7 +56,7 @@ namespace Engine
 		friend class ContactManager;
 	public:
 		// Populates vector of contacts, returns the amount of added contacts.
-		virtual U32 GenerateContacts(ContactInfo2D& info)   = 0;
+		virtual U32 GenerateContacts(ContactInfo2D& info) = 0;
 		virtual std::array<Collider2D*, 2> GetColliders() = 0;
 	private:
 		// Shall never be called (it means we failed to derive real type).
@@ -172,16 +179,25 @@ namespace Engine
 
 	struct ContactInfoNode2D;
 
+	struct ContactResolverDef
+	{
+		ContactInfoNode2D* ContactList = nullptr;
+		U32 ContactListSize = 0;
+		bool WarmStartEnabled = false;
+	};
+
 	class ContactResolver
 	{
 	public:
-		static void PreSolve(ContactInfoNode2D* contactList, U32 constListSize);
+		static void PreSolve(const ContactResolverDef& crDef);
 		static void ResolveVelocity();
 		static bool ResolvePosition();
 		static void WarmStart();
 		static std::vector<glm::vec2> s_p;
 		static std::vector<glm::vec2> s_n;
 	private:
+		static void ResolveTangentVelocity(const ContactConstraint2D& constraint);
+		static void ResolveNormalVelocity(const ContactConstraint2D& constraint);
 		static F32 GetDeltaImpulse(const ContactInfo2D& info,  U32 contactIndex);
 	private:
 		static std::vector<ContactConstraint2D> s_ContactConstraints;

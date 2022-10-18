@@ -168,6 +168,9 @@ namespace Engine
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;
+		// Syntetic thickness for stability.
+		static constexpr F32 Radius = 2.0f * 0.005f; //TODO: magic constants.
+		//static constexpr F32 Radius = 0.0f; 
 	};
 	
 	class CircleCollider2D : public Collider2D

@@ -36,6 +36,9 @@ namespace Engine
 		const std::vector<Ref<RigidBody2D>>& GetBodies() const { return m_Bodies; }
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
+
+		void EnableWarmStart(bool enable) { m_WarmStartEnabled = enable; }
+		bool IsWarmStartEnabled() const { return m_WarmStartEnabled; }
 	private:
 		void ApplyGlobalForces();
 		void SynchronizeBroadPhase(F32 deltaTime);
@@ -55,9 +58,10 @@ namespace Engine
 
 		NarrowPhase2D m_NarrowPhase;
 		U32 m_NarrowPhaseIterations;
+		bool m_WarmStartEnabled;
 			
 		glm::vec2 m_Gravity;
-
+		
 
 	};
 }

@@ -7,7 +7,7 @@
 namespace Engine
 {
 	RigidBody2DWorld::RigidBody2DWorld(const glm::vec2& gravity, U32 iterations)
-		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_NarrowPhaseIterations(iterations)
+		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_NarrowPhaseIterations(iterations), m_WarmStartEnabled(true)
 	{
 	}
 
@@ -61,12 +61,22 @@ namespace Engine
 		}
 
 		// Perform warm start / pre steps. TODO
-		ContactResolver::WarmStart();
 		m_BroadPhase.FindContacts([&narrowPhase = m_NarrowPhase](const PotentialContact2D& contact) {narrowPhase.Callback(contact); });
 		m_NarrowPhase.Collide();
-		ContactResolver::PreSolve(m_NarrowPhase.GetContactInfoList(), m_NarrowPhase.GetContactsCount());
+
+		ContactResolverDef crDef{
+			.ContactList = m_NarrowPhase.GetContactInfoList(),
+			.ContactListSize = m_NarrowPhase.GetContactsCount(),
+			.WarmStartEnabled = m_WarmStartEnabled };
+
+		ContactResolver::PreSolve(crDef);
+		if (m_WarmStartEnabled)
+		{
+			ContactResolver::WarmStart();
+		}
+
 		// Resolve velocity constraints.
-		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
+		for (U32 i = 0; i < m_NarrowPhaseIterations + 2; i++)
 		{
 			ContactResolver::ResolveVelocity();
 		}
@@ -75,6 +85,7 @@ namespace Engine
 		{
 			glm::vec2 newPos = body->GetPosition() + body->GetLinearVelocity() * deltaTime;
 			F32 deltaRot = body->GetAngularVelocity() * deltaTime;
+			
 			body->SetPosition(newPos);
 			body->AddRotation(deltaRot);
 			body->SetRotation(glm::normalize(body->GetRotation()));
@@ -82,12 +93,13 @@ namespace Engine
 			body->ResetForce();
 			body->ResetTorque();
 		}
-		// Resolve position constraints. TODO
+		// Resolve position constraints. 
 		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
 		{
-			/*m_NarrowPhase.Collide(m_BroadPhase.GetContacts());
-			ContactResolver::PreSolve(m_NarrowPhase.GetContactManifolds());*/
-			if (ContactResolver::ResolvePosition()) break;
+			if (ContactResolver::ResolvePosition())
+			{
+				break;
+			}
 		}
 	}
 

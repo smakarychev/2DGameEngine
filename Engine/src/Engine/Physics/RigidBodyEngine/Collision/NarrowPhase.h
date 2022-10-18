@@ -23,7 +23,6 @@ namespace Engine
 		~NarrowPhase2D();
 
 		void Collide();
-		const std::vector<ContactManifold2D>& GetContactManifolds() const { return m_Manifolds; }
 		void Callback(const PotentialContact2D& potentialContact);
 		ContactInfoNode2D* GetContactInfoList() const { return m_ContactInfos; }
 		U32 GetContactsCount() const { return m_ContactInfosCount; }
@@ -32,7 +31,6 @@ namespace Engine
 		void RemoveContactInfo(const ContactInfoNode2D& info);
 	private:
 		BroadPhase2D<>& m_BroadPhase;
-		std::vector<ContactManifold2D> m_Manifolds;
 
 		ContactInfoNode2D* m_ContactInfos = nullptr;
 		U32 m_ContactInfosCount = 0;

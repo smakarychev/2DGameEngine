@@ -29,32 +29,33 @@ namespace Engine
 	U32 BoxBoxContact2D::GenerateContacts(ContactInfo2D& info)
 	{
 		ContactManifold2D& manifold = *info.Manifold;
+		F32 radius = m_First->Radius + m_Second->Radius;
 		// SAT.
 		SATQuery satA = SATFaceDirections(*m_First, *m_Second, 
 			m_First->GetAttachedRigidBody()->GetTransform(), m_Second->GetAttachedRigidBody()->GetTransform());
-		if (satA.Distance > 0.0f) return 0;
+		if (satA.Distance > radius) return 0;
 
 		SATQuery satB = SATFaceDirections(*m_Second, *m_First,
 			m_Second->GetAttachedRigidBody()->GetTransform(), m_First->GetAttachedRigidBody()->GetTransform());
-		if (satB.Distance > 0.0f) return 0;
+		if (satB.Distance > radius) return 0;
 		
 		// We need the axis with smallest depth.
 		SATQuery sat;
 		BoxCollider2D* primary = nullptr;
 		BoxCollider2D* secondary = nullptr;
 		// Add some bias to satA for coherency.
-		static constexpr auto satBias = 0.0003f;
-		if (satB.Distance > satA.Distance - satBias)
+		static constexpr auto satBias = 0.005f;
+		if (satA.Distance > satB.Distance - satBias)
+		{
+			sat = satA;
+			primary = m_First;
+			secondary = m_Second;	
+		}
+		else
 		{
 			sat = satB;
 			primary = m_Second;
 			secondary = m_First;
-		}
-		else
-		{
-			sat = satA;
-			primary = m_First;
-			secondary = m_Second;
 		}
 		glm::vec2 refFaceDir = primary->GetFaceDirection(sat.FaceIndex);
 		I32 incidentFaceI = FindIncidentFaceIndex(*secondary,
@@ -70,11 +71,11 @@ namespace Engine
 			.End = secondary->GetVertex(incidentFaceI < 3 ? incidentFaceI + 1 : 0)
 		};
 		Line2D sideA{
-			.Offset = -glm::dot(primary->GetVertex(sat.FaceIndex), refFaceDir),
+			.Offset = -glm::dot(primary->GetVertex(sat.FaceIndex), refFaceDir) + radius,
 			.Normal = refFaceDir
 		};
 		Line2D sideB{
-			.Offset = glm::dot(primary->GetVertex(sat.FaceIndex < 3 ? sat.FaceIndex + 1 : 0), refFaceDir),
+			.Offset = glm::dot(primary->GetVertex(sat.FaceIndex < 3 ? sat.FaceIndex + 1 : 0), refFaceDir) + radius,
 			.Normal = -refFaceDir
 		};
 
@@ -97,7 +98,7 @@ namespace Engine
 		{
 			// Compute distance to reference face.
 			F32 distance = glm::dot(clippedPoints[i], refFaceNormal) + refFaceOffset;
-			if (distance > 0.0f) continue;
+			if (distance > radius) continue;
 			//TODO: Move contact point onto the ref face (this helps coherence)?
 
 			ContactPoint2D contactInfo;
@@ -429,15 +430,15 @@ namespace Engine
 	std::vector<glm::vec2> ContactResolver::s_p;
 	std::vector<glm::vec2> ContactResolver::s_n;
 
-	void ContactResolver::PreSolve(ContactInfoNode2D* contactList, U32 constListSize)
+	void ContactResolver::PreSolve(const ContactResolverDef& crDef)
 	{
 		s_p.clear(); //x1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		s_n.clear(); //x1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		s_ContactConstraints.clear();
 
-		s_ContactConstraints.reserve(constListSize);
+		s_ContactConstraints.reserve(crDef.ContactListSize);
 		
-		ContactInfoNode2D* currentInfo = contactList;
+		ContactInfoNode2D* currentInfo = crDef.ContactList;
 		while (currentInfo != nullptr)
 		{
 			if (currentInfo->Info.Manifold != nullptr)
@@ -445,8 +446,131 @@ namespace Engine
 				ContactManifold2D& manifold = *currentInfo->Info.Manifold;
 				s_ContactConstraints.push_back(ContactConstraint2D{
 					.ContactInfo = &currentInfo->Info });
+				for (U32 i = 0; i < manifold.ContactCount; i++)
+				{
+					if (crDef.WarmStartEnabled == false)
+					{
+						s_ContactConstraints.back().ContactInfo->AccumulatedNormalImpulses[i] = 0.0f;
+						s_ContactConstraints.back().ContactInfo->AccumulatedTangentImpulses[i] = 0.0f;
+					}
+				}
 			}
 			currentInfo = currentInfo->Next;
+		}
+	}
+
+	void ContactResolver::WarmStart()
+	{
+		for (auto& constraint : s_ContactConstraints)
+		{
+			ContactManifold2D& manifold = *constraint.ContactInfo->Manifold;
+			RigidBody2D* first = constraint.ContactInfo->Bodies[0];
+			RigidBody2D* second = constraint.ContactInfo->Bodies[1];
+
+			if (first->GetType() == RigidBodyType2D::Static && second->GetType() == RigidBodyType2D::Static) continue;
+
+			for (U32 i = 0; i < manifold.ContactCount; i++)
+			{
+				// TODO: store in constraint.
+				glm::vec2 contactPointWorld = second->GetTransform().Transform(manifold.Contacts[i].LocalPoint);
+				glm::vec2 distA = contactPointWorld - first->GetTransform().Translation;
+				glm::vec2 distB = contactPointWorld - second->GetTransform().Translation;
+				glm::vec2 normal = first->GetTransform().TransformDirection(manifold.LocalNormal);
+				glm::vec2 tangent{ -normal.y, normal.x };
+
+				glm::vec2 impulseVec = normal * constraint.ContactInfo->AccumulatedNormalImpulses[i] +
+					tangent * constraint.ContactInfo->AccumulatedTangentImpulses[i];
+
+				first->SetLinearVelocity(first->GetLinearVelocity() + impulseVec * first->GetInverseMass());
+				first->SetAngularVelocity(first->GetAngularVelocity() + Math::Cross2D(distA, impulseVec) * first->GetInverseInertia());
+				second->SetLinearVelocity(second->GetLinearVelocity() - impulseVec * second->GetInverseMass());
+				second->SetAngularVelocity(second->GetAngularVelocity() - Math::Cross2D(distB, impulseVec) * second->GetInverseInertia());
+			}
+
+		}
+	}
+
+	void ContactResolver::ResolveTangentVelocity(const ContactConstraint2D& constraint)
+	{
+		RigidBody2D* first = constraint.ContactInfo->Bodies[0];
+		RigidBody2D* second = constraint.ContactInfo->Bodies[1];
+		const Transform2D& tfA = first->GetTransform();
+		const Transform2D& tfB = second->GetTransform();
+		const ContactManifold2D& manifold = *constraint.ContactInfo->Manifold;
+
+		for (U32 i = 0; i < manifold.ContactCount; i++)
+		{
+			glm::vec2 normal = tfA.TransformDirection(manifold.LocalNormal);
+			glm::vec2 tangent{ -normal.y, normal.x };
+			glm::vec2 contactPointWorld = tfB.Transform(manifold.Contacts[i].LocalPoint);
+			glm::vec2 distA = contactPointWorld - tfA.Translation;
+			glm::vec2 distB = contactPointWorld - tfB.Translation;
+			F32 tDistA = Math::Cross2D(distA, tangent);
+			F32 tDistB = Math::Cross2D(distB, tangent);
+
+			glm::vec2 relativeVel =
+				  first->GetLinearVelocity() + Math::Cross2D( first->GetAngularVelocity(), distA) -
+				(second->GetLinearVelocity() + Math::Cross2D(second->GetAngularVelocity(), distB));
+			// TODO: account for tangent speed (for revoluting bodies).
+			F32 jv = glm::dot(relativeVel, tangent);
+
+			F32 effectiveMass = first->GetInverseMass() + second->GetInverseMass() +
+				first->GetInverseInertia()  * tDistA * tDistA +
+				second->GetInverseInertia() * tDistB * tDistB;
+			F32 deltaImpulse = -jv / effectiveMass;
+
+			F32 maxFriction = constraint.ContactInfo->GetFriction() * constraint.ContactInfo->AccumulatedNormalImpulses[i];
+			F32 newImpulse = Math::Clamp(constraint.ContactInfo->AccumulatedTangentImpulses[i] + deltaImpulse, -maxFriction, maxFriction);
+			deltaImpulse = newImpulse - constraint.ContactInfo->AccumulatedTangentImpulses[i];
+			constraint.ContactInfo->AccumulatedTangentImpulses[i] = newImpulse;
+
+			glm::vec2 impulseVec = deltaImpulse * tangent;
+
+			first->SetLinearVelocity(first->GetLinearVelocity() + impulseVec * first->GetInverseMass());
+			first->SetAngularVelocity(first->GetAngularVelocity() + Math::Cross2D(distA, impulseVec) * first->GetInverseInertia());
+			second->SetLinearVelocity(second->GetLinearVelocity() - impulseVec * second->GetInverseMass());
+			second->SetAngularVelocity(second->GetAngularVelocity() - Math::Cross2D(distB, impulseVec) * second->GetInverseInertia());
+		}
+	}
+
+	void ContactResolver::ResolveNormalVelocity(const ContactConstraint2D& constraint)
+	{
+		RigidBody2D*  first = constraint.ContactInfo->Bodies[0];
+		RigidBody2D* second = constraint.ContactInfo->Bodies[1];
+		const Transform2D& tfA =  first->GetTransform();
+		const Transform2D& tfB = second->GetTransform();
+		const ContactManifold2D& manifold = *constraint.ContactInfo->Manifold;
+
+		for (U32 i = 0; i < manifold.ContactCount; i++)
+		{
+			glm::vec2 normal = tfA.TransformDirection(manifold.LocalNormal);
+			glm::vec2 contactPointWorld = tfB.Transform(manifold.Contacts[i].LocalPoint);
+			glm::vec2 distA = contactPointWorld - tfA.Translation;
+			glm::vec2 distB = contactPointWorld - tfB.Translation;
+			F32 nDistA = Math::Cross2D(distA, normal);
+			F32 nDistB = Math::Cross2D(distB, normal);
+
+			glm::vec2 relativeVel =
+				  first->GetLinearVelocity() + Math::Cross2D( first->GetAngularVelocity(), distA) -
+				(second->GetLinearVelocity() + Math::Cross2D(second->GetAngularVelocity(), distB));
+			F32 jv = glm::dot(relativeVel, normal);
+
+			F32 effectiveMass = first->GetInverseMass() + second->GetInverseMass() +
+				first->GetInverseInertia() * nDistA * nDistA +
+				second->GetInverseInertia() * nDistB * nDistB;
+			F32 restitution = constraint.ContactInfo->GetRestitution();
+
+			F32 deltaImpulse = -(1.0f + restitution) * jv / effectiveMass;
+			F32 newImpulse = Math::Max(constraint.ContactInfo->AccumulatedNormalImpulses[i] + deltaImpulse, 0.0f);
+			deltaImpulse = newImpulse - constraint.ContactInfo->AccumulatedNormalImpulses[i];
+			constraint.ContactInfo->AccumulatedNormalImpulses[i] = newImpulse;
+			
+			glm::vec2 impulseVec = deltaImpulse * normal;
+
+			first->SetLinearVelocity(first->GetLinearVelocity() + impulseVec * first->GetInverseMass());
+			first->SetAngularVelocity(first->GetAngularVelocity() + Math::Cross2D(distA, impulseVec) * first->GetInverseInertia());
+			second->SetLinearVelocity(second->GetLinearVelocity() - impulseVec * second->GetInverseMass());
+			second->SetAngularVelocity(second->GetAngularVelocity() - Math::Cross2D(distB, impulseVec) * second->GetInverseInertia());
 		}
 	}
 
@@ -460,28 +584,8 @@ namespace Engine
 			
 			if (first->GetType() == RigidBodyType2D::Static && second->GetType() == RigidBodyType2D::Static) continue;
 
-			//! This requires some rework.
-			for (U32 i = 0; i < manifold.ContactCount; i++)
-			{
-				glm::vec2 normal = first->GetTransform().TransformDirection(manifold.LocalNormal);
-
-				// TODO: store in constraint.
-				glm::vec2 contactPointWorld = second->GetTransform().Transform(manifold.Contacts[i].LocalPoint);
-				glm::vec2 distA = contactPointWorld - first->GetTransform().Translation;
-				glm::vec2 distB = contactPointWorld - second->GetTransform().Translation;
-
-				F32 deltaImpulse = GetDeltaImpulse(*constraint.ContactInfo, i);
-				F32 oldImpulse = constraint.ContactInfo->AccumulatedImpulse;
-				constraint.ContactInfo->AccumulatedImpulse += deltaImpulse;
-				constraint.ContactInfo->AccumulatedImpulse = Math::Max(0.0f, constraint.ContactInfo->AccumulatedImpulse);
-				deltaImpulse = constraint.ContactInfo->AccumulatedImpulse - oldImpulse;
-				constraint.ContactInfo->AccumulatedImpulse = deltaImpulse;
-
-				first->SetLinearVelocity(first->GetLinearVelocity() + deltaImpulse * first->GetInverseMass() * normal);
-				first->SetAngularVelocity(first->GetAngularVelocity() + first->GetInverseInertia() * Math::Cross2D(distA, deltaImpulse * normal));
-				second->SetLinearVelocity(second->GetLinearVelocity() - deltaImpulse * second->GetInverseMass() * normal);
-				second->SetAngularVelocity(second->GetAngularVelocity() - second->GetInverseInertia() * Math::Cross2D(distB, deltaImpulse * normal));
-			}
+			ResolveTangentVelocity(constraint);
+			ResolveNormalVelocity(constraint);
 		}
 	}
 
@@ -494,9 +598,7 @@ namespace Engine
 			ContactManifold2D& manifold = *constraint.ContactInfo->Manifold;
 			RigidBody2D* first =  constraint.ContactInfo->Bodies[0];
 			RigidBody2D* second = constraint.ContactInfo->Bodies[1];
-			if (first->GetType() == RigidBodyType2D::Static && second->GetType() == RigidBodyType2D::Static) continue;
 			
-			//! This requires some rework.
 			for (U32 i = 0; i < manifold.ContactCount; i++)
 			{
 				glm::vec2 normal = first->GetTransform().TransformDirection(manifold.LocalNormal);
@@ -512,13 +614,10 @@ namespace Engine
 				F32 nDistA = Math::Cross2D(distA, normal);
 				F32 nDistB = Math::Cross2D(distB, normal);
 
-				glm::vec2 centersDistVec = first->GetPosition() - second->GetPosition();
-				F32 centersDistNormal = glm::dot(centersDistVec, normal);
-
 				F32 effectiveDepth = manifold.Contacts[i].PenetrationDepth;
 				effectiveDepth = glm::dot((contactPointWorld - refPoint), normal);
-				maxDepth = Math::Max(maxDepth, effectiveDepth);
 				if (effectiveDepth < 0.0f) continue;
+				maxDepth = Math::Max(maxDepth, effectiveDepth);
 
 				F32 correction = baumgarte * (effectiveDepth - 0.005f);
 				correction = Math::Clamp(correction, 0.0f, baumgarte);
@@ -537,28 +636,14 @@ namespace Engine
 				second->SetRotation(glm::normalize(second->GetRotation()));
 			}
 		}
-		return maxDepth < 0.005f * 1.5f;
-	}
-
-	void ContactResolver::WarmStart()
-	{
-		for (auto& constraint : s_ContactConstraints)
-		{
-			ContactManifold2D& manifold = *constraint.ContactInfo->Manifold;
-			RigidBody2D* first =  constraint.ContactInfo->Bodies[0];
-			RigidBody2D* second = constraint.ContactInfo->Bodies[1];
-
-			glm::vec2 normal = first->GetTransform().TransformDirection(manifold.LocalNormal);
-
-			first->SetLinearVelocity(first->GetLinearVelocity() + constraint.ContactInfo->AccumulatedImpulse * first->GetInverseMass() * normal);
-			second->SetLinearVelocity(second->GetLinearVelocity() - constraint.ContactInfo->AccumulatedImpulse * second->GetInverseMass() * normal);
-		}
+		return maxDepth < 0.005f * 3.0f;
 	}
 
 	F32 ContactResolver::GetDeltaImpulse(const ContactInfo2D& info, U32 contactIndex)
 	{
 		RigidBody2D* first = info.Bodies[0];
 		RigidBody2D* second = info.Bodies[1];
+		if (first->GetType() == RigidBodyType2D::Static && second->GetType() == RigidBodyType2D::Static) return 0.0f;
 		ContactManifold2D& manifold = *info.Manifold;
 		glm::vec2 normal = first->GetTransform().TransformDirection(manifold.LocalNormal);
 
@@ -570,16 +655,15 @@ namespace Engine
 		F32 nDistB = Math::Cross2D(distB, normal);
 
 		glm::vec2 relativeVel =
-			 first->GetLinearVelocity()  + Math::Cross2D(first->GetAngularVelocity(), distA) -
+			  first->GetLinearVelocity() + Math::Cross2D( first->GetAngularVelocity(), distA) -
 			(second->GetLinearVelocity() + Math::Cross2D(second->GetAngularVelocity(), distB));
 		F32 jv = glm::dot(relativeVel, normal);
 
-		F32 restitution = info.GetRestitution();
-		F32 impulse = -(1.0f + restitution) * jv;
 		F32 effectiveMass = first->GetInverseMass() + second->GetInverseMass() +
-			first->GetInverseInertia() * nDistA * nDistA +
+			 first->GetInverseInertia() * nDistA * nDistA +
 			second->GetInverseInertia() * nDistB * nDistB;
-		impulse /= effectiveMass;
+		F32 restitution = info.GetRestitution();
+		F32 impulse = -(1.0f + restitution) * jv / effectiveMass;
 		
 		return impulse;
 	}
