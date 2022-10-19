@@ -7,7 +7,7 @@
 namespace Engine
 {
 	NarrowPhase2D::NarrowPhase2D(BroadPhase2D<>& broadPhase)
-		: m_BroadPhase(broadPhase)
+		: m_BroadPhase(broadPhase), m_ContactListener(DefaultContactListener::Get())
 	{
 	}
 
@@ -32,29 +32,52 @@ namespace Engine
 		ContactInfoNode2D* currentInfo = m_ContactInfos;
 		while (currentInfo != nullptr)
 		{
+			// Check if colliders was colliding on the last frame.
+			bool wasTouching = currentInfo->Info.IsTouching();
 			// Check if there is still bounds collision.
 			const std::array<I32, 2>& broadNodes = currentInfo->Info.NodeIds;
-			if (m_BroadPhase.CheckCollision(broadNodes[0], broadNodes[1]) == false)
+
+			Collider2D* colliderA = currentInfo->Info.Bodies[0]->GetCollider();
+			Collider2D* colliderB = currentInfo->Info.Bodies[1]->GetCollider();
+			
+			// Check if objects can collide, if we assume object's filters never change,
+			// we could move second part of this check to `Callback` and discard contact immediately.
+			bool canCollide = m_BroadPhase.CheckCollision(broadNodes[0], broadNodes[1]) &&
+				Filter::ShouldCollide(colliderA, colliderB);
+
+			if (canCollide == false)
 			{
+				if (wasTouching)
+				{
+					m_ContactListener->OnContactEnd(currentInfo->Info);
+					// No need to change state of contact since it will be destroyed immediately.
+				}
 				m_BroadPhase.RemoveContact(PotentialContact2D{ .Bodies {currentInfo->Info.Bodies}, .NodeIds = broadNodes });
 				ContactInfoNode2D* toDelete = currentInfo;
 				currentInfo = currentInfo->Next;
 				RemoveContactInfo(*toDelete);
 				continue;
 			}
-
-			Collider2D* colliderA = currentInfo->Info.Bodies[0]->GetCollider();
-			Collider2D* colliderB = currentInfo->Info.Bodies[1]->GetCollider();
-
+			
 			Contact2D* narrowContact = ContactManager::Create(colliderA, colliderB);
+
 			if (currentInfo->Info.Manifold == nullptr)
 			{
 				currentInfo->Info.Manifold = New<ContactManifold2D>();
 			}
-			if (narrowContact->GenerateContacts(currentInfo->Info) == 0)
+			bool isTouching = narrowContact->GenerateContacts(currentInfo->Info) > 0;
+
+			if (!isTouching && wasTouching)
 			{
+				m_ContactListener->OnContactEnd(currentInfo->Info);
 				Delete<ContactManifold2D>(currentInfo->Info.Manifold);
 				currentInfo->Info.Manifold = nullptr;
+				currentInfo->Info.SetTouch(false);
+			}
+			else if (!wasTouching && isTouching)
+			{
+				m_ContactListener->OnContactBegin(currentInfo->Info);
+				currentInfo->Info.SetTouch(true);
 			}
 			ContactManager::Destroy(narrowContact);
 			currentInfo = currentInfo->Next;
@@ -66,7 +89,13 @@ namespace Engine
 		Collider2D* colliderA = potentialContact.Bodies[0]->GetCollider();
 		Collider2D* colliderB = potentialContact.Bodies[1]->GetCollider();
 
-		ContactInfo2D info{ .Manifold = nullptr, .Bodies = potentialContact.Bodies, .NodeIds = potentialContact.NodeIds };
+		ContactInfo2D info{};
+		info.Manifold = nullptr;
+		info.Bodies = potentialContact.Bodies;
+		info.NodeIds = potentialContact.NodeIds;
+		info.AccumulatedNormalImpulses = info.AccumulatedTangentImpulses = { 0.0f };
+		// Check if any of colliders are sensors, and set flag if so.
+		info.SetSensors();
 		AddContactInfo(info);
 	}
 	

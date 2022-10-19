@@ -6,6 +6,25 @@
 
 namespace Engine
 {
+	bool Filter::ShouldCollide(Collider2D* first, Collider2D* second)
+	{
+		const Filter& filterA = first->GetFilter();
+		const Filter& filterB = second->GetFilter();
+		if (filterA.GroupIndex == 0 || filterA.GroupIndex != filterB.GroupIndex)
+		{
+			// Use mask + category.
+			return (filterA.CategoryBits & filterB.MaskBits) && (filterB.CategoryBits & filterA.MaskBits);
+		}
+		else
+		{
+			if (filterA.GroupIndex > 0)
+			{
+				return true;
+			}
+			return false;
+		}
+	}
+
 	BoxCollider2D::BoxCollider2D(const glm::vec2& center, const glm::vec2& halfSize)
 		: Collider2D(Type::Box),
 		HalfSize(halfSize), Center(center)
@@ -40,6 +59,7 @@ namespace Engine
 		case 1: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y - HalfSize.y });
 		case 2: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y + HalfSize.y });
 		case 3: return m_AttachedRigidBody->GetTransform().Transform({ Center.x - HalfSize.x, Center.y + HalfSize.y });
+		default: ENGINE_CORE_FATAL("Impossible vertex index!"); return { 0.0f, 0.0f };
 		}
 	}
 
@@ -118,5 +138,7 @@ namespace Engine
 		}
 		}
 	}
+
+
 
 }

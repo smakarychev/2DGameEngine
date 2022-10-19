@@ -32,6 +32,26 @@ namespace Engine
 		std::array<F32, 2> AccumulatedTangentImpulses { 0.0f };
 		// Ids of the nodes in bvh tree (broad phase).
 		std::array<I32, 2> NodeIds;
+		void SetTouch(bool isTouching)
+		{
+			if (isTouching) Flags |= TOUCH_FLAG;
+			else Flags &= ~TOUCH_FLAG;
+		}
+		bool IsTouching() const { return static_cast<bool>(Flags & TOUCH_FLAG); }
+		void SetSensors()
+		{
+			ENGINE_CORE_ASSERT(Bodies[0] != nullptr && Bodies[1] != nullptr, "Bodies are unset");
+			if (Bodies[0]->GetCollider()->IsSensor() || Bodies[1]->GetCollider()->IsSensor())
+			{
+				Flags |= SENSOR_FLAG;
+			}
+			else
+			{
+				Flags &= ~SENSOR_FLAG;
+			}
+
+		}
+		bool HasSensors() const { return static_cast<bool>(Flags & SENSOR_FLAG); }
 		F32 GetRestitution() const
 		{
 			return std::max(
@@ -44,6 +64,10 @@ namespace Engine
 				Bodies[0]->GetPhysicsMaterial().Friction,
 				Bodies[1]->GetPhysicsMaterial().Friction);
 		}
+	private:
+		U32 Flags = 0;
+		constexpr static auto TOUCH_FLAG  = Bit(0);
+		constexpr static auto SENSOR_FLAG = Bit(1);
 	};
 
 	struct ContactConstraint2D
@@ -190,9 +214,11 @@ namespace Engine
 	{
 	public:
 		static void PreSolve(const ContactResolverDef& crDef);
+		static void WarmStart();
 		static void ResolveVelocity();
 		static bool ResolvePosition();
-		static void WarmStart();
+		// Put objects to sleep.
+		static void PostSolve();
 		static std::vector<glm::vec2> s_p;
 		static std::vector<glm::vec2> s_n;
 	private:
@@ -201,5 +227,26 @@ namespace Engine
 		static F32 GetDeltaImpulse(const ContactInfo2D& info,  U32 contactIndex);
 	private:
 		static std::vector<ContactConstraint2D> s_ContactConstraints;
+	};
+
+	// Idea from box2d (as pretty much everything else here :)),
+	// let user react to contact's state change.
+	class ContactListener
+	{
+	public:
+		virtual ~ContactListener() {};
+		virtual void OnContactBegin([[maybe_unused]] const ContactInfo2D& contact) {}
+		virtual void OnContactEnd([[maybe_unused]] const ContactInfo2D& contact) {}
+	};
+
+	class DefaultContactListener : public ContactListener
+	{
+	public:
+		static void Init();
+		// This is called in `EntryPoint` maybe find a better place?
+		static void Shutdown();
+		static DefaultContactListener* Get();
+	private:
+		static DefaultContactListener* s_Instance;
 	};
 }

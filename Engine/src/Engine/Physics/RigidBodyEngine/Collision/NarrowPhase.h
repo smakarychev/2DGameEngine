@@ -26,11 +26,16 @@ namespace Engine
 		void Callback(const PotentialContact2D& potentialContact);
 		ContactInfoNode2D* GetContactInfoList() const { return m_ContactInfos; }
 		U32 GetContactsCount() const { return m_ContactInfosCount; }
+
+		void SetContactListener(ContactListener* contactListener) { m_ContactListener = contactListener; }
+
 	private:
 		ContactInfoNode2D* AddContactInfo(const ContactInfo2D& info);
 		void RemoveContactInfo(const ContactInfoNode2D& info);
 	private:
 		BroadPhase2D<>& m_BroadPhase;
+
+		ContactListener* m_ContactListener = nullptr;
 
 		ContactInfoNode2D* m_ContactInfos = nullptr;
 		U32 m_ContactInfosCount = 0;

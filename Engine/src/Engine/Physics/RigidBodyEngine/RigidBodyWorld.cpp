@@ -101,6 +101,7 @@ namespace Engine
 				break;
 			}
 		}
+		ContactResolver::PostSolve();
 	}
 
 	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)

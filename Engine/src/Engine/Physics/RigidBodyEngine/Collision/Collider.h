@@ -124,10 +124,29 @@ namespace Engine
 	class EdgeCollider2D;
 	class Collider2D;
 
+	// Inspired by.... 
+
+	struct Filter
+	{
+		U16 CategoryBits = 0x0001;
+		// Which categories to collide with.
+		U16 MaskBits = 0xFFFF;
+		/* 
+		Altrenative to category + mask, if for a pair of colliders group is:
+			* 0 / different - use category + mask.
+			* same and negative - never collide.
+			* same and positive - always collide.
+		*/
+		I32 GroupIndex = 0;
+		static bool ShouldCollide(Collider2D* first, Collider2D* second);
+	};
+
 	struct ColliderDef2D
 	{
 		// This collider will be copied.
 		Collider2D* Collider = nullptr;
+		Filter Filter{};
+		bool IsSensor = false;
 	};
 
 	class Collider2D
@@ -144,6 +163,12 @@ namespace Engine
 		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
 		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
 
+		bool IsSensor() const { return m_IsSensor; }
+		void SetSensor(bool isSensor) { m_IsSensor = isSensor; }
+
+		const Filter& GetFilter() const { return m_Filter; }
+		void SetFilter(const Filter& filter) { m_Filter = filter; }
+
 		static void Destroy(Collider2D* collider);
 
 		virtual Collider2D* Clone() = 0;
@@ -152,6 +177,8 @@ namespace Engine
 
 	protected:
 		Type m_Type;
+		Filter m_Filter;
+		bool m_IsSensor = false;
 		RigidBody2D* m_AttachedRigidBody = nullptr;
 	};
 

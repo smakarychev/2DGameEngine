@@ -39,6 +39,7 @@ namespace Engine
 
 		void EnableWarmStart(bool enable) { m_WarmStartEnabled = enable; }
 		bool IsWarmStartEnabled() const { return m_WarmStartEnabled; }
+		void SetContactListener(ContactListener* contactListener) { m_NarrowPhase.SetContactListener(contactListener); }
 	private:
 		void ApplyGlobalForces();
 		void SynchronizeBroadPhase(F32 deltaTime);

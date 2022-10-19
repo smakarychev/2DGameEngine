@@ -101,7 +101,7 @@ namespace Engine
 			if (distance > radius) continue;
 			//TODO: Move contact point onto the ref face (this helps coherence)?
 
-			ContactPoint2D contactInfo;
+			ContactPoint2D contactInfo{};
 			contactInfo.LocalPoint = secondary->GetAttachedRigidBody()->GetTransform().InverseTransform(clippedPoints[i]);
 			contactInfo.PenetrationDepth = -distance;
 			manifold.Contacts[manifold.ContactCount] = contactInfo;
@@ -155,7 +155,7 @@ namespace Engine
 		info.Bodies[1] = const_cast<RigidBody2D*>(m_Second->GetAttachedRigidBody());
 		manifold.LocalNormal = normal;
 		manifold.ContactCount = 1;
-		ContactPoint2D contactInfo;
+		ContactPoint2D contactInfo{};
 		contactInfo.LocalPoint = m_Second->GetAttachedRigidBody()->GetTransform().InverseTransform(firstCenter + distVec * 0.5f);
 		contactInfo.PenetrationDepth = minDist - dist;
 		manifold.Contacts[0] = contactInfo;
@@ -221,7 +221,7 @@ namespace Engine
 		if (manifold.LocalNormal.x != 0.0 || manifold.LocalNormal.y != 0)
 			manifold.LocalNormal = glm::normalize(manifold.LocalNormal);
 		
-		ContactPoint2D contactInfo;
+		ContactPoint2D contactInfo{};
 		contactInfo.LocalPoint= closestPoint;
 		contactInfo.PenetrationDepth = m_Circle->Radius - Math::Sqrt(distanceSquared);
 		manifold.Contacts[0] = contactInfo;
@@ -272,7 +272,7 @@ namespace Engine
 			return 0;
 		}
 
-		ContactPoint2D contactInfo;
+		ContactPoint2D contactInfo{};
 		contactInfo.LocalPoint= m_Circle->GetAttachedRigidBody()->GetTransform().InverseTransform(circleCenter - normal * distanceToPlane);
 		
 		F32 depth = -distanceToPlane;
@@ -350,7 +350,7 @@ namespace Engine
 			if (vertexDistance <= offset)
 			{
 				// Create contact data.
-				ContactPoint2D contactInfo;
+				ContactPoint2D contactInfo{};
 				contactInfo.LocalPoint= m_Box->GetAttachedRigidBody()->GetTransform().InverseTransform(normal * (vertexDistance - offset) + vertices[i]);
 				contactInfo.PenetrationDepth = offset - vertexDistance;
 				manifold.Contacts[manifold.ContactCount] = contactInfo;
@@ -443,6 +443,13 @@ namespace Engine
 		{
 			if (currentInfo->Info.Manifold != nullptr)
 			{
+				// We need not resolve sensors.
+				if (currentInfo->Info.HasSensors())
+				{
+					currentInfo = currentInfo->Next;
+					continue;
+				}
+
 				ContactManifold2D& manifold = *currentInfo->Info.Manifold;
 				s_ContactConstraints.push_back(ContactConstraint2D{
 					.ContactInfo = &currentInfo->Info });
@@ -666,6 +673,31 @@ namespace Engine
 		F32 impulse = -(1.0f + restitution) * jv / effectiveMass;
 		
 		return impulse;
+	}
+	
+	void ContactResolver::PostSolve()
+	{
+		// TODO: put objects to sleep.
+	}
+
+	DefaultContactListener* DefaultContactListener::s_Instance = nullptr;
+
+	void DefaultContactListener::Init()
+	{
+		ENGINE_CORE_ASSERT(s_Instance == nullptr, "Default contact listener is already created.");
+		s_Instance = New<DefaultContactListener>();
+	}
+
+	void DefaultContactListener::Shutdown()
+	{
+		Delete<DefaultContactListener>(s_Instance);
+	}
+
+	DefaultContactListener* DefaultContactListener::Get()
+	{
+		if (s_Instance == nullptr)
+			Init();
+		return s_Instance;
 	}
 
 }

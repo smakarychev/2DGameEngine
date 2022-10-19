@@ -11,7 +11,6 @@ namespace Engine
 		m_Force(0.0f), m_Torque(0.0f),
 		m_InverseMass(1.0f / rbDef.Mass), m_InverseInertiaTensor(1.0f / rbDef.Inertia),
 		m_Type(rbDef.Type),
-		m_Collider(rbDef.ColliderDef.Collider->Clone()),
 		m_PhysicsMaterial(rbDef.PhysicsMaterial)
 	{
 		if (rbDef.Flags & RigidBodyDef2D::RestrictRotation)
@@ -28,6 +27,16 @@ namespace Engine
 			m_InverseMass = 0.0f;
 			m_InverseInertiaTensor = 0.0f;
 			break;
+		}
+		if (rbDef.ColliderDef.Collider != nullptr)
+		{
+			m_Collider = rbDef.ColliderDef.Collider->Clone();
+			m_Collider->SetSensor(rbDef.ColliderDef.IsSensor);
+			m_Collider->SetFilter(rbDef.ColliderDef.Filter);
+		}
+		else
+		{
+			m_Collider = nullptr;
 		}
 	}
 
