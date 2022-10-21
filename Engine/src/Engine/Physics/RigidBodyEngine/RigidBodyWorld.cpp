@@ -11,20 +11,62 @@ namespace Engine
 	{
 	}
 
-	RigidBody2D& RigidBody2DWorld::CreateBody(const RigidBodyDef2D& rbDef)
+	RigidBody2DWorld::~RigidBody2DWorld()
 	{
-		m_Bodies.emplace_back(CreateRef<RigidBody2D>(rbDef));
-		RigidBody2D& newBody = *m_Bodies.back();
-		newBody.SetPhysicsMaterial(rbDef.PhysicsMaterial);
+		while (m_BodyList != nullptr)
+		{
+			RigidBodyNode2D* next = m_BodyList->Next;
+			Delete<RigidBody2D>(m_BodyList->Body);
+			Delete<RigidBodyNode2D>(m_BodyList);
+			m_BodyList = next;
+		}
+	}
+
+	RigidBody2D* RigidBody2DWorld::AddBodyToList(const RigidBodyDef2D& rbDef)
+	{
+		RigidBodyNode2D* newNode = New<RigidBodyNode2D>();
+		RigidBody2D* newBody = New<RigidBody2D>(rbDef);
+		newNode->Body = newBody;
 		if (rbDef.ColliderDef.Collider != nullptr)
 		{
-			newBody.GetCollider()->SetAttachedRigidBody(&newBody);
+			newBody->GetCollider()->SetAttachedRigidBody(newBody);
 			// Add body to broad phase and safe returned nodeId for later modification of bvh tree.
 			// TODO: store only bodies that are dynamic / kinematic.
-			I32 nodeId = m_BroadPhase.InsertRigidBody(&newBody, newBody.GetCollider()->GenerateBounds(newBody.GetTransform()));
+			I32 nodeId = m_BroadPhase.InsertRigidBody(newBody, newBody->GetCollider()->GenerateBounds(newBody->GetTransform()));
 			m_BroadPhaseNodes.push_back(nodeId);
 		}
+		newNode->Next = m_BodyList;
+		if (m_BodyList != nullptr)
+		{
+			m_BodyList->Prev = newNode;
+		}
+		m_BodyList = newNode;
+
 		return newBody;
+	}
+
+	void RigidBody2DWorld::RemoveBody(RigidBodyNode2D* bodyNode)
+	{
+		// Delete node.
+		if (bodyNode == m_BodyList)
+		{
+			m_BodyList = bodyNode->Next;
+		}
+		if (bodyNode->Prev != nullptr)
+		{
+			bodyNode->Prev->Next = bodyNode->Next;
+		}
+		if (bodyNode->Next != nullptr)
+		{
+			bodyNode->Next->Prev = bodyNode->Prev;
+		}
+		Delete<RigidBody2D>(bodyNode->Body);
+		Delete<RigidBodyNode2D>(bodyNode);
+	}
+
+	RigidBody2D* RigidBody2DWorld::CreateBody(const RigidBodyDef2D& rbDef)
+	{
+		return AddBodyToList(rbDef);
 	}
 
 	void RigidBody2DWorld::Update(F32 deltaTime)
@@ -34,8 +76,11 @@ namespace Engine
 		ApplyGlobalForces();
 		m_Registry.ApplyForces();
 		// Update velocities based on forces.
-		for (auto& body : m_Bodies)
+		RigidBodyNode2D* currentNode = m_BodyList;
+		while (currentNode != nullptr)
 		{
+			RigidBody2D* body = currentNode->Body;
+
 			glm::vec2 linAcc{ 0.0f };
 			F32 angAcc{ 0.0f };
 			// If body has finite mass, convert its force to acceleration.
@@ -58,6 +103,8 @@ namespace Engine
 			// Update body vels.
 			body->SetLinearVelocity(newLinVel);
 			body->SetAngularVelocity(newAngVel);
+
+			currentNode = currentNode->Next;
 		}
 
 		// Perform warm start / pre steps. TODO
@@ -81,8 +128,11 @@ namespace Engine
 			ContactResolver::ResolveVelocity();
 		}
 		// Update positions based on velocities.
-		for (auto& body : m_Bodies)
+		currentNode = m_BodyList;
+		while (currentNode != nullptr)
 		{
+			RigidBody2D* body = currentNode->Body;
+
 			glm::vec2 newPos = body->GetPosition() + body->GetLinearVelocity() * deltaTime;
 			F32 deltaRot = body->GetAngularVelocity() * deltaTime;
 			
@@ -92,6 +142,8 @@ namespace Engine
 
 			body->ResetForce();
 			body->ResetTorque();
+
+			currentNode = currentNode->Next;
 		}
 		// Resolve position constraints. 
 		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
@@ -113,9 +165,12 @@ namespace Engine
 	{
 		for (auto& globalForce : m_GlobalForces)
 		{
-			for (auto& body : m_Bodies)
+			RigidBodyNode2D* currentNode = m_BodyList;
+			while (currentNode != nullptr)
 			{
+				RigidBody2D* body = currentNode->Body;
 				globalForce->ApplyForce(*body);
+				currentNode = currentNode->Next;
 			}
 		}
 	}

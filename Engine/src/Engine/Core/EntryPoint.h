@@ -5,6 +5,7 @@
 #include "Engine/Memory/MemoryManager.h"
 #include "Engine/Rendering/Renderer.h"
 #include "Engine/Resource/ResourceManager.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 
 extern std::unique_ptr<Engine::Application> Engine::CreateApplication();
 
@@ -19,5 +20,6 @@ int main(int argc, char** argv)
 	}
 	Engine::Renderer::ShutDown();
 	Engine::ResourceManager::ShutDown();
+	Engine::DefaultContactListener::Shutdown();
 	Engine::MemoryManager::ShutDown();
 }

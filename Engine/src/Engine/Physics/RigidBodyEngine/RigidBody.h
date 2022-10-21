@@ -39,6 +39,11 @@ namespace Engine
 		Flags Flags = None;
 	};
 
+	enum class ForceMode
+	{
+		Force, Impulse
+	};
+
 	class RigidBody2D
 	{
 	public:
@@ -70,6 +75,7 @@ namespace Engine
 		F32 GetLinearDamping() const { return m_LinearDamping; }
 
 		void AddForce(const glm::vec2& force) { m_Force += force; }
+		void AddForce(const glm::vec2& force, ForceMode mode);
 		void ResetForce() { m_Force = glm::vec2{ 0.0f }; }
 		const glm::vec2& GetForce() const { return m_Force; }
 
@@ -119,7 +125,6 @@ namespace Engine
 		PhysicsMaterial m_PhysicsMaterial;
 		Collider2D* m_Collider;
 
-		// vec3 for position is a bit strange, for now 3rd value is used as layer.
 		glm::vec2 m_Position;
 		glm::vec2 m_Rotation;
 

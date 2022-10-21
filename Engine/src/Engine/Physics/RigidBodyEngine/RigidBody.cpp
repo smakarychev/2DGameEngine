@@ -48,6 +48,19 @@ namespace Engine
 		}
 	}
 
+	void RigidBody2D::AddForce(const glm::vec2& force, ForceMode mode)
+	{
+		switch (mode)
+		{
+		case Engine::ForceMode::Force: 
+			AddForce(force);
+			break;
+		case Engine::ForceMode::Impulse: 
+			m_LinearVelocity += force * m_InverseMass;
+			break;
+		}
+	}
+
 	void RigidBody2D::AddRotation(F32 angleRad)
 	{
 		glm::vec2 delta = glm::vec2{ glm::cos(angleRad), glm::sin(angleRad) };

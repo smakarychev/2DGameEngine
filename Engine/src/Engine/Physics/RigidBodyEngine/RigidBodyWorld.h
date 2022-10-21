@@ -14,14 +14,21 @@ namespace Engine
 {
 	using namespace Types;
 
+	struct RigidBodyNode2D
+	{
+		RigidBody2D* Body = nullptr;
+		RigidBodyNode2D* Next = nullptr;
+		RigidBodyNode2D* Prev = nullptr;
+	};
+
 	//! The main problem now is the lack of ability to delete bodies.
 	class RigidBody2DWorld
 	{
 	public:
 		RigidBody2DWorld(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f }, U32 iterations = 4);
-
+		~RigidBody2DWorld();
 		// All rigid bodies shall be created by this method.
-		RigidBody2D& CreateBody(const RigidBodyDef2D& rbDef);
+		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		
 		void Update(F32 deltaTime);
 
@@ -33,7 +40,10 @@ namespace Engine
 
 		void SetGravity(const glm::vec2& gravity) { m_Gravity = gravity; }
 		void SetIterations(U32 iterations) { m_NarrowPhaseIterations = iterations; }
-		const std::vector<Ref<RigidBody2D>>& GetBodies() const { return m_Bodies; }
+		
+		const RigidBodyNode2D* GetBodyList() const { return m_BodyList; }
+		void RemoveBody(RigidBodyNode2D* bodyNode);
+
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
 
@@ -41,11 +51,12 @@ namespace Engine
 		bool IsWarmStartEnabled() const { return m_WarmStartEnabled; }
 		void SetContactListener(ContactListener* contactListener) { m_NarrowPhase.SetContactListener(contactListener); }
 	private:
+		RigidBody2D* AddBodyToList(const RigidBodyDef2D& rbDef);
 		void ApplyGlobalForces();
 		void SynchronizeBroadPhase(F32 deltaTime);
 	private:
 		// Stores all the bodies (smart pointers to them).
-		std::vector<Ref<RigidBody2D>> m_Bodies;
+		RigidBodyNode2D* m_BodyList = nullptr;
 
 		// Stores all global forces.
 		std::vector<Ref<RigidBody2DForceGenerator>> m_GlobalForces;
