@@ -10,4 +10,15 @@ namespace Engine
 	public:
 		static F64 Get();
 	};
+	
+	class Timer
+	{
+	public:
+		Timer();
+		F64 GetTime() const;
+		F64 GetFPS() const;
+		void Reset();
+	private:
+		F64 m_TimeMark;
+	};
 }
