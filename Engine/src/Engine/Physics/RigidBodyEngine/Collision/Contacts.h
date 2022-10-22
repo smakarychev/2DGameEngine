@@ -27,7 +27,7 @@ namespace Engine
 	struct ContactInfo2D
 	{
 		ContactManifold2D* Manifold = nullptr;
-		std::array<RigidBody2D*, 2> Bodies;
+		std::array<Collider2D*, 2> Colliders;
 		std::array<F32, 2> AccumulatedNormalImpulses { 0.0f };
 		std::array<F32, 2> AccumulatedTangentImpulses { 0.0f };
 		// Ids of the nodes in bvh tree (broad phase).
@@ -40,8 +40,8 @@ namespace Engine
 		bool IsTouching() const { return static_cast<bool>(Flags & TOUCH_FLAG); }
 		void SetSensors()
 		{
-			ENGINE_CORE_ASSERT(Bodies[0] != nullptr && Bodies[1] != nullptr, "Bodies are unset");
-			if (Bodies[0]->GetCollider()->IsSensor() || Bodies[1]->GetCollider()->IsSensor())
+			ENGINE_CORE_ASSERT(Colliders[0] != nullptr && Colliders[1] != nullptr, "Colliders are unset");
+			if (Colliders[0]->IsSensor() || Colliders[1]->IsSensor())
 			{
 				Flags |= SENSOR_FLAG;
 			}
@@ -55,14 +55,14 @@ namespace Engine
 		F32 GetRestitution() const
 		{
 			return std::max(
-				Bodies[0]->GetPhysicsMaterial().Restitution,
-				Bodies[1]->GetPhysicsMaterial().Restitution);
+				Colliders[0]->GetPhysicsMaterial().Restitution,
+				Colliders[1]->GetPhysicsMaterial().Restitution);
 		}
 		F32 GetFriction() const
 		{
 			return std::max(
-				Bodies[0]->GetPhysicsMaterial().Friction,
-				Bodies[1]->GetPhysicsMaterial().Friction);
+				Colliders[0]->GetPhysicsMaterial().Friction,
+				Colliders[1]->GetPhysicsMaterial().Friction);
 		}
 	private:
 		U32 Flags = 0;
@@ -73,6 +73,11 @@ namespace Engine
 	struct ContactConstraint2D
 	{
 		ContactInfo2D* ContactInfo = nullptr;
+		std::array<F32, 2> NormalMasses{};
+		std::array<F32, 2> TangentMasses{};
+		std::array<glm::vec2, 2> DistVecA{};
+		std::array<glm::vec2, 2> DistVecB{};
+
 	};
 
 	class Contact2D
@@ -201,11 +206,11 @@ namespace Engine
 		static bool s_IsInit;
 	};
 
-	struct ContactInfoNode2D;
+	struct ContactInfoEntry2D;
 
 	struct ContactResolverDef
 	{
-		ContactInfoNode2D* ContactList = nullptr;
+		ContactInfoEntry2D* ContactList = nullptr;
 		U32 ContactListSize = 0;
 		bool WarmStartEnabled = false;
 	};
@@ -219,14 +224,19 @@ namespace Engine
 		static bool ResolvePosition();
 		// Put objects to sleep.
 		static void PostSolve();
-		static std::vector<glm::vec2> s_p;
-		static std::vector<glm::vec2> s_n;
+
+		static void StoreContactPoints(bool store) { s_StoreContactPointInfo = store; }
+		static const std::vector<glm::vec2>& GetContactPoints() { return s_ContactPoints; }
+		static const std::vector<glm::vec2>& GetContactNormals() { return s_ContactNormals; }
 	private:
 		static void ResolveTangentVelocity(const ContactConstraint2D& constraint);
 		static void ResolveNormalVelocity(const ContactConstraint2D& constraint);
 		static F32 GetDeltaImpulse(const ContactInfo2D& info,  U32 contactIndex);
 	private:
 		static std::vector<ContactConstraint2D> s_ContactConstraints;
+		static std::vector<glm::vec2> s_ContactPoints;
+		static std::vector<glm::vec2> s_ContactNormals;
+		static bool s_StoreContactPointInfo;
 	};
 
 	// Idea from box2d (as pretty much everything else here :)),

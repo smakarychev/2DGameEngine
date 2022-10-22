@@ -33,7 +33,7 @@ namespace Engine
 			I32 Parent;
 			I32 Next = BVHNode::NULL_NODE;
 		};
-		// It is assumed that Payload is of type RigidBody2D.
+		// It is assumed that Payload is of type Collider2D.
 		void* Payload = nullptr;
 		bool Moved = false;
 
@@ -370,6 +370,7 @@ namespace Engine
 	}
 
 	// Straight from box2d.
+	// TODO: balance based on sah not on height.
 	template<typename Bounds>
 	inline I32 BVHTree2D<Bounds>::RebalanceTree(I32 nodeId)
 	{

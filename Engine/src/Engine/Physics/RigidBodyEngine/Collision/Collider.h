@@ -5,6 +5,8 @@
 #include "Engine/Math/MathUtils.h"
 #include "Engine/Memory/MemoryManager.h"
 
+#include "Engine/Physics/RigidBodyEngine/PhysicsMaterial.h"
+
 #include "Intersections.h"
 
 #include <vector>
@@ -123,6 +125,7 @@ namespace Engine
 	class CircleCollider2D;
 	class EdgeCollider2D;
 	class Collider2D;
+	struct MassInfo2D;
 
 	// Inspired by.... 
 
@@ -145,8 +148,18 @@ namespace Engine
 	{
 		// This collider will be copied.
 		Collider2D* Collider = nullptr;
+		PhysicsMaterial PhysicsMaterial{};
 		Filter Filter{};
 		bool IsSensor = false;
+		Collider2D* Clone() const;
+		
+	};
+
+	struct ColliderListEntry2D
+	{
+		Collider2D* Collider = nullptr;
+		ColliderListEntry2D* Next = nullptr;
+		ColliderListEntry2D* Prev = nullptr;
 	};
 
 	class Collider2D
@@ -163,6 +176,9 @@ namespace Engine
 		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
 		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
 
+		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
+		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
+
 		bool IsSensor() const { return m_IsSensor; }
 		void SetSensor(bool isSensor) { m_IsSensor = isSensor; }
 
@@ -174,15 +190,15 @@ namespace Engine
 		virtual Collider2D* Clone() = 0;
 		
 		virtual DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const = 0;
+		virtual MassInfo2D CalculateMass() const = 0;
 
 	protected:
 		Type m_Type;
 		Filter m_Filter;
+		PhysicsMaterial m_PhysicsMaterial;
 		bool m_IsSensor = false;
 		RigidBody2D* m_AttachedRigidBody = nullptr;
 	};
-
-	
 
 	class BoxCollider2D : public Collider2D
 	{
@@ -190,14 +206,16 @@ namespace Engine
 		BoxCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		MassInfo2D CalculateMass() const override;
+
 		glm::vec2 GetFaceDirection(I32 vertexId) const;
 		glm::vec2 GetVertex(I32 vertexId) const;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;
-		// Syntetic thickness for stability.
+		// Synthetic thickness for stability.
 		static constexpr F32 Radius = 2.0f * 0.005f; //TODO: magic constants.
-		//static constexpr F32 Radius = 0.0f; 
+
 	};
 	
 	class CircleCollider2D : public Collider2D
@@ -206,6 +224,8 @@ namespace Engine
 		CircleCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, F32 radius = 1.0f);
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		MassInfo2D CalculateMass() const override;
+
 		F32 Radius;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;
@@ -218,6 +238,8 @@ namespace Engine
 		EdgeCollider2D(const glm::vec2& start = glm::vec2{ -1.0f, 0.0f }, const glm::vec2& end = glm::vec2{ 1.0f, 0.0f });
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		MassInfo2D CalculateMass() const override;
+
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
 		// Relative to rigidbody.
 		glm::vec2 Start;

@@ -6,80 +6,87 @@
 
 namespace Engine
 {
-	RigidBody2DWorld::RigidBody2DWorld(const glm::vec2& gravity, U32 iterations)
+	RigidBodyWorld2D::RigidBodyWorld2D(const glm::vec2& gravity, U32 iterations)
 		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_NarrowPhaseIterations(iterations), m_WarmStartEnabled(true)
 	{
 	}
 
-	RigidBody2DWorld::~RigidBody2DWorld()
+	RigidBodyWorld2D::~RigidBodyWorld2D()
 	{
 		while (m_BodyList != nullptr)
 		{
-			RigidBodyNode2D* next = m_BodyList->Next;
+			RigidBodyListEntry2D* next = m_BodyList->Next;
 			Delete<RigidBody2D>(m_BodyList->Body);
-			Delete<RigidBodyNode2D>(m_BodyList);
+			Delete<RigidBodyListEntry2D>(m_BodyList);
 			m_BodyList = next;
 		}
 	}
 
-	RigidBody2D* RigidBody2DWorld::AddBodyToList(const RigidBodyDef2D& rbDef)
-	{
-		RigidBodyNode2D* newNode = New<RigidBodyNode2D>();
-		RigidBody2D* newBody = New<RigidBody2D>(rbDef);
-		newNode->Body = newBody;
-		if (rbDef.ColliderDef.Collider != nullptr)
-		{
-			newBody->GetCollider()->SetAttachedRigidBody(newBody);
-			// Add body to broad phase and safe returned nodeId for later modification of bvh tree.
-			// TODO: store only bodies that are dynamic / kinematic.
-			I32 nodeId = m_BroadPhase.InsertRigidBody(newBody, newBody->GetCollider()->GenerateBounds(newBody->GetTransform()));
-			m_BroadPhaseNodes.push_back(nodeId);
-		}
-		newNode->Next = m_BodyList;
-		if (m_BodyList != nullptr)
-		{
-			m_BodyList->Prev = newNode;
-		}
-		m_BodyList = newNode;
-
-		return newBody;
-	}
-
-	void RigidBody2DWorld::RemoveBody(RigidBodyNode2D* bodyNode)
-	{
-		// Delete node.
-		if (bodyNode == m_BodyList)
-		{
-			m_BodyList = bodyNode->Next;
-		}
-		if (bodyNode->Prev != nullptr)
-		{
-			bodyNode->Prev->Next = bodyNode->Next;
-		}
-		if (bodyNode->Next != nullptr)
-		{
-			bodyNode->Next->Prev = bodyNode->Prev;
-		}
-		Delete<RigidBody2D>(bodyNode->Body);
-		Delete<RigidBodyNode2D>(bodyNode);
-	}
-
-	RigidBody2D* RigidBody2DWorld::CreateBody(const RigidBodyDef2D& rbDef)
+	RigidBody2D* RigidBodyWorld2D::CreateBody(const RigidBodyDef2D& rbDef)
 	{
 		return AddBodyToList(rbDef);
 	}
 
-	void RigidBody2DWorld::Update(F32 deltaTime)
+	void RigidBodyWorld2D::RemoveBody(RigidBody2D* body)
+	{
+		RigidBodyListEntry2D* listEntry = body->m_BodyListEntry;
+		// Delete node.
+		if (listEntry == m_BodyList)
+		{
+			m_BodyList = listEntry->Next;
+		}
+		if (listEntry->Prev != nullptr)
+		{
+			listEntry->Prev->Next = listEntry->Next;
+		}
+		if (listEntry->Next != nullptr)
+		{
+			listEntry->Next->Prev = listEntry->Prev;
+		}
+		Delete<RigidBody2D>(body);
+		Delete<RigidBodyListEntry2D>(listEntry);
+	}
+
+	void RigidBodyWorld2D::AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
+	{
+		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset");
+		Collider2D* newCollider = body->AddCollider(colliderDef);
+		// Add collider to broad phase and save returned nodeId for later modification of bvh tree.
+		// Do not store id of static, since they never move.
+		I32 nodeId = m_BroadPhase.InsertCollider(newCollider, newCollider->GenerateBounds(body->GetTransform()));
+		if (body->GetType() != RigidBodyType2D::Static)
+		{
+			m_BroadPhaseNodes.push_back(nodeId);
+		}
+	}
+
+	RigidBody2D* RigidBodyWorld2D::AddBodyToList(const RigidBodyDef2D& rbDef)
+	{
+		RigidBodyListEntry2D* newEntry = New<RigidBodyListEntry2D>();
+		RigidBody2D* newBody = New<RigidBody2D>(rbDef);
+		newEntry->Body = newBody;
+		newBody->m_BodyListEntry = newEntry;
+		newEntry->Next = m_BodyList;
+		if (m_BodyList != nullptr)
+		{
+			m_BodyList->Prev = newEntry;
+		}
+		m_BodyList = newEntry;
+
+		return newBody;
+	}
+
+	void RigidBodyWorld2D::Update(F32 deltaTime)
 	{
 		SynchronizeBroadPhase(deltaTime);
 
 		ApplyGlobalForces();
 		m_Registry.ApplyForces();
 		// Update velocities based on forces.
-		RigidBodyNode2D* currentNode = m_BodyList;
-		while (currentNode != nullptr)
+		for (RigidBodyListEntry2D* bodyEntry = m_BodyList; bodyEntry != nullptr; bodyEntry = bodyEntry->Next)
 		{
-			RigidBody2D* body = currentNode->Body;
+			RigidBody2D* body = bodyEntry->Body;
+			if (body->GetType() == RigidBodyType2D::Static) continue;
 
 			glm::vec2 linAcc{ 0.0f };
 			F32 angAcc{ 0.0f };
@@ -103,8 +110,6 @@ namespace Engine
 			// Update body vels.
 			body->SetLinearVelocity(newLinVel);
 			body->SetAngularVelocity(newAngVel);
-
-			currentNode = currentNode->Next;
 		}
 
 		// Perform warm start / pre steps. TODO
@@ -128,10 +133,10 @@ namespace Engine
 			ContactResolver::ResolveVelocity();
 		}
 		// Update positions based on velocities.
-		currentNode = m_BodyList;
-		while (currentNode != nullptr)
+		for (RigidBodyListEntry2D* bodyEntry = m_BodyList; bodyEntry != nullptr; bodyEntry = bodyEntry->Next)
 		{
-			RigidBody2D* body = currentNode->Body;
+			RigidBody2D* body = bodyEntry->Body;
+			if (body->GetType() == RigidBodyType2D::Static) continue;
 
 			glm::vec2 newPos = body->GetPosition() + body->GetLinearVelocity() * deltaTime;
 			F32 deltaRot = body->GetAngularVelocity() * deltaTime;
@@ -142,8 +147,6 @@ namespace Engine
 
 			body->ResetForce();
 			body->ResetTorque();
-
-			currentNode = currentNode->Next;
 		}
 		// Resolve position constraints. 
 		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
@@ -156,35 +159,34 @@ namespace Engine
 		ContactResolver::PostSolve();
 	}
 
-	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)
+	void RigidBodyWorld2D::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator)
 	{
 		m_GlobalForces.push_back(forceGenerator);
 	}
 
-	void RigidBody2DWorld::ApplyGlobalForces()
+	void RigidBodyWorld2D::ApplyGlobalForces()
 	{
 		for (auto& globalForce : m_GlobalForces)
 		{
-			RigidBodyNode2D* currentNode = m_BodyList;
-			while (currentNode != nullptr)
+			for (RigidBodyListEntry2D* bodyEntry = m_BodyList; bodyEntry != nullptr; bodyEntry = bodyEntry->Next)
 			{
-				RigidBody2D* body = currentNode->Body;
+				RigidBody2D* body = bodyEntry->Body;
 				globalForce->ApplyForce(*body);
-				currentNode = currentNode->Next;
 			}
 		}
 	}
 
-	void RigidBody2DWorld::SynchronizeBroadPhase(F32 deltaTime)
+	void RigidBodyWorld2D::SynchronizeBroadPhase(F32 deltaTime)
 	{
 		for (auto nodeId : m_BroadPhaseNodes)
 		{
-			RigidBody2D* body = reinterpret_cast<RigidBody2D*>(m_BroadPhase.GetPayload(nodeId));
-			m_BroadPhase.MoveRigidBody(nodeId, body->GetCollider()->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
+			Collider2D* collider = reinterpret_cast<Collider2D*>(m_BroadPhase.GetPayload(nodeId));
+			const RigidBody2D* body = collider->GetAttachedRigidBody();
+			m_BroadPhase.MoveCollider(nodeId, collider->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
 		}
 	}
 
-	void RigidBody2DWorld::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator, RigidBody2D& body)
+	void RigidBodyWorld2D::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator, RigidBody2D& body)
 	{
 		m_Registry.Add(forceGenerator, &body);
 	}

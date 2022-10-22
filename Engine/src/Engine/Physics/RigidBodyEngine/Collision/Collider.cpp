@@ -25,6 +25,15 @@ namespace Engine
 		}
 	}
 
+	Collider2D* ColliderDef2D::Clone() const
+	{
+		Collider2D* clone = Collider->Clone();
+		clone->SetPhysicsMaterial(PhysicsMaterial);
+		clone->SetFilter(Filter);
+		clone->SetSensor(IsSensor);
+		return clone;
+	}
+
 	BoxCollider2D::BoxCollider2D(const glm::vec2& center, const glm::vec2& halfSize)
 		: Collider2D(Type::Box),
 		HalfSize(halfSize), Center(center)
@@ -43,10 +52,10 @@ namespace Engine
 	glm::vec2 BoxCollider2D::GetFaceDirection(I32 vertexId) const
 	{
 		static constexpr std::array<glm::vec2, 4> localDirs {
-			glm::vec2{ -1.0f, 0.0f },
-			glm::vec2{ 0.0f, -1.0f },
-			glm::vec2{ 1.0f,  0.0f },
-			glm::vec2{ 0.0f,  1.0f }
+			glm::vec2{ -1.0f,  0.0f },
+			glm::vec2{  0.0f, -1.0f },
+			glm::vec2{  1.0f,  0.0f },
+			glm::vec2{  0.0f,  1.0f }
 		};
 		return m_AttachedRigidBody->GetTransform().TransformDirection(localDirs[vertexId]);
 	}
@@ -87,6 +96,14 @@ namespace Engine
 		return AABB2D{ (max + min) * 0.5f, (max - min) * 0.5f };
 	}
 
+	MassInfo2D BoxCollider2D::CalculateMass() const
+	{
+		static constexpr auto inertiaCoeff = 4.0f / 12.0f;
+		F32 mass = HalfSize.x * HalfSize.y * 4.0f * m_PhysicsMaterial.Density;
+		F32 inertia = mass * inertiaCoeff * glm::length2(HalfSize);
+		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = Center };
+	}
+
 	Collider2D* CircleCollider2D::Clone()
 	{
 		return New<CircleCollider2D>(Center, Radius);
@@ -95,6 +112,14 @@ namespace Engine
 	DefaultBounds2D CircleCollider2D::GenerateBounds(const Transform2D& transform) const
 	{
 		return AABB2D{ transform.Transform(Center), {Radius, Radius} };
+	}
+
+	MassInfo2D CircleCollider2D::CalculateMass() const
+	{
+		static constexpr auto inertiaCoeff = 1.0f / 2.0f;
+		F32 mass = Math::Pi() * Radius * Radius *m_PhysicsMaterial.Density;
+		F32 inertia = mass * inertiaCoeff * Radius * Radius;
+		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = Center };
 	}
 
 	Collider2D* EdgeCollider2D::Clone()
@@ -115,6 +140,14 @@ namespace Engine
 			Math::Min(worldEnd.y, worldStart.y)
 		};
 		return AABB2D{ (max + min) * 0.5f, (max - min) * 0.5f };
+	}
+
+	MassInfo2D EdgeCollider2D::CalculateMass() const
+	{
+		ENGINE_CORE_ASSERT(false, "Not yet implemented");
+		F32 mass = 0.0f;
+		F32 inertia = 0.0f;
+		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = glm::vec2{0.0f} };
 	}
 
 	void Collider2D::Destroy(Collider2D* collider)
@@ -138,7 +171,5 @@ namespace Engine
 		}
 		}
 	}
-
-
 
 }

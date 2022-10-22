@@ -9,11 +9,11 @@ namespace Engine
 {
 	using namespace Types;
 
-	struct ContactInfoNode2D
+	struct ContactInfoEntry2D
 	{
 		ContactInfo2D Info{};
-		ContactInfoNode2D* Next = nullptr;
-		ContactInfoNode2D* Prev = nullptr;
+		ContactInfoEntry2D* Next = nullptr;
+		ContactInfoEntry2D* Prev = nullptr;
 	};
 
 	class NarrowPhase2D
@@ -24,20 +24,20 @@ namespace Engine
 
 		void Collide();
 		void Callback(const PotentialContact2D& potentialContact);
-		ContactInfoNode2D* GetContactInfoList() const { return m_ContactInfos; }
+		ContactInfoEntry2D* GetContactInfoList() const { return m_ContactInfos; }
 		U32 GetContactsCount() const { return m_ContactInfosCount; }
 
 		void SetContactListener(ContactListener* contactListener) { m_ContactListener = contactListener; }
 
 	private:
-		ContactInfoNode2D* AddContactInfo(const ContactInfo2D& info);
-		void RemoveContactInfo(const ContactInfoNode2D& info);
+		ContactInfoEntry2D* AddContactInfo(const ContactInfo2D& info);
+		void RemoveContactInfo(const ContactInfoEntry2D& info);
 	private:
 		BroadPhase2D<>& m_BroadPhase;
 
 		ContactListener* m_ContactListener = nullptr;
 
-		ContactInfoNode2D* m_ContactInfos = nullptr;
+		ContactInfoEntry2D* m_ContactInfos = nullptr;
 		U32 m_ContactInfosCount = 0;
 	};
 }

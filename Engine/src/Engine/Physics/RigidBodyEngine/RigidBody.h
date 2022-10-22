@@ -15,9 +15,18 @@ namespace Engine
 	// Note: currently the only distinction is static / non static.
 	enum class RigidBodyType2D { Dynamic, Kinematic, Static };
 
+	// Used for mass, inertia and center of mass calculation,
+	// based on colliders that body has.
+	struct MassInfo2D
+	{
+		F32 Mass;
+		F32 Inertia;
+		glm::vec2 CenterOfMass;
+	};
+
 	struct RigidBodyDef2D
 	{
-		enum Flags { None = 0, RestrictRotation = Bit(1) };
+		enum BodyFlags { None = 0, RestrictRotation = Bit(1), UseSyntheticMass = Bit(2)	};
 		struct Rotation
 		{
 			glm::vec2 RotationVec;
@@ -34,9 +43,7 @@ namespace Engine
 		F32 AngularDamping { 0.0f };
 
 		RigidBodyType2D Type { RigidBodyType2D::Static };
-		PhysicsMaterial PhysicsMaterial {};
-		ColliderDef2D ColliderDef {};
-		Flags Flags = None;
+		BodyFlags Flags = None;
 	};
 
 	enum class ForceMode
@@ -44,22 +51,28 @@ namespace Engine
 		Force, Impulse
 	};
 
+	class RigidBody2D;
+	struct RigidBodyListEntry2D
+	{
+		RigidBody2D* Body = nullptr;
+		RigidBodyListEntry2D* Next = nullptr;
+		RigidBodyListEntry2D* Prev = nullptr;
+	};
+
 	class RigidBody2D
 	{
+		using ColliderList = ColliderListEntry2D;
+		friend class RigidBodyWorld2D;
+		FRIEND_MEMORY_FN;
 	public:
-		RigidBody2D(const RigidBodyDef2D& rbDef);
-		~RigidBody2D();
-
 		RigidBodyType2D GetType() const { return m_Type; }
 
-		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
-		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
-
-		void SetCollider(Collider2D* collider) { m_Collider = collider; }
-		Collider2D* GetCollider() { return m_Collider; }
+		ColliderList* GetColliderList() { return m_ColliderList; }
 
 		void SetPosition(const glm::vec2& pos) { m_Position = pos; }
 		const glm::vec2& GetPosition() const { return m_Position; }
+		
+		const glm::vec2& GetCenterOfMass() const { return m_CenterOfMass; }
 
 		void SetLinearVelocity(const glm::vec2& vel) { m_LinearVelocity = vel; }
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
@@ -121,12 +134,20 @@ namespace Engine
 		glm::vec2 TransformToLocal(const glm::vec2& point) const;
 		glm::vec2 TransformDirectionToLocal(const glm::vec2& dir) const;
 	private:
+		RigidBody2D(const RigidBodyDef2D& rbDef);
+		~RigidBody2D();
+		Collider2D* AddCollider(const ColliderDef2D& colDef);
+	private:
 		RigidBodyType2D m_Type;
-		PhysicsMaterial m_PhysicsMaterial;
-		Collider2D* m_Collider;
+		RigidBodyListEntry2D* m_BodyListEntry;
+		ColliderList* m_ColliderList;
+		RigidBodyDef2D::BodyFlags m_Flags;
 
+		//? Change to Transfrom2D component?
 		glm::vec2 m_Position;
 		glm::vec2 m_Rotation;
+
+		glm::vec2 m_CenterOfMass;
 
 		glm::vec2 m_LinearVelocity;
 		F32 m_LinearDamping;

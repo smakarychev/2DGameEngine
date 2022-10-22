@@ -13,15 +13,15 @@ namespace Engine
 
 	NarrowPhase2D::~NarrowPhase2D()
 	{
-		ContactInfoNode2D* currentNode = m_ContactInfos;
+		ContactInfoEntry2D* currentNode = m_ContactInfos;
 		while (currentNode != nullptr)
 		{
-			ContactInfoNode2D* next = currentNode->Next;
+			ContactInfoEntry2D* next = currentNode->Next;
 			if (currentNode->Info.Manifold != nullptr)
 			{
 				Delete<ContactManifold2D>(currentNode->Info.Manifold);
 			}
-			Delete<ContactInfoNode2D>(currentNode);
+			Delete<ContactInfoEntry2D>(currentNode);
 			currentNode = next;
 		}
 	}
@@ -29,7 +29,7 @@ namespace Engine
 
 	void NarrowPhase2D::Collide()
 	{
-		ContactInfoNode2D* currentInfo = m_ContactInfos;
+		ContactInfoEntry2D* currentInfo = m_ContactInfos;
 		while (currentInfo != nullptr)
 		{
 			// Check if colliders was colliding on the last frame.
@@ -37,8 +37,8 @@ namespace Engine
 			// Check if there is still bounds collision.
 			const std::array<I32, 2>& broadNodes = currentInfo->Info.NodeIds;
 
-			Collider2D* colliderA = currentInfo->Info.Bodies[0]->GetCollider();
-			Collider2D* colliderB = currentInfo->Info.Bodies[1]->GetCollider();
+			Collider2D* colliderA = currentInfo->Info.Colliders[0];
+			Collider2D* colliderB = currentInfo->Info.Colliders[1];
 			
 			// Check if objects can collide, if we assume object's filters never change,
 			// we could move second part of this check to `Callback` and discard contact immediately.
@@ -52,8 +52,8 @@ namespace Engine
 					m_ContactListener->OnContactEnd(currentInfo->Info);
 					// No need to change state of contact since it will be destroyed immediately.
 				}
-				m_BroadPhase.RemoveContact(PotentialContact2D{ .Bodies {currentInfo->Info.Bodies}, .NodeIds = broadNodes });
-				ContactInfoNode2D* toDelete = currentInfo;
+				m_BroadPhase.RemoveContact(PotentialContact2D{ .Colliders {currentInfo->Info.Colliders}, .NodeIds = broadNodes });
+				ContactInfoEntry2D* toDelete = currentInfo;
 				currentInfo = currentInfo->Next;
 				RemoveContactInfo(*toDelete);
 				continue;
@@ -86,12 +86,12 @@ namespace Engine
 
 	void NarrowPhase2D::Callback(const PotentialContact2D& potentialContact)
 	{
-		Collider2D* colliderA = potentialContact.Bodies[0]->GetCollider();
-		Collider2D* colliderB = potentialContact.Bodies[1]->GetCollider();
+		Collider2D* colliderA = potentialContact.Colliders[0];
+		Collider2D* colliderB = potentialContact.Colliders[1];
 
 		ContactInfo2D info{};
 		info.Manifold = nullptr;
-		info.Bodies = potentialContact.Bodies;
+		info.Colliders = potentialContact.Colliders;
 		info.NodeIds = potentialContact.NodeIds;
 		info.AccumulatedNormalImpulses = info.AccumulatedTangentImpulses = { 0.0f };
 		// Check if any of colliders are sensors, and set flag if so.
@@ -99,10 +99,10 @@ namespace Engine
 		AddContactInfo(info);
 	}
 	
-	ContactInfoNode2D* NarrowPhase2D::AddContactInfo(const ContactInfo2D& info)
+	ContactInfoEntry2D* NarrowPhase2D::AddContactInfo(const ContactInfo2D& info)
 	{
 		// Allocate new node.
-		ContactInfoNode2D* newNode = New<ContactInfoNode2D>();
+		ContactInfoEntry2D* newNode = New<ContactInfoEntry2D>();
 		newNode->Info = info;
 		// Insert node to the list.
 		newNode->Next = m_ContactInfos;
@@ -115,9 +115,9 @@ namespace Engine
 		return newNode;
 	}
 	
-	void NarrowPhase2D::RemoveContactInfo(const ContactInfoNode2D& info)
+	void NarrowPhase2D::RemoveContactInfo(const ContactInfoEntry2D& info)
 	{
-		ContactInfoNode2D* toDelete = const_cast<ContactInfoNode2D*>(&info);
+		ContactInfoEntry2D* toDelete = const_cast<ContactInfoEntry2D*>(&info);
 		// Delete node.
 		if (toDelete == m_ContactInfos)
 		{
@@ -135,7 +135,7 @@ namespace Engine
 		{
 			Delete<ContactManifold2D>(toDelete->Info.Manifold);
 		}
-		Delete<ContactInfoNode2D>(toDelete);
+		Delete<ContactInfoEntry2D>(toDelete);
 		m_ContactInfosCount--;
 	}
 }

@@ -12,11 +12,10 @@
 
 namespace Engine
 {
-	// Holds a pair of rigid bodies, 
-	// if broad phase detects a collistion between their Collider2d objects.
+	// Holds a pair of colliders, whose bounds are colliding.
 	struct PotentialContact2D
 	{
-		std::array<RigidBody2D*, 2> Bodies;
+		std::array<Collider2D*, 2> Colliders;
 		std::array<I32, 2> NodeIds;
 	};
 
@@ -31,15 +30,15 @@ namespace Engine
 		template <typename Callback>
 		void Query(const Bounds& bounds, Callback callback);
 
-		I32 InsertRigidBody(RigidBody2D* body, const Bounds& bounds);
+		I32 InsertCollider(Collider2D* collider, const Bounds& bounds);
 		
-		// `nodeId` is returned by InsertRigidBody().
-		void RemoveRigidBody(I32 nodeId);
+		// `nodeId` is returned by InsertCollider().
+		void RemoveCollider(I32 nodeId);
 		
-		// `nodeId` is returned by InsertRigidBody(), `velocity` here is a 
+		// `nodeId` is returned by InsertCollider(), `velocity` here is a 
 		// mere measure of displacement, not strictly related 
 		// to the physical velocity of the object.
-		bool MoveRigidBody(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity);
+		bool MoveCollider(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity);
 
 		// Checks for bounds collision.
 		bool CheckCollision(I32 firstNodeId, I32 secondNodeId);
@@ -80,21 +79,21 @@ namespace Engine
 	}
 
 	template<typename Bounds>
-	inline I32 BroadPhase2D<Bounds>::InsertRigidBody(RigidBody2D* body, const Bounds& bounds)
+	inline I32 BroadPhase2D<Bounds>::InsertCollider(Collider2D* collider, const Bounds& bounds)
 	{
-		I32 nodeID = m_Tree.Insert(static_cast<void*>(body), bounds);
+		I32 nodeID = m_Tree.Insert(static_cast<void*>(collider), bounds);
 		m_MovingBodies.push_back(nodeID);
 		return nodeID;
 	}
 
 	template<typename Bounds>
-	inline void BroadPhase2D<Bounds>::RemoveRigidBody(I32 nodeId)
+	inline void BroadPhase2D<Bounds>::RemoveCollider(I32 nodeId)
 	{
 		m_Tree.Remove(nodeId);
 	}
 
 	template<typename Bounds>
-	inline bool BroadPhase2D<Bounds>::MoveRigidBody(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
+	inline bool BroadPhase2D<Bounds>::MoveCollider(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
 	{
 		bool hasMoved = m_Tree.Move(nodeId, bounds, velocity);
 		if (hasMoved) m_MovingBodies.push_back(nodeId);
@@ -161,8 +160,11 @@ namespace Engine
 		if (m_Tree.IsMoved(otherNode) && otherNode > m_CurrentlyTestedNode) return;
 
 		// TODO: maybe find a better way.
-		RigidBody2D* primaryBody = reinterpret_cast<RigidBody2D*>(m_Tree.GetPayload(m_CurrentlyTestedNode));
-		RigidBody2D* otherBody = reinterpret_cast<RigidBody2D*>(m_Tree.GetPayload(otherNode));
+		Collider2D* primaryCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(m_CurrentlyTestedNode));
+		Collider2D* otherCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(otherNode));
+		// No contact resolution between colliders of same body.
+		if (primaryCollider->GetAttachedRigidBody() == otherCollider->GetAttachedRigidBody()) return;
+
 		for (auto& contactNodeId : m_ContactsMap[m_CurrentlyTestedNode])
 		{
 			if (contactNodeId == otherNode)
@@ -177,7 +179,7 @@ namespace Engine
 				return;
 			}
 		}
-		PotentialContact2D contact{ {primaryBody, otherBody},{ m_CurrentlyTestedNode, otherNode } };
+		PotentialContact2D contact{ {primaryCollider, otherCollider},{ m_CurrentlyTestedNode, otherNode } };
 		callback(contact);
 		m_ContactsMap[m_CurrentlyTestedNode].push_back(otherNode);
 	}

@@ -14,21 +14,17 @@ namespace Engine
 {
 	using namespace Types;
 
-	struct RigidBodyNode2D
-	{
-		RigidBody2D* Body = nullptr;
-		RigidBodyNode2D* Next = nullptr;
-		RigidBodyNode2D* Prev = nullptr;
-	};
-
 	//! The main problem now is the lack of ability to delete bodies.
-	class RigidBody2DWorld
+	class RigidBodyWorld2D
 	{
+		using RigidBodyList  = RigidBodyListEntry2D;
 	public:
-		RigidBody2DWorld(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f }, U32 iterations = 4);
-		~RigidBody2DWorld();
+		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f }, U32 iterations = 4);
+		~RigidBodyWorld2D();
 		// All rigid bodies shall be created by this method.
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
+		void RemoveBody(RigidBody2D* body);
+		void AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
 		
 		void Update(F32 deltaTime);
 
@@ -41,8 +37,7 @@ namespace Engine
 		void SetGravity(const glm::vec2& gravity) { m_Gravity = gravity; }
 		void SetIterations(U32 iterations) { m_NarrowPhaseIterations = iterations; }
 		
-		const RigidBodyNode2D* GetBodyList() const { return m_BodyList; }
-		void RemoveBody(RigidBodyNode2D* bodyNode);
+		const RigidBodyList* GetBodyList() const { return m_BodyList; }
 
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
@@ -56,7 +51,7 @@ namespace Engine
 		void SynchronizeBroadPhase(F32 deltaTime);
 	private:
 		// Stores all the bodies (smart pointers to them).
-		RigidBodyNode2D* m_BodyList = nullptr;
+		RigidBodyList* m_BodyList = nullptr;
 
 		// Stores all global forces.
 		std::vector<Ref<RigidBody2DForceGenerator>> m_GlobalForces;
