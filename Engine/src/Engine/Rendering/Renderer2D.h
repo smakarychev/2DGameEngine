@@ -23,7 +23,7 @@ namespace Engine
 		struct BatchVertex
 		{
 			// vec3 for position to have the ability to render something on top.
-			glm::vec3 Position		= glm::vec3(0.0f);
+			glm::vec2 Position		= glm::vec2(0.0f);
 			F32 TextureIndex		= -1.0f;
 			glm::vec2 UV			= glm::vec2(0.0f);
 			glm::vec2 TextureTiling	= glm::vec2{1.0f};
@@ -33,7 +33,7 @@ namespace Engine
 			static const VertexLayout& GetLayout()
 			{
 				const static VertexLayout layout{ {
-					{ LayoutElement::Float3,	"a_position" },
+					{ LayoutElement::Float2,	"a_position" },
 					{ LayoutElement::Float,		"a_textureIndex" },
 					{ LayoutElement::Float2,	"a_uv" },
 					{ LayoutElement::Float2,	"a_textureTiling" },
@@ -42,10 +42,10 @@ namespace Engine
 				return layout;
 			}
 
-			BatchVertex(const glm::vec3& pos, const glm::vec2& uv, const glm::vec4 color) :
+			BatchVertex(const glm::vec2& pos, const glm::vec2& uv, const glm::vec4 color) :
 				Position(pos), UV(uv), Color(color)
 			{}
-			BatchVertex(const glm::vec3& pos, const glm::vec2& uv, Texture& texture, F32 textureTiling = 1.0f) :
+			BatchVertex(const glm::vec2& pos, const glm::vec2& uv, Texture& texture, F32 textureTiling = 1.0f) :
 				Position(pos), TextureIndex(F32(texture.GetId())), UV(uv), TextureTiling(textureTiling)
 			{}
 			BatchVertex() = default;
@@ -53,19 +53,19 @@ namespace Engine
 
 		struct BatchVertexLine
 		{
-			glm::vec3 Position;
+			glm::vec2 Position;
 			glm::vec4 Color;
 
 			static const VertexLayout& GetLayout()
 			{
 				const static VertexLayout layout{ {
-					{ LayoutElement::Float3,	"a_position" },
+					{ LayoutElement::Float2,	"a_position" },
 					{ LayoutElement::Float4,	"a_color" },
 				} };
 				return layout;
 			}
 
-			BatchVertexLine(const glm::vec3& pos, const glm::vec4 color) :
+			BatchVertexLine(const glm::vec2& pos, const glm::vec4 color) :
 				Position(pos), Color(color)
 			{}
 			BatchVertexLine() = default;
@@ -138,11 +138,21 @@ namespace Engine
 				Rotation(const glm::vec2& rotation) : RotationVec(rotation) {}
 				Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad)) {}
 			};
-			const glm::vec3& Position			= glm::vec3{ 0.0f };
+			const glm::vec2& Position			= glm::vec2{ 0.0f };
 			const glm::vec2& Scale				= glm::vec2{ 1.0f };
 			const Rotation&  Rotation			= glm::vec2{ 1.0f, 0.0f };
 			const glm::vec4& Color				= glm::vec4{ 1.0f };
 			Texture*  Texture					= nullptr;
+			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
+			RendererAPI::PrimitiveType Type		= RendererAPI::PrimitiveType::Triangle;
+		};
+
+		struct DrawInfoMat
+		{
+			const glm::mat3& Transform			= glm::mat3{ 1.0f };
+			const glm::vec4& Color				= glm::vec4{ 1.0f };
+			Texture* Texture					= nullptr;
 			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
 			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
 			RendererAPI::PrimitiveType Type		= RendererAPI::PrimitiveType::Triangle;
@@ -158,6 +168,7 @@ namespace Engine
 		static void EndScene();
 
 		static void DrawQuad(const DrawInfo& drawInfo);
+		static void DrawQuad(const DrawInfoMat& drawInfo);
 
 		static void DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo);
 
@@ -177,12 +188,13 @@ namespace Engine
 		static void ResetBatch(BatchData& batch);
 		static void ResetBatch(BatchDataLines& batch);
 	private:
-		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale);
-		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, F32 rotation);
-		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation);
+		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale);
+		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, F32 rotation);
+		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, const glm::vec2& rotation);
 		static void InitVertexColorData(BatchVertex& vertex, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
 		static F32 GetTextureIndex(BatchData& batch, Texture* texture);
 		static void DrawOutline(const DrawInfo& drawInfo);
+		static void DrawOutline(const DrawInfoMat& drawInfo);
 	private:
 		static BatchRendererData s_BatchData;
 	};

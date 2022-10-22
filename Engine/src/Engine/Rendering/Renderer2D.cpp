@@ -203,6 +203,37 @@ namespace Engine
 		quadBatch.CurrentIndices += 6;
 	}
 
+	void Renderer2D::DrawQuad(const DrawInfoMat& drawInfo)
+	{
+		// If we want to draw edges instead of full shape.
+		if (drawInfo.Type == RendererAPI::PrimitiveType::Line)
+		{
+			DrawOutline(drawInfo);
+			return;
+		}
+
+		BatchData& quadBatch = s_BatchData.QuadBatch;
+		if (quadBatch.CurrentVertices + 4 > quadBatch.MaxVertices || quadBatch.CurrentIndices + 6 > quadBatch.MaxIndices)
+		{
+			Flush(quadBatch);
+			ResetBatch(quadBatch);
+		}
+		F32 textureIndex = GetTextureIndex(quadBatch, drawInfo.Texture);
+		auto& referenceQuad = s_BatchData.ReferenceQuad;
+
+		// Create new quad.
+		for (U32 i = 0; i < 4; i++)
+		{
+			BatchVertex* vertex = quadBatch.CurrentVertexPointer;
+			vertex->Position = drawInfo.Transform * glm::vec3(glm::vec2(referenceQuad.Position[i]), 1.0f);
+			InitVertexColorData(*vertex, textureIndex, drawInfo.UV[i], drawInfo.Color, drawInfo.TextureTiling);
+
+			quadBatch.CurrentVertexPointer++;
+		}
+		quadBatch.CurrentVertices += 4;
+		quadBatch.CurrentIndices += 6;
+	}
+
 	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo)
 	{
 		BatchData& polygonBatch = s_BatchData.PolygonBatch;
@@ -396,6 +427,22 @@ namespace Engine
 		DrawLine(vertices[3].Position, vertices[0].Position, drawInfo.Color);
 	}
 
+	void Renderer2D::DrawOutline(const DrawInfoMat& drawInfo)
+	{
+		auto& referenceQuad = s_BatchData.ReferenceQuad;
+		BatchVertex vertices[4];
+		// Create new quad.
+		for (U32 i = 0; i < 4; i++)
+		{
+			BatchVertex& vertex = vertices[i];
+			vertex.Position = drawInfo.Transform * glm::vec3(glm::vec2(referenceQuad.Position[i]), 1.0f);
+		}
+		DrawLine(vertices[0].Position, vertices[1].Position, drawInfo.Color);
+		DrawLine(vertices[1].Position, vertices[2].Position, drawInfo.Color);
+		DrawLine(vertices[2].Position, vertices[3].Position, drawInfo.Color);
+		DrawLine(vertices[3].Position, vertices[0].Position, drawInfo.Color);
+	}
+
 	void Renderer2D::Flush(BatchData& batch, Shader& shader)
 	{
 		shader.Bind();
@@ -448,28 +495,26 @@ namespace Engine
 		batch.CurrentIndexPointer = reinterpret_cast<U32*>(batch.IndicesMemory);
 	}
 
-	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale)
+	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale)
 	{
-		vertex.Position = vertex.Position * glm::vec3(scale, 1.0) + position;
+		vertex.Position = vertex.Position * scale + position;
 	}
 
-	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, F32 rotation)
+	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, F32 rotation)
 	{
-		vertex.Position = glm::vec3{
+		vertex.Position = glm::vec2{
 			glm::cos(rotation) * vertex.Position.x - glm::sin(rotation) * vertex.Position.y,
-			glm::sin(rotation) * vertex.Position.x + glm::cos(rotation) * vertex.Position.y,
-			vertex.Position.z
+			glm::sin(rotation) * vertex.Position.x + glm::cos(rotation) * vertex.Position.y
 		};
-		vertex.Position = vertex.Position * glm::vec3(scale, 1.0) + position;
+		vertex.Position = vertex.Position * scale + position;
 	}
 
-	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec3& position, const glm::vec2& scale, const glm::vec2& rotation)
+	void Renderer2D::InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, const glm::vec2& rotation)
 	{
-		vertex.Position *= glm::vec3(scale, 1.0f);
-		vertex.Position = glm::vec3{
+		vertex.Position *= scale;
+		vertex.Position = glm::vec2{
 			rotation.x * vertex.Position.x - rotation.y * vertex.Position.y,
-			rotation.y * vertex.Position.x + rotation.x * vertex.Position.y,
-			vertex.Position.z
+			rotation.y * vertex.Position.x + rotation.x * vertex.Position.y
 		};
 		vertex.Position += position;
 	}

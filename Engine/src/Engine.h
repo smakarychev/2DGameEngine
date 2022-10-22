@@ -48,6 +48,7 @@
 #include "Engine/Rendering/Font.h"
 /* Utility rendering (drawers) */
 #include "Engine/Rendering/Drawers/BVHTreeDrawer.h"
+#include "Engine/Rendering/Drawers/RigidBodyWorldDrawer.h"
 
 /* UI */
 #include "Engine/Imgui/ImguiLayer.h"
