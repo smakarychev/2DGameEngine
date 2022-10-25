@@ -22,6 +22,6 @@ namespace Engine
 		static void* AllocAligned(U64 bytes, U16 alignment = alignof(std::max_align_t));
 		static void FreeAligned(void* memory);
 
-		static void Copy(void* dest, void* source, U64 sizeBytes);
+		static void Copy(void* dest, const void* source, U64 sizeBytes);
 	};
 }

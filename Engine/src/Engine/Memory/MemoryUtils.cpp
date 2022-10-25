@@ -51,7 +51,7 @@ namespace Engine
 		}
 	}
 	
-	void MemoryUtils::Copy(void* dest, void* source, U64 sizeBytes)
+	void MemoryUtils::Copy(void* dest, const void* source, U64 sizeBytes)
 	{
 		memcpy(dest, source, sizeBytes);
 	}
