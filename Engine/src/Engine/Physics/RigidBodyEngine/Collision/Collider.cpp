@@ -31,6 +31,7 @@ namespace Engine
 		clone->SetPhysicsMaterial(PhysicsMaterial);
 		clone->SetFilter(Filter);
 		clone->SetSensor(IsSensor);
+		clone->SetUserData(UserData);
 		return clone;
 	}
 

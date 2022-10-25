@@ -733,7 +733,8 @@ namespace Engine
 
 	void DefaultContactListener::Shutdown()
 	{
-		Delete<DefaultContactListener>(s_Instance);
+		if (s_Instance != nullptr)
+			Delete<DefaultContactListener>(s_Instance);
 	}
 
 	DefaultContactListener* DefaultContactListener::Get()

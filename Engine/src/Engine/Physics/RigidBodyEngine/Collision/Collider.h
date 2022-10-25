@@ -151,8 +151,8 @@ namespace Engine
 		PhysicsMaterial PhysicsMaterial{};
 		Filter Filter{};
 		bool IsSensor = false;
+		void* UserData = nullptr;
 		Collider2D* Clone() const;
-		
 	};
 
 	struct ColliderListEntry2D
@@ -173,6 +173,10 @@ namespace Engine
 		virtual ~Collider2D() = default;
 		Type GetType() const { return m_Type; }
 		I32 GetTypeInt() const { return static_cast<I32>(m_Type); }
+
+		void SetUserData(void* userData) { m_UserData = userData; }
+		void* GetUserData() const { return m_UserData; }
+
 		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
 		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
 
@@ -194,6 +198,7 @@ namespace Engine
 
 	protected:
 		Type m_Type;
+		void* m_UserData = nullptr;
 		Filter m_Filter;
 		PhysicsMaterial m_PhysicsMaterial;
 		bool m_IsSensor = false;
