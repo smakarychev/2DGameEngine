@@ -44,6 +44,7 @@ namespace Engine
 
 		RigidBodyType2D Type { RigidBodyType2D::Static };
 		BodyFlags Flags = None;
+		void* UserData = nullptr;
 	};
 
 	enum class ForceMode
@@ -66,6 +67,8 @@ namespace Engine
 		FRIEND_MEMORY_FN;
 	public:
 		RigidBodyType2D GetType() const { return m_Type; }
+		void SetUserData(void* userData) { m_UserData = userData; }
+		void* GetUserData() const { return m_UserData; }
 
 		ColliderList* GetColliderList() { return m_ColliderList; }
 
@@ -142,6 +145,7 @@ namespace Engine
 		RigidBodyListEntry2D* m_BodyListEntry;
 		ColliderList* m_ColliderList;
 		RigidBodyDef2D::BodyFlags m_Flags;
+		void* m_UserData = nullptr;
 
 		//? Change to Transfrom2D component?
 		glm::vec2 m_Position;

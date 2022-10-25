@@ -47,7 +47,7 @@ namespace Engine
 		Delete<RigidBodyListEntry2D>(listEntry);
 	}
 
-	void RigidBodyWorld2D::AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
+	Collider2D* RigidBodyWorld2D::AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
 	{
 		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset");
 		Collider2D* newCollider = body->AddCollider(colliderDef);
@@ -58,6 +58,7 @@ namespace Engine
 		{
 			m_BroadPhaseNodes.push_back(nodeId);
 		}
+		return newCollider;
 	}
 
 	RigidBody2D* RigidBodyWorld2D::AddBodyToList(const RigidBodyDef2D& rbDef)

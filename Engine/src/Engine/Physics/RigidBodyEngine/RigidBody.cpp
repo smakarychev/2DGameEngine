@@ -11,7 +11,7 @@ namespace Engine
 		m_Force(0.0f), m_Torque(0.0f),
 		m_InverseMass(1.0f / rbDef.Mass), m_InverseInertiaTensor(1.0f / rbDef.Inertia),
 		m_Type(rbDef.Type), m_Flags(rbDef.Flags),
-		m_BodyListEntry(nullptr)
+		m_BodyListEntry(nullptr), m_UserData(rbDef.UserData)
 	{
 		m_CenterOfMass = glm::vec2{ 0.0f };
 		if (rbDef.Flags & RigidBodyDef2D::RestrictRotation)

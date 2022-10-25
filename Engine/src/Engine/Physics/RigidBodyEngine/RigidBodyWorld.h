@@ -24,7 +24,7 @@ namespace Engine
 		// All rigid bodies shall be created by this method.
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		void RemoveBody(RigidBody2D* body);
-		void AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
+		Collider2D* AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
 		
 		void Update(F32 deltaTime);
 
