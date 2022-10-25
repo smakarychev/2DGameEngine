@@ -2,12 +2,14 @@
 
 #include "Engine/Core/Types.h"
 
-#include "Engine/Rendering/Buffer.h"
-#include "Engine/Rendering/Shader.h"
-#include "Engine/Rendering/Texture.h"	
-#include "Engine/Rendering/Font.h"	
+#include "Buffer.h"
+#include "RendererAPI.h"
+#include "RenderQueue.h"
+#include "Shader.h"
+#include "SortingLayer.h"	
+#include "Texture.h"	
+#include "Font.h"	
 
-#include "Engine/Rendering/RendererAPI.h"
 
 #include "Engine/Core/Camera.h"
 #include "Engine/Primitives/2D/RegularPolygon.h"
@@ -17,9 +19,40 @@
 namespace Engine
 {
 	using namespace Types;
+
 	class Renderer2D
 	{
+		friend class RenderCommand;
 	public:
+		struct DrawInfo
+		{
+			struct Rotation
+			{
+				glm::vec2 RotationVec;
+				Rotation(const glm::vec2& rotation) : RotationVec(rotation) {}
+				Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad)) {}
+			};
+			glm::vec2 Position				= glm::vec2{ 0.0f };
+			glm::vec2 Scale					= glm::vec2{ 1.0f };
+			Rotation Rotation				= glm::vec2{ 1.0f, 0.0f };
+			glm::vec4 Color					= glm::vec4{ 1.0f };
+			Texture* Texture				= nullptr;
+			std::vector<glm::vec2> UV		= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+			glm::vec2 TextureTiling			= glm::vec2{ 1.0f };
+			RendererAPI::PrimitiveType Type = RendererAPI::PrimitiveType::Triangle;
+	
+		};
+
+		struct DrawInfoMat
+		{
+			const glm::mat3 Transform		= glm::mat3{ 1.0f };
+			const glm::vec4 Color			= glm::vec4{ 1.0f };
+			Texture* Texture				= nullptr;
+			const std::vector<glm::vec2> UV = { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+			const glm::vec2 TextureTiling	= glm::vec2{ 1.0f };
+			RendererAPI::PrimitiveType Type = RendererAPI::PrimitiveType::Triangle;
+		};
+
 		struct BatchVertex
 		{
 			// vec3 for position to have the ability to render something on top.
@@ -127,36 +160,12 @@ namespace Engine
 			BatchData PolygonBatch;
 			BatchData TextBatch;
 			BatchDataLines LineBatch;
+
+			RenderQueue RenderQueue;
 			~BatchRendererData() {}
 		};
 
-		struct DrawInfo
-		{
-			struct Rotation
-			{
-				glm::vec2 RotationVec;
-				Rotation(const glm::vec2& rotation) : RotationVec(rotation) {}
-				Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad)) {}
-			};
-			const glm::vec2& Position			= glm::vec2{ 0.0f };
-			const glm::vec2& Scale				= glm::vec2{ 1.0f };
-			const Rotation&  Rotation			= glm::vec2{ 1.0f, 0.0f };
-			const glm::vec4& Color				= glm::vec4{ 1.0f };
-			Texture*  Texture					= nullptr;
-			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
-			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
-			RendererAPI::PrimitiveType Type		= RendererAPI::PrimitiveType::Triangle;
-		};
-
-		struct DrawInfoMat
-		{
-			const glm::mat3& Transform			= glm::mat3{ 1.0f };
-			const glm::vec4& Color				= glm::vec4{ 1.0f };
-			Texture* Texture					= nullptr;
-			const std::vector<glm::vec2>& UV	= { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
-			const glm::vec2& TextureTiling		= glm::vec2{ 1.0f };
-			RendererAPI::PrimitiveType Type		= RendererAPI::PrimitiveType::Triangle;
-		};
+		
 
 	public:
 		Renderer2D() {}
@@ -181,20 +190,28 @@ namespace Engine
 		static void DrawFont(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color = glm::vec4{ 1.0f });
 
 		static void DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4{ 1.0f });
-		static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color = glm::vec4{ 1.0f });
 
 		static void Flush(BatchData& batch, Shader& shader = *s_BatchData.BatchShader);
 		static void Flush(BatchDataLines& batch, Shader& shader = *s_BatchData.LineShader);
 		static void ResetBatch(BatchData& batch);
 		static void ResetBatch(BatchDataLines& batch);
 	private:
+		static void DrawQuadCall(const DrawInfo& drawInfo);
+		static void DrawQuadMatCall(const DrawInfoMat& drawInfo);
+		static void DrawPolygonCall(const RegularPolygon& polygon, const DrawInfo& drawInfo);
+		static void DrawFontFixedCall(Font& font, F32 fontSize, F32 xminPx, F32 xmaxPx, F32 yminPx, const std::string& text, const glm::vec4& color = glm::vec4{ 1.0f });
+		static void DrawFontCall(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color = glm::vec4{ 1.0f });
+		static void DrawLineCall(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4{ 1.0f });
+
+
+		static void DrawOutline(const DrawInfo& drawInfo);
+		static void DrawOutline(const DrawInfoMat& drawInfo);
+
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale);
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, F32 rotation);
 		static void InitVertexGeometryData(BatchVertex& vertex, const glm::vec2& position, const glm::vec2& scale, const glm::vec2& rotation);
 		static void InitVertexColorData(BatchVertex& vertex, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint, const glm::vec2& textureTiling = glm::vec2{ 1.0f });
 		static F32 GetTextureIndex(BatchData& batch, Texture* texture);
-		static void DrawOutline(const DrawInfo& drawInfo);
-		static void DrawOutline(const DrawInfoMat& drawInfo);
 	private:
 		static BatchRendererData s_BatchData;
 	};

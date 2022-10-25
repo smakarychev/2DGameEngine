@@ -41,11 +41,14 @@
 /* All rendering related */
 #include "Engine/Rendering/Buffer.h"
 #include "Engine/Rendering/Shader.h"
+#include "Engine/Rendering/SortingKey.h"
+#include "Engine/Rendering/SortingLayer.h"
 #include "Engine/Rendering/Texture.h"
 #include "Engine/Rendering/Renderer.h"
 #include "Engine/Rendering/Renderer2D.h"
 #include "Engine/Rendering/RenderCommand.h"
 #include "Engine/Rendering/Font.h"
+
 /* Utility rendering (drawers) */
 #include "Engine/Rendering/Drawers/BVHTreeDrawer.h"
 #include "Engine/Rendering/Drawers/RigidBodyWorldDrawer.h"

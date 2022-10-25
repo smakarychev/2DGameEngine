@@ -7,6 +7,7 @@
 #include <variant>
 #include <future>
 #include <chrono>
+#include <compare>
 
 #include <string>
 #include <sstream>

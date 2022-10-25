@@ -1,13 +1,14 @@
 #include "enginepch.h"
 
 #include "Renderer2D.h"
+#include "RenderCommand.h"
 
 #include "Engine/Core/Core.h"
 
-#include "RenderCommand.h"
 
 namespace Engine
 {
+
 	Renderer2D::BatchRendererData Renderer2D::s_BatchData;
 
 	void Renderer2D::Init()
@@ -134,10 +135,13 @@ namespace Engine
 	{
 		s_BatchData.CameraViewProjection = camera->GetViewProjection();
 		s_BatchData.Camera = camera.get();
+		s_BatchData.RenderQueue.Clear();
 	}
 	
 	void Renderer2D::EndScene()
 	{
+		// TODO: sort render queue.
+		s_BatchData.RenderQueue.Execute();
 		// Lines are rendered first because they are less likely to be transparent.
 		// (transparency is only partially supported yet).
 		if (s_BatchData.LineBatch.CurrentIndices > 0)
@@ -145,8 +149,9 @@ namespace Engine
 			Flush(s_BatchData.LineBatch);
 			ResetBatch(s_BatchData.LineBatch);
 		}
+
 		if (s_BatchData.QuadBatch.CurrentIndices > 0)
-		{
+		{	
 			Flush(s_BatchData.QuadBatch);
 			ResetBatch(s_BatchData.QuadBatch);
 		}
@@ -165,6 +170,69 @@ namespace Engine
 	}
 
 	void Renderer2D::DrawQuad(const DrawInfo& drawInfo)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawQuadBatched);
+		s_BatchData.RenderQueue.PushParameter(drawInfo);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+	
+	void Renderer2D::DrawQuad(const DrawInfoMat& drawInfo)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawQuadMatBatched);
+		s_BatchData.RenderQueue.PushParameter(drawInfo);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+
+	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawPolygonBatched);
+		s_BatchData.RenderQueue.PushParameter(polygon);
+		s_BatchData.RenderQueue.PushParameter(drawInfo);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+
+	void Renderer2D::DrawFontFixed(Font& font, F32 fontSize, const std::string& text, const glm::vec4& color)
+	{
+		DrawFontFixed(font, fontSize, 0.0f, std::numeric_limits<F32>::max(), 0.0f, text, color);
+	}
+
+	void Renderer2D::DrawFontFixed(Font& font, F32 fontSize, F32 xminPx, F32 xmaxPx, F32 yminPx, const std::string& text, const glm::vec4& color)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawFontFixedBatched);
+		s_BatchData.RenderQueue.PushParameter(font);
+		s_BatchData.RenderQueue.PushParameter(fontSize);
+		s_BatchData.RenderQueue.PushParameter(xminPx);
+		s_BatchData.RenderQueue.PushParameter(xmaxPx);
+		s_BatchData.RenderQueue.PushParameter(yminPx);
+		s_BatchData.RenderQueue.PushParameter(text);
+		s_BatchData.RenderQueue.PushParameter(color);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+
+
+	void Renderer2D::DrawFont(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawFontBatched);
+		s_BatchData.RenderQueue.PushParameter(font);
+		s_BatchData.RenderQueue.PushParameter(fontSize);
+		s_BatchData.RenderQueue.PushParameter(xmin);
+		s_BatchData.RenderQueue.PushParameter(xmax);
+		s_BatchData.RenderQueue.PushParameter(ymin);
+		s_BatchData.RenderQueue.PushParameter(text);
+		s_BatchData.RenderQueue.PushParameter(color);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+
+	void Renderer2D::DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
+	{
+		s_BatchData.RenderQueue.BeginCommand(RenderCommand::DrawLine);
+		s_BatchData.RenderQueue.PushParameter(from);
+		s_BatchData.RenderQueue.PushParameter(to);
+		s_BatchData.RenderQueue.PushParameter(color);
+		s_BatchData.RenderQueue.EndCommand();
+	}
+
+	void Renderer2D::DrawQuadCall(const DrawInfo& drawInfo)
 	{
 		// If we want to draw edges instead of full shape.
 		if (drawInfo.Type == RendererAPI::PrimitiveType::Line)
@@ -203,7 +271,7 @@ namespace Engine
 		quadBatch.CurrentIndices += 6;
 	}
 
-	void Renderer2D::DrawQuad(const DrawInfoMat& drawInfo)
+	void Renderer2D::DrawQuadMatCall(const DrawInfoMat& drawInfo)
 	{
 		// If we want to draw edges instead of full shape.
 		if (drawInfo.Type == RendererAPI::PrimitiveType::Line)
@@ -234,7 +302,7 @@ namespace Engine
 		quadBatch.CurrentIndices += 6;
 	}
 
-	void Renderer2D::DrawPolygon(const RegularPolygon& polygon, const DrawInfo& drawInfo)
+	void Renderer2D::DrawPolygonCall(const RegularPolygon& polygon, const DrawInfo& drawInfo)
 	{
 		BatchData& polygonBatch = s_BatchData.PolygonBatch;
 		if (polygonBatch.CurrentVertices + polygon.GetVertices().size() > polygonBatch.MaxVertices)
@@ -269,12 +337,7 @@ namespace Engine
 		polygonBatch.CurrentIndices += U32(polygon.GetIndices().size());
 	}
 
-	void Renderer2D::DrawFontFixed(Font& font, F32 fontSize, const std::string& text, const glm::vec4& color)
-	{
-		DrawFontFixed(font, fontSize, 0.0f, std::numeric_limits<F32>::max(), 0.0f, text, color);
-	}
-
-	void Renderer2D::DrawFontFixed(Font& font, F32 fontSize, F32 xminPx, F32 xmaxPx, F32 yminPx, const std::string& text, const glm::vec4& color)
+	void Renderer2D::DrawFontFixedCall(Font& font, F32 fontSize, F32 xminPx, F32 xmaxPx, F32 yminPx, const std::string& text, const glm::vec4& color)
 	{
 		BatchData& textBatch = s_BatchData.TextBatch;
 		if (textBatch.CurrentVertices + 4 > textBatch.MaxVertices || textBatch.CurrentIndices + 6 > textBatch.MaxIndices)
@@ -286,9 +349,9 @@ namespace Engine
 		auto& referenceQuad = s_BatchData.ReferenceQuad;
 
 		F32 fontSizeCoeff = fontSize / font.GetBaseFontSize() * s_BatchData.Camera->GetPixelCoefficient();
-		xminPx -= (F32)s_BatchData.Camera->GetViewportWidth()  / 2.0f;
-		xmaxPx -= (F32)s_BatchData.Camera->GetViewportWidth()  / 2.0f;
-		yminPx =  (F32)s_BatchData.Camera->GetViewportHeight() / 2.0f - fontSize - yminPx;
+		xminPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
+		xmaxPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
+		yminPx = (F32)s_BatchData.Camera->GetViewportHeight() / 2.0f - fontSize - yminPx;
 		xminPx *= s_BatchData.Camera->GetPixelCoefficient(); xmaxPx *= s_BatchData.Camera->GetPixelCoefficient(); yminPx *= s_BatchData.Camera->GetPixelCoefficient();
 		F32 x = xminPx;
 		F32 y = yminPx;
@@ -314,8 +377,8 @@ namespace Engine
 				InitVertexGeometryData(
 					*vertex,
 					glm::vec3{ x, y, s_BatchData.Camera->GetPosition().z - s_BatchData.Camera->GetNearClipPlane() * 1.001f } +
-						glm::vec3(font.GetCharacters()[ch].Bearing * fontSizeCoeff, 0.0f) +
-						glm::vec3(glm::vec2(s_BatchData.Camera->GetPosition()), 0.0f),
+					glm::vec3(font.GetCharacters()[ch].Bearing * fontSizeCoeff, 0.0f) +
+					glm::vec3(glm::vec2(s_BatchData.Camera->GetPosition()), 0.0f),
 					font.GetCharacters()[ch].Size * fontSizeCoeff);
 				InitVertexColorData(*vertex, textureIndex, font.GetCharacters()[ch].UV[i], color, glm::vec2{ 1.0f });
 
@@ -327,7 +390,7 @@ namespace Engine
 		}
 	}
 
-	void Renderer2D::DrawFont(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color)
+	void Renderer2D::DrawFontCall(Font& font, F32 fontSize, F32 xmin, F32 xmax, F32 ymin, const std::string& text, const glm::vec4& color)
 	{
 		BatchData& textBatch = s_BatchData.TextBatch;
 		if (textBatch.CurrentVertices + 4 > textBatch.MaxVertices || textBatch.CurrentIndices + 6 > textBatch.MaxIndices)
@@ -375,12 +438,7 @@ namespace Engine
 		}
 	}
 
-	void Renderer2D::DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
-	{
-		DrawLine(glm::vec3{ from, 0.0f }, glm::vec3{ to, 0.0f }, color);
-	}
-
-	void Renderer2D::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
+	void Renderer2D::DrawLineCall(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
 	{
 		BatchDataLines& lineBatch = s_BatchData.LineBatch;
 		if (lineBatch.CurrentVertices + 2 > lineBatch.MaxVertices || lineBatch.CurrentIndices + 2 > lineBatch.MaxIndices)
@@ -544,7 +602,7 @@ namespace Engine
 					Flush(batch, *s_BatchData.TextShader);
 					ResetBatch(batch);
 				}
-				batch.UsedTextures[batch.CurrentTextureIndex] = const_cast<Texture*>(texture);
+				batch.UsedTextures[batch.CurrentTextureIndex] = texture;
 				textureIndex = F32(batch.CurrentTextureIndex);
 				batch.CurrentTextureIndex++;
 			}
