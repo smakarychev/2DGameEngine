@@ -66,9 +66,12 @@ namespace Engine
 		friend class RigidBodyWorld2D;
 		FRIEND_MEMORY_FN;
 	public:
+		void SetType(RigidBodyType2D type) { m_Type = type; }
 		RigidBodyType2D GetType() const { return m_Type; }
 		void SetUserData(void* userData) { m_UserData = userData; }
 		void* GetUserData() const { return m_UserData; }
+		void SetFlags(RigidBodyDef2D::BodyFlags flags) { m_Flags = flags; }
+		RigidBodyDef2D::BodyFlags GetFlags() const { return m_Flags; }
 
 		ColliderList* GetColliderList() { return m_ColliderList; }
 
@@ -80,6 +83,7 @@ namespace Engine
 		void SetLinearVelocity(const glm::vec2& vel) { m_LinearVelocity = vel; }
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
 
+		void RecalculateMass();
 		void SetMass(F32 mass) { m_InverseMass = 1.0f / mass; }
 		void SetInverseMass(F32 invMass) { m_InverseMass = invMass; }
 		F32 GetMass() const { return 1.0f / m_InverseMass; }

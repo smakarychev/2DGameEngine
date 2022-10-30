@@ -6,8 +6,8 @@
 
 namespace Engine
 {
-	RigidBodyWorld2D::RigidBodyWorld2D(const glm::vec2& gravity, U32 iterations)
-		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_NarrowPhaseIterations(iterations), m_WarmStartEnabled(true)
+	RigidBodyWorld2D::RigidBodyWorld2D(const glm::vec2& gravity)
+		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_WarmStartEnabled(true)
 	{
 	}
 
@@ -52,12 +52,8 @@ namespace Engine
 		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset");
 		Collider2D* newCollider = body->AddCollider(colliderDef);
 		// Add collider to broad phase and save returned nodeId for later modification of bvh tree.
-		// Do not store id of static, since they never move.
 		I32 nodeId = m_BroadPhase.InsertCollider(newCollider, newCollider->GenerateBounds(body->GetTransform()));
-		if (body->GetType() != RigidBodyType2D::Static)
-		{
-			m_BroadPhaseNodes.push_back(nodeId);
-		}
+		m_BroadPhaseNodes.push_back(nodeId);
 		return newCollider;
 	}
 
@@ -77,7 +73,7 @@ namespace Engine
 		return newBody;
 	}
 
-	void RigidBodyWorld2D::Update(F32 deltaTime)
+	void RigidBodyWorld2D::Update(F32 deltaTime, U32 velocityIters, U32 positionIters)
 	{
 		SynchronizeBroadPhase(deltaTime);
 
@@ -129,7 +125,7 @@ namespace Engine
 		}
 
 		// Resolve velocity constraints.
-		for (U32 i = 0; i < m_NarrowPhaseIterations + 2; i++)
+		for (U32 i = 0; i < velocityIters; i++)
 		{
 			ContactResolver::ResolveVelocity();
 		}
@@ -150,7 +146,7 @@ namespace Engine
 			body->ResetTorque();
 		}
 		// Resolve position constraints. 
-		for (U32 i = 0; i < m_NarrowPhaseIterations; i++)
+		for (U32 i = 0; i < positionIters; i++)
 		{
 			if (ContactResolver::ResolvePosition())
 			{

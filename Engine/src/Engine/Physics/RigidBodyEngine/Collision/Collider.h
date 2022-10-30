@@ -95,8 +95,8 @@ namespace Engine
 				Radius = biggest.Radius;
 				return;
 			}
-			glm::vec2 centerOffset = second.Center - first.Center;
-			F32 distance = glm::distance(first.Center, second.Center);
+			const glm::vec2 centerOffset = second.Center - first.Center;
+			const F32 distance = glm::distance(first.Center, second.Center);
 			Radius = (first.Radius + second.Radius + distance) * 0.5f;
 			Center = first.Center;
 			if (distance > 0)

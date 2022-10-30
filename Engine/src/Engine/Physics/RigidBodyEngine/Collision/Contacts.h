@@ -244,6 +244,8 @@ namespace Engine
 	class ContactListener
 	{
 	public:
+		enum class ContactState { Begin, End };
+	public:
 		virtual ~ContactListener() {};
 		virtual void OnContactBegin([[maybe_unused]] const ContactInfo2D& contact) {}
 		virtual void OnContactEnd([[maybe_unused]] const ContactInfo2D& contact) {}

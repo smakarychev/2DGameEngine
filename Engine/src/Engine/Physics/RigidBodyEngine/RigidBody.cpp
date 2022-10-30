@@ -57,11 +57,22 @@ namespace Engine
 		m_ColliderList = newEntry;
 
 		if ((m_Flags & RigidBodyDef2D::UseSyntheticMass) != 0) return newEntry->Collider;
+		if (m_Type != RigidBodyType2D::Dynamic) return newEntry->Collider;
 		// Recalculate mass, inertia, center of mass.
 		m_InverseMass = m_InverseInertiaTensor = 0.0f;
 		m_CenterOfMass = glm::vec2{ 0.0f };
 		
-		if (m_Type != RigidBodyType2D::Dynamic) return newEntry->Collider;
+		RecalculateMass();
+
+		// Very smart visual studio.
+		if (newEntry == nullptr) return nullptr;
+		return newEntry->Collider;
+	}
+
+	void RigidBody2D::RecalculateMass()
+	{
+		m_InverseMass = m_InverseInertiaTensor = 0.0f;
+		m_CenterOfMass = glm::vec2{ 0.0f };
 
 		F32 mass = 0.0f;
 		F32 inertia = 0.0f;
@@ -84,9 +95,6 @@ namespace Engine
 			inertia -= mass * glm::dot(m_CenterOfMass, m_CenterOfMass);
 			m_InverseInertiaTensor = 1.0f / inertia;
 		}
-		// Very smart visual studio.
-		if (newEntry == nullptr) return nullptr;
-		return newEntry->Collider;
 	}
 
 	void RigidBody2D::AddForce(const glm::vec2& force, ForceMode mode)

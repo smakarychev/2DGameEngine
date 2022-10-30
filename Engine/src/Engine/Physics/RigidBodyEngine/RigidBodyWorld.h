@@ -19,14 +19,14 @@ namespace Engine
 	{
 		using RigidBodyList  = RigidBodyListEntry2D;
 	public:
-		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f }, U32 iterations = 4);
+		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
 		~RigidBodyWorld2D();
 		// All rigid bodies shall be created by this method.
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		void RemoveBody(RigidBody2D* body);
 		Collider2D* AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
 		
-		void Update(F32 deltaTime);
+		void Update(F32 deltaTime, U32 velocityIters = 8, U32 positionIters = 10);
 
 		// Add the global force, acting on all bodies.
 		void AddForce(Ref<RigidBody2DForceGenerator> forceGenerator);
@@ -35,10 +35,8 @@ namespace Engine
 		void AddForce(Ref<RigidBody2DForceGenerator> forceGenerator, RigidBody2D& body);
 
 		void SetGravity(const glm::vec2& gravity) { m_Gravity = gravity; }
-		void SetIterations(U32 iterations) { m_NarrowPhaseIterations = iterations; }
 		
 		const RigidBodyList* GetBodyList() const { return m_BodyList; }
-
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
 
@@ -64,7 +62,6 @@ namespace Engine
 		std::vector<I32> m_BroadPhaseNodes;
 
 		NarrowPhase2D m_NarrowPhase;
-		U32 m_NarrowPhaseIterations;
 		bool m_WarmStartEnabled;
 			
 		glm::vec2 m_Gravity;
