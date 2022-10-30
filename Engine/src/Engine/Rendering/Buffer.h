@@ -4,6 +4,8 @@
 #include "Engine/Core/Log.h"
 #include "Engine/Core/Types.h"
 
+#include "RendererAPI.h"
+
 #include <memory>
 
 namespace Engine
@@ -77,8 +79,8 @@ namespace Engine
 
 	struct VertexLayoutElement
 	{
-		VertexLayoutElement(LayoutElement type, const std::string& name, bool normalized = false)
-			: Type(type), Name(name), Normalized(normalized), Offset(0)
+		VertexLayoutElement(LayoutElement type, std::string name, bool normalized = false)
+			: Type(type), Name(std::move(name)), Offset(0), Normalized(normalized)
 		{
 			Count = GetLayoutElementCount(type);
 		}
@@ -91,7 +93,7 @@ namespace Engine
 	struct VertexLayout
 	{
 		VertexLayout() : Stride(0) {}
-		VertexLayout(const std::vector<VertexLayoutElement>& elements) : Elements(elements)
+		VertexLayout(std::vector<VertexLayoutElement> elements) : Elements(std::move(elements))
 		{
 			U32 offset = 0;
 			for (auto& e : Elements)
@@ -155,13 +157,25 @@ namespace Engine
 	};
 
 	class Texture;
+	struct PixelData;
 	class FrameBuffer
 	{
 	public:
 		struct Spec
 		{
+			enum class AttachmentFormat { Color, Depth24Stencil8, RedInteger};
+			enum class AttachmentCategory { Write, ReadWrite};
+			struct AttachmentSpec
+			{
+				AttachmentFormat Type = AttachmentFormat::Color;
+				AttachmentCategory Category = AttachmentCategory::ReadWrite;
+			};
 			U32 Width = 0;
 			U32 Height = 0;
+			std::vector<AttachmentSpec> Attachments = {
+				{ AttachmentFormat::Color,			 AttachmentCategory::ReadWrite },
+				{ AttachmentFormat::Depth24Stencil8, AttachmentCategory::Write }
+			};
 		};
 	public:
 		virtual ~FrameBuffer() {}
@@ -170,8 +184,10 @@ namespace Engine
 		virtual void Unbind() = 0;
 		virtual void Resize(U32 width, U32 height) = 0;
 		virtual const Spec& GetSpec() const = 0;
-		virtual U32 GetColorBufferId() const = 0;
-		virtual Texture& GetColorBuffer() const = 0;
+		virtual U32 GetColorBufferId(U32 colorBufferIndex) const = 0;
+		virtual Texture& GetColorBuffer(U32 colorBufferIndex) const = 0;
+		virtual Texture& GetAttachment(U32 attachmentBufferIndex) const = 0;
+		virtual PixelData ReadPixel(U32 colorBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) = 0;
 
 		static Ref<FrameBuffer> Create(const Spec& spec);
 	};

@@ -2,6 +2,7 @@
 #include "OpenGLRendererAPI.h"
 
 #include "Engine/Core/Core.h"
+#include "OpenGLBuffer.h"
 
 #include "glad/glad.h"
 
@@ -27,6 +28,38 @@ namespace Engine
 	void OpenGLRendererAPI::SetViewport(U32 width, U32 height)
 	{
 		glViewport(0, 0, width, height);
+	}
+
+	U32 OpenGLRendererAPI::GetNativeDataType(RendererAPI::DataType type)
+	{
+		switch (type)
+		{
+		case Engine::RendererAPI::DataType::UByte: return GL_UNSIGNED_BYTE;
+		case Engine::RendererAPI::DataType::Byte:  return GL_BYTE;
+		case Engine::RendererAPI::DataType::UInt:  return GL_UNSIGNED_INT;
+		case Engine::RendererAPI::DataType::Int:   return GL_INT;
+		case Engine::RendererAPI::DataType::Float: return GL_FLOAT;
+		default:
+			ENGINE_CORE_FATAL("Unimplemented type!");
+			return 0;
+		}
+	}
+
+	void OpenGLRendererAPI::EnableCull(bool enable)
+	{
+		if (enable) glEnable(GL_CULL_FACE);
+		else glDisable(GL_CULL_FACE);
+	}
+
+	void OpenGLRendererAPI::SetCullFrontFace(CullFrontFace face)
+	{
+		switch (face)
+		{
+		case Engine::RendererAPI::CullFrontFace::Clockwise: glCullFace(GL_CW);
+			break;
+		case Engine::RendererAPI::CullFrontFace::CounterClockwise: glCullFace(GL_CCW);
+			break;
+		}
 	}
 
 	void OpenGLRendererAPI::ClearScreen()

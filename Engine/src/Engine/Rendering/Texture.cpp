@@ -9,17 +9,21 @@
 
 namespace Engine
 {
-	std::shared_ptr<Texture> Texture::LoadTextureFromFile(const std::filesystem::path& path)
+	Ref<Texture> Texture::LoadTextureFromFile(const std::filesystem::path& path)
 	{
 		return TextureLoader::LoadTextureFromFile(path);
 	}
 	
-	std::shared_ptr<Texture> Texture::Create(const TextureData& textureData)
+	Ref<Texture> Texture::Create(const TextureData& textureData)
 	{
-		return std::shared_ptr<OpenGLTexture>(New<OpenGLTexture>(textureData), Delete<OpenGLTexture>);
+		return CreateRef<OpenGLTexture>(textureData);
 	}
-	std::shared_ptr<Texture> Texture::GetSubTexture(Texture& texture, const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	Ref<Texture> Texture::GetSubTexture(Texture& texture, const glm::uvec2& tileSize, const glm::uvec2& subtexCoords, const glm::uvec2& subtexSize)
 	{
 		return texture.GetSubTexture(tileSize, subtexCoords, subtexSize);
+	}
+	Ref<Texture> GetSubTexturePixels(Texture& texture, const glm::uvec2& subtexCoordsPx, const glm::uvec2& subtexSizePx)
+	{
+		return texture.GetSubTexturePixels(subtexCoordsPx, subtexSizePx);
 	}
 }

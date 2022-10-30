@@ -71,7 +71,8 @@ namespace Engine
 		if (textureData.Data == nullptr) ENGINE_CORE_ERROR("Failed to load texture: {}", pathString);
 		textureData.Width = U32(width);
 		textureData.Height = U32(height);
-		textureData.Channels = U32(channels);
+		if (channels == 3) textureData.PixelFormat = Texture::PixelFormat::RGB;
+		else if (channels == 4) textureData.PixelFormat = Texture::PixelFormat::RGBA;
 		textureData.Name = textureName;
 
 		Ref<Texture> texture = Texture::Create(textureData);
@@ -127,7 +128,7 @@ namespace Engine
 				
 				msdfgen::BitmapConstRef<msdfgen::byte, 3> bitmap = generator.atlasStorage();
 				Texture::TextureData data;
-				data.Channels = 3;
+				data.PixelFormat = Texture::PixelFormat::RGB;
 				data.Width = U32(bitmap.width); data.Height = U32(bitmap.height);
 				data.Data = const_cast<U8*>(bitmap.pixels);
 				data.Minification = Texture::Filter::Linear;

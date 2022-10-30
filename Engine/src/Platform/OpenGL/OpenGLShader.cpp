@@ -4,8 +4,7 @@
 
 namespace Engine
 {
-
-	OpenGLShader::OpenGLShader(const std::string& name, const std::string& source) : m_Id(0), m_Name(name)
+	OpenGLShader::OpenGLShader(std::string name, std::string source) : m_Id(0), m_Name(std::move(name))
 	{
 		auto shadersSources = ExtractShaders(source);
 		CreateShaderProgram(shadersSources);

@@ -4,6 +4,9 @@
 
 #include "Engine/Core/Log.h"
 
+#include "Engine/Memory/MemoryManager.h"
+#include "Engine/Rendering/RendererAPI.h"
+
 #include <glad/glad.h>
 
 namespace Engine
@@ -18,22 +21,12 @@ namespace Engine
 		SetMinificationFilter(textureData.Minification);
 		SetMagnificationFilter(textureData.Magnification);
 
-		GLenum internalFormat = 0, dataFormat = 0;
-		if (textureData.Channels == 4)
-		{
-			internalFormat = GL_RGBA8;
-			dataFormat = GL_RGBA;
-		}
-		else if (textureData.Channels == 3)
-		{
-			internalFormat = GL_RGB8;
-			dataFormat = GL_RGB;
-		}
+		auto&& [internalFormat, dataFormat] = GetInternalFormatFormatPair(textureData.PixelFormat);
 
 		glTextureStorage2D(m_Id, 1, internalFormat, (GLsizei)textureData.Width, (GLsizei)textureData.Height);
 		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GL_UNSIGNED_BYTE, textureData.Data);
 
-		if (textureData.GenerateBitmaps)
+		if (textureData.GenerateMipmaps)
 		{
 			glGenerateTextureMipmap(m_Id);
 		}
@@ -47,40 +40,67 @@ namespace Engine
 
 	void OpenGLTexture::UpdateData(void* data, PixelFormat format)
 	{
-		glTextureSubImage2D(m_Id, 0, 0, 0, m_Data.Width, m_Data.Height, GetOpenGLPixelFormat(format), GL_UNSIGNED_BYTE, data);
+		glTextureSubImage2D(m_Id, 0, 0, 0, m_Data.Width, m_Data.Height, GetFormat(format), GL_UNSIGNED_BYTE, data);
 	}
 
 	void OpenGLTexture::UpdateData(U32 width, U32 height, void* data, PixelFormat format)
 	{
 		m_Data.Width = width;
 		m_Data.Height = height;
-		glTextureSubImage2D(m_Id, 0, 0, 0, width, height, GetOpenGLPixelFormat(format), GL_UNSIGNED_BYTE, data);
+		glTextureSubImage2D(m_Id, 0, 0, 0, width, height, GetFormat(format), GL_UNSIGNED_BYTE, data);
 	}
 
-	std::shared_ptr<Texture> OpenGLTexture::GetSubTexture(const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	PixelData OpenGLTexture::ReadPixel(U32 x, U32 y, RendererAPI::DataType dataType)
+	{
+		PixelData pixelData;
+		glReadPixels(GLint(x), GLint(y), 1, 1, GetFormat(m_Data.PixelFormat), RendererAPI::GetNativeDataType(dataType), &pixelData.Data);
+		return pixelData;
+	}
+
+	Ref<Texture> OpenGLTexture::GetSubTexture(const glm::uvec2& tileSize, const glm::uvec2& subtexCoords, const glm::uvec2& subtexSize)
+	{
+		return GetSubTexturePixels(tileSize * subtexCoords, tileSize * subtexSize);
+	}
+
+	Ref<Texture> OpenGLTexture::GetSubTexturePixels(const glm::uvec2& subtexCoordsPx, const glm::uvec2& subtexSizePx)
 	{
 		TextureData data;
-		data.Channels = m_Data.Channels;
+		data.PixelFormat = m_Data.PixelFormat;
 		data.Name = m_Data.Name + std::string("sub");
 		data.Data = nullptr;
-		data.Width = U32(tileSize.x  * subtexSize.x);
-		data.Height = U32(tileSize.y * subtexSize.y);
-		std::shared_ptr<Texture> subTexture = Texture::Create(data);
+		data.Width = subtexSizePx.x;
+		data.Height = subtexSizePx.y;
+		Ref<Texture> subTexture = Texture::Create(data);
 
 		glCopyImageSubData(
-			m_Id, GL_TEXTURE_2D, 0, GLint(tileSize.x * subtexCoords.x), GLint(tileSize.y * subtexCoords.y), 0,
+			m_Id, GL_TEXTURE_2D, 0, GLint(subtexCoordsPx.x), GLint(subtexCoordsPx.y), 0,
 			subTexture->GetId(), GL_TEXTURE_2D, 0, 0, 0, 0,
-			GLsizei(tileSize.x * subtexSize.x), GLsizei(tileSize.y * subtexSize.y), 1
+			GLsizei(subtexSizePx.x), GLsizei(subtexSizePx.y), 1
 		);
 		return subTexture;
 	}
 
-	std::vector<glm::vec2> OpenGLTexture::GetSubTextureUV(const glm::vec2& tileSize, const glm::vec2& subtexCoords, const glm::vec2& subtexSize)
+	std::array<glm::vec2, 4> OpenGLTexture::GetSubTextureUV(const glm::uvec2& tileSize, const glm::uvec2& subtexCoords, const glm::uvec2& subtexSize)
 	{
 		// Normalize tilesize to get uv.
-		glm::vec2 normalizedTile = glm::vec2(tileSize.x / m_Data.Width, tileSize.y / m_Data.Height);
-		glm::vec2 begin = glm::vec2(subtexCoords.x * normalizedTile.x, subtexCoords.y * normalizedTile.y);
-		glm::vec2 end = begin + glm::vec2(subtexSize.x * normalizedTile.x, subtexSize.y * normalizedTile.y);
+		glm::vec2 normalizedTile = glm::vec2{ (F32)tileSize.x / m_Data.Width, (F32)tileSize.y / m_Data.Height };
+		glm::vec2 begin = glm::vec2{ subtexCoords.x * normalizedTile.x, subtexCoords.y * normalizedTile.y };
+		glm::vec2 end = begin + glm::vec2{ subtexSize.x * normalizedTile.x, subtexSize.y * normalizedTile.y };
+		return { {
+			{ begin.x,	begin.y },
+			{ end.x,	begin.y },
+			{ end.x,	end.y	},
+			{ begin.x,	end.y	}
+		} };
+	}
+
+	std::array<glm::vec2, 4> OpenGLTexture::GetSubTexturePixelsUV(const glm::uvec2& subtexCoordsPx, const glm::uvec2& subtexSizePx)
+	{
+		glm::vec2 begin = subtexCoordsPx;
+		glm::vec2 end = begin + glm::vec2{ subtexSizePx };
+		// Normalize to get uv.
+		begin /= glm::vec2{ m_Data.Width, m_Data.Height };
+		end   /= glm::vec2{ m_Data.Width, m_Data.Height };
 		return { {
 			{ begin.x,	begin.y },
 			{ end.x,	begin.y },
@@ -144,12 +164,30 @@ namespace Engine
 		}
 	}
 
+	std::pair<GLenum, GLenum> OpenGLTexture::GetInternalFormatFormatPair(Texture::PixelFormat format)
+	{
+		switch (format)
+		{
+		case Engine::Texture::PixelFormat::RedInteger:		return std::make_pair(GL_R32I, GetFormat(format));
+		case Engine::Texture::PixelFormat::RGB:				return std::make_pair(GL_RGB8, GetFormat(format));
+		case Engine::Texture::PixelFormat::RGBA:			return std::make_pair(GL_RGBA8, GetFormat(format));
+		case Engine::Texture::PixelFormat::DepthStencil:	return std::make_pair(GL_DEPTH32F_STENCIL8, GetFormat(format));
+		case Engine::Texture::PixelFormat::None:
+			ENGINE_CORE_FATAL("Pixel format for texture is unset!");
+			break;
+		default:
+			ENGINE_CORE_FATAL("Pixel format in unimplemented!");
+			break;
+		}
+		return std::pair<GLenum, GLenum>();
+	}
+
 	OpenGLTexture::~OpenGLTexture()
 	{
 		glDeleteTextures(1, &m_Id);
 	}
 
-	U32 GetOpenGLPixelFormat(Texture::PixelFormat format)
+	U32 OpenGLTexture::GetFormat(Texture::PixelFormat format)
 	{
 		switch (format)
 		{

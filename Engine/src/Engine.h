@@ -15,7 +15,7 @@
 /* Window */
 #include "Engine/Core/Window.h"
 
-/* Input */
+/* GemWarsInput */
 #include "Engine/Core/Input.h"
 
 /* Time */
@@ -39,15 +39,19 @@
 #include "Engine/ECS/EntityManager.h"
 
 /* All rendering related */
+#include "Engine/Rendering/Animation.h"
 #include "Engine/Rendering/Buffer.h"
+#include "Engine/Rendering/Font.h"
+#include "Engine/Rendering/GraphicsContext.h"
+#include "Engine/Rendering/RenderCommand.h"
+#include "Engine/Rendering/Renderer.h"
+#include "Engine/Rendering/Renderer2D.h"
+#include "Engine/Rendering/RendererAPI.h"
+#include "Engine/Rendering/RenderQueue.h"
 #include "Engine/Rendering/Shader.h"
 #include "Engine/Rendering/SortingKey.h"
 #include "Engine/Rendering/SortingLayer.h"
 #include "Engine/Rendering/Texture.h"
-#include "Engine/Rendering/Renderer.h"
-#include "Engine/Rendering/Renderer2D.h"
-#include "Engine/Rendering/RenderCommand.h"
-#include "Engine/Rendering/Font.h"
 
 /* Utility rendering (drawers) */
 #include "Engine/Rendering/Drawers/BVHTreeDrawer.h"

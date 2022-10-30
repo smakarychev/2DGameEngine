@@ -15,8 +15,12 @@ namespace Engine
 		void DrawIndexed(Ref<VertexArray> vertexArray, PrimitiveType type) override;
 		void DrawIndexed(Ref<VertexArray> vertexArray, U32 count, PrimitiveType type) override;	
 
+		void EnableCull(bool enable) override;
+		void SetCullFrontFace(CullFrontFace face) override;
 		void SetDepthTestMode(Mode mode) override;
 		void SetViewport(U32 width, U32 height) override;
+
+		static U32 GetNativeDataType(RendererAPI::DataType type);
 	private:
 		glm::vec3 m_ClearColor;
 	};
