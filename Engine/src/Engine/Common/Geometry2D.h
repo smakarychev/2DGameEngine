@@ -48,11 +48,11 @@ namespace Engine
 		}
 	};
 
-	struct Rect
+	struct CRect
 	{
 		glm::vec2 Center;
 		glm::vec2 HalfSize;
-		Rect(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f }) : Center(center), HalfSize(halfSize)
+		CRect(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f }) : Center(center), HalfSize(halfSize)
 		{}
 
 		bool Contains(const glm::vec2& point) const
@@ -61,18 +61,17 @@ namespace Engine
 				Math::Abs(point.y - Center.y) < HalfSize.y;
 		}
 
-		bool Contains(const Rect& rect) const
+		bool Contains(const CRect& rect) const
 		{
 			return Math::Abs(rect.Center.x - Center.x) < (HalfSize.x - rect.HalfSize.x) &&
 				Math::Abs(rect.Center.y - Center.y) < (HalfSize.y - rect.HalfSize.y);
 		}
 
-		bool Overlaps(const Rect& rect) const
+		bool Overlaps(const CRect& rect) const
 		{
 			return Math::Abs(rect.Center.x - Center.x) < (HalfSize.x + rect.HalfSize.x) &&
 				Math::Abs(rect.Center.y - Center.y) < (HalfSize.y + rect.HalfSize.y);
 		}
-
 	};
 
 	struct Line2D

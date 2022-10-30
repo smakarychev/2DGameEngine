@@ -8,6 +8,7 @@
 #endif
 
 #include <algorithm>
+#include <glm/glm.hpp>
 
 namespace Engine
 {
@@ -76,9 +77,15 @@ namespace Engine
 		}
 
 		template <typename T>
-		inline T Abs(T val)
+		inline T Abs(const T& val)
 		{
 			return std::abs(val);
+		}
+
+		template <>
+		inline glm::vec2 Abs<glm::vec2>(const glm::vec2& val)
+		{
+			return glm::vec2{ Math::Abs(val.x), Math::Abs(val.y) };
 		}
 
 		inline constexpr std::floating_point auto Sqrt(std::floating_point auto val)

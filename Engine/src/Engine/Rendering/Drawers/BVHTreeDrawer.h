@@ -20,24 +20,24 @@ namespace Engine
 		{
 			if (node.IsLeaf())
 			{
-				Renderer2D::DrawQuad({ 
-					.Position{node.Bounds.Center},
-					.Scale{node.Bounds.HalfSize * 2.0f},
-					.Color{0.0f, 0.0f, 0.8f, 0.8f},
-					.Type{RendererAPI::PrimitiveType::Line} }
-				);
+				Component::Transform2D transform;
+				transform.Position = node.Bounds.Center;
+				transform.Scale = node.Bounds.HalfSize * 2.0f;
+				Component::SpriteRenderer sp;
+				sp.Tint = {0.0f, 0.0f, 0.8f, 0.8f};
+				Renderer2D::DrawQuad(transform, sp, RendererAPI::PrimitiveType::Line);
 			}
 		}
 		for (const auto& node : tree.m_Nodes)
 		{
 			if (node.Height > 0)
 			{
-				Renderer2D::DrawQuad({
-					.Position{node.Bounds.Center},
-					.Scale{node.Bounds.HalfSize * 2.0f * 1.01f},
-					.Color{Math::Clamp(0.1f * node.Height, 0.0f, 1.0f), Math::Clamp(0.8f - 0.1f * node.Height, 0.0f, 1.0f), 0.0f, 0.5f},
-					.Type{RendererAPI::PrimitiveType::Line} }
-				);
+				Component::Transform2D transform;
+				transform.Position = node.Bounds.Center;
+				transform.Scale = node.Bounds.HalfSize * 2.0f * 1.01f;
+				Component::SpriteRenderer sp;
+				sp.Tint = {Math::Clamp(0.1f * node.Height, 0.0f, 1.0f), Math::Clamp(0.8f - 0.1f * node.Height, 0.0f, 1.0f), 0.0f, 0.5f};
+				Renderer2D::DrawQuad(transform, sp, RendererAPI::PrimitiveType::Line);
 			}
 		}
 	}

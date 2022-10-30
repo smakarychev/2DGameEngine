@@ -5,7 +5,8 @@
 namespace Engine
 {
 	RenderQueue::RenderQueue() 
-		: m_QueueBuffer(m_QueueAllocator.Alloc(0))
+		: m_QueueBuffer(m_QueueAllocator.Alloc(0)),
+		m_SortingBuffer(m_SortingAllocator.Alloc(0))
 	{
 	}
 
@@ -15,31 +16,62 @@ namespace Engine
 		// Allocate space for command pointer + 4 bytes for parameter size.
 		m_LastCommand = m_QueueAllocator.Alloc(sizeof RenderCommandFn);
 		MemoryUtils::Copy(m_LastCommand, &command, sizeof RenderCommandFn);
-		m_CurrentCommandSizeAddress = m_QueueAllocator.Alloc(sizeof m_CurrentCommandParameterSize);
 		
+		m_LastSortingPair =  new (m_SortingAllocator.Alloc<SortingKeyCommandPair>()) SortingKeyCommandPair();
+		((SortingKeyCommandPair*)m_LastSortingPair)->CommandPtr = (RenderCommandFn*)m_LastCommand;
+
 		m_CommandDescStarted = true;
-		m_CurrentCommandParameterSize = 0;
+		m_CommandsCount++;
+	}
+
+	void RenderQueue::AddSortingKey(const SortingKey& key)
+	{
+		ENGINE_CORE_ASSERT(m_CommandDescStarted == true, "No active command");
+		((SortingKeyCommandPair*)m_LastSortingPair)->Key = key;
 	}
 
 	void RenderQueue::EndCommand()
 	{
 		ENGINE_CORE_ASSERT(m_CommandDescStarted == true, "No active command");
-		*(U32*)m_CurrentCommandSizeAddress = m_CurrentCommandParameterSize;
 		m_CommandDescStarted = false;
+		if (U64((U8*)m_LastCommand - (U8*)m_QueueBuffer) < 256_B)
+		{
+			Execute();
+			Clear();
+		}
+	}
+
+	void RenderQueue::Sort()
+	{
+		ENGINE_CORE_ASSERT(m_CommandDescStarted == false, "Unfinished command");
+		std::qsort(m_SortingBuffer, m_CommandsCount, sizeof(SortingKeyCommandPair), [](const auto* a, const auto* b) { 
+			const auto cmp =  ((SortingKeyCommandPair *)a)->Key <=> ((SortingKeyCommandPair*)b)->Key;
+			if (cmp < 0) return -1;
+			if (cmp > 0) return 1;
+			return 0;
+		});
 	}
 
 	void RenderQueue::Execute()
 	{
 		ENGINE_CORE_ASSERT(m_CommandDescStarted == false, "Unfinished command");
-		void* currentCommand = m_QueueBuffer;
-		while (currentCommand <= m_LastCommand)
+		SortingKeyCommandPair* keyCommand = (SortingKeyCommandPair *)m_SortingBuffer;
+		U32 commandNum = 0;
+		while (commandNum < m_CommandsCount)
 		{
-			RenderCommandFn command = *(RenderCommandFn*)(currentCommand);
-			void* sizeOffset = ((U8*)currentCommand + sizeof(RenderCommandFn));
-			U32 parameterSize = *(U32*)sizeOffset;
-			command((U8*)sizeOffset + sizeof(U32));
-			currentCommand = (U8*)sizeOffset + sizeof(U32) + parameterSize;
+			RenderCommandFn command = *(RenderCommandFn*)(keyCommand->CommandPtr);
+			void* parameters = (U8*)keyCommand->CommandPtr + sizeof(RenderCommandFn);
+			command(parameters);
+			keyCommand++;
+			commandNum++;
 		}
+	}
+	
+	void RenderQueue::Clear()
+	{
+		m_QueueAllocator.Clear();
+		m_SortingAllocator.Clear();
+		m_CommandsCount = 0;
 	}
 }
 

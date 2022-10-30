@@ -2,7 +2,6 @@
 
 #include "Engine/Core/Types.h"
 
-#include "Engine/Memory/MemoryManager.h"
 #include "Engine/Events/Event.h"
 #include "Engine/Events/KeyboardEvents.h"
 #include "Engine/Events/MouseEvents.h"
@@ -27,8 +26,8 @@ namespace Engine
 			Perspective, Orthographic
 		};
 	public:
-		static std::shared_ptr<Camera> Create();
-		static std::shared_ptr<Camera> Create(const glm::vec3& position, F32 fov, F32 aspect);
+		static Ref<Camera> Create();
+		static Ref<Camera> Create(const glm::vec3& position, F32 fov, F32 aspect);
 		
 		Camera();
 		Camera(const glm::vec3& position, F32 fov, F32 aspect);
@@ -46,7 +45,7 @@ namespace Engine
 		void OnEvent(Event& event);
 
 		F32 GetPixelCoefficient();
-		F32 GetPixelCoefficient(F32 distance);
+		F32 GetPixelCoefficient(F32 distance) const;
 
 		void SetProjection(ProjectionType type);
 		void SetViewport(U32 width, U32 height);
@@ -102,26 +101,27 @@ namespace Engine
 			FPS, Editor, Editor2D
 		};
 	public:
-		static std::shared_ptr<CameraController> Create(ControllerType type, std::shared_ptr<Camera> camera);
+		virtual ~CameraController() = default;
+		static Ref<CameraController> Create(ControllerType type, Ref<Camera> camera);
 
 		virtual void OnUpdate(F32 dt) = 0;
 		virtual bool OnEvent(Event& event) = 0;
-		virtual std::shared_ptr<Camera> GetCamera() = 0;
+		virtual Ref<Camera> GetCamera() = 0;
 	};
 
 	class FPSCameraController : public CameraController
 	{
 	public:
-		FPSCameraController(std::shared_ptr<Camera> camera);
+		FPSCameraController(Ref<Camera> camera);
 
 		void OnUpdate(F32 dt) override;
 		bool OnEvent(Event& event) override;
-		std::shared_ptr<Camera> GetCamera() override { return m_Camera; }
+		Ref<Camera> GetCamera() override { return m_Camera; }
 
 		void SetTranslationSpeed(F32 speed) { m_TranslationSpeed = speed; }
-		void SetMousemSensitivity(F32 sensitivity) { m_MouseSensitivity = sensitivity; }
+		void SetMouseSensitivity(F32 sensitivity) { m_MouseSensitivity = sensitivity; }
 	private:
-		std::shared_ptr<Camera> m_Camera;
+		Ref<Camera> m_Camera;
 		F32 m_TranslationSpeed;
 		F32 m_MouseSensitivity;
 
@@ -138,18 +138,18 @@ namespace Engine
 	class EditorCameraController : public CameraController
 	{
 	public:
-		EditorCameraController(std::shared_ptr<Camera> camera);
+		EditorCameraController(Ref<Camera> camera);
 
 		void OnUpdate(F32 dt) override;
 		bool OnEvent(Event& event) override;
-		std::shared_ptr<Camera> GetCamera() { return m_Camera; };
+		Ref<Camera> GetCamera() override { return m_Camera; }
 
 		void SetTranslationSpeed(F32 speed) { m_TranslationSpeed = speed; }
 		void SetRotationSpeed(F32 speed) { m_RotationSpeed = speed; }
 	protected:
-		F32 ZoomSpeed();
+		F32 ZoomSpeed() const;
 	protected:
-		std::shared_ptr<Camera> m_Camera;
+		Ref<Camera> m_Camera;
 
 		F32 m_TranslationSpeed, m_RotationSpeed;
 		F32 m_Yaw, m_Pitch;
@@ -162,7 +162,7 @@ namespace Engine
 
 		// TODO: Move to config.
 		static const F32 DEFAULT_TRANSLATION_SPEED, DEFAULT_ROTATION_SPEED;
-		// E for Euler (DEFAULT_PITCH is some microsoft macro).
+		// E for Euler DEFAULT_PITCH is some microsoft macro >:(.
 		static const F32 DEFAULT_E_YAW, DEFAULT_E_PITCH;
 		static const F32 DEFAULT_DISTANCE;
 		static const glm::vec3 DEFAULT_FOCAL_POINT;
@@ -170,7 +170,7 @@ namespace Engine
 	class Editor2DCameraController : public EditorCameraController
 	{
 	public:
-		Editor2DCameraController(std::shared_ptr<Camera> camera) : EditorCameraController(camera)
+		Editor2DCameraController(Ref<Camera> camera) : EditorCameraController(camera)
 		{
 			m_AnglesConstrained = true;
 			camera->SetProjection(Camera::ProjectionType::Orthographic);

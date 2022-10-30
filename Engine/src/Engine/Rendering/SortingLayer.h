@@ -16,20 +16,22 @@ namespace Engine
 	public:
 		struct Layer
 		{
-			std::string Name;
+			std::string_view Name;
 			U32 Id;
-			I32 Priority;
+			U8 Priority;
 		};
 	public:
 		SortingLayer();
-		Layer CreateLayer(const std::string& name);
+		Layer CreateLayer(std::string_view name);
 		void PlaceBefore(const Layer& first, const Layer& second);
 
 		const std::vector<Layer>& GetLayers() const { return m_Layers; }
-		const Layer& GetLayer(const std::string& name) const;
+		const Layer& GetLayer(std::string_view name) const;
 		const Layer& GetDefaultLayer() const { return GetLayer("Default"); }
-		void RemoveLayer(const std::string& name);
+		void RemoveLayer(std::string_view name);
 
+		F32 CalculateLayerDepth(const Layer& layer, I16 orderInLayer) const;
+		
 		Layer& operator[](U32 index) { return m_Layers[index]; }
 		const Layer& operator[](U32 index) const { return m_Layers[index]; }
 	private:

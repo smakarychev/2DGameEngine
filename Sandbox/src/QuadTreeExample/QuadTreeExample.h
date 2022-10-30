@@ -26,7 +26,7 @@ public:
 private:
 	void PopulateQuadTree();
 	void Render();
-	Rect GetCameraBounds();
+	CRect GetCameraBounds();
 private:
 	Ref<CameraController> m_CameraController;
 	QuadTreeContainer<ColoredQuad> m_QuadTree;

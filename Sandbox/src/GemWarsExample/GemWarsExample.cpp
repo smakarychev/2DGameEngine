@@ -17,7 +17,6 @@ void GemWarsExample::OnAttach()
     SetBounds();
 
     SpawnPlayer();
-
     m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Thin.ttf");
     FrameBuffer::Spec spec;
     spec.Width = camera->GetViewportWidth(); spec.Height = camera->GetViewportHeight();
@@ -61,7 +60,7 @@ void GemWarsExample::OnImguiUpdate()
 
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     m_ViewportSize = { viewportSize.x, viewportSize.y };
-    U64 textureID = m_FrameBuffer->GetColorBufferId();
+    U64 textureID = m_FrameBuffer->GetColorBufferId(0);
     ImGui::Image(reinterpret_cast<void*>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
     ImGui::PopStyleVar(1);
     ImGui::End();
@@ -72,12 +71,12 @@ void GemWarsExample::SpawnPlayer()
 {
     Entity* entity = &m_Manager.AddEntity("player");
     F32 playerRadius = 0.2f;
-    entity->Transform2D = CreateRef<Component::Transform2D>(glm::vec2{ 0.0f, 0.0f }, glm::vec2{ playerRadius }, 0.0f);
-    entity->RigidBody2D = CreateRef<Component::RigidBody2D>(playerRadius, 2.0f);
-    entity->Mesh2D = CreateRef<Component::Mesh2D>(8, nullptr, glm::vec4{ 0.78f, 0.55f, 0.16f, 1.0f });
-    entity->Input = CreateRef<Component::Input>();
-    entity->SpecialAbility = CreateRef<Component::SpecialAbility>(120);
-    entity->Score = CreateRef<Component::Score>(0);
+    entity->GemWarsTransform2D = CreateRef<Component::GemWarsTransform2D>(glm::vec2{ 0.0f, 0.0f }, glm::vec2{ playerRadius }, 0.0f);
+    entity->GemWarsRigidBody2D = CreateRef<Component::GemWarsRigidBody2D>(playerRadius, 2.0f);
+    entity->GemWarsMesh2D = CreateRef<Component::Mesh2D>(8, nullptr, glm::vec4{ 0.78f, 0.55f, 0.16f, 1.0f });
+    entity->GemWarsInput = CreateRef<Component::GemWarsInput>();
+    entity->GemWarsSpecialAbility = CreateRef<Component::GemWarsSpecialAbility>(120);
+    entity->GemWarsScore = CreateRef<Component::GemWarsScore>(0);
     m_Player = entity;
     for (auto& e : m_Manager.GetEntities("enemy"))
     {
@@ -102,16 +101,16 @@ void GemWarsExample::sEnemySpawner()
             glm::vec2 allowedXRegion = glm::vec2{ m_Bounds.BottomLeft.x + enemyRadius, m_Bounds.TopRight.x - enemyRadius };
             glm::vec2 allowedYRegion = glm::vec2{ m_Bounds.BottomLeft.y + enemyRadius, m_Bounds.TopRight.y - enemyRadius };
             glm::vec2 enemyPosition = glm::vec2(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y));
-            enemy.Transform2D = CreateRef<Component::Transform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
-            enemy.RigidBody2D = CreateRef<Component::RigidBody2D>(enemyRadius, Random::Float(2.0, 5.0f), Random::Float(glm::radians(30.0f), glm::radians(90.0f)));
+            enemy.GemWarsTransform2D = CreateRef<Component::GemWarsTransform2D>(enemyPosition, glm::vec2{ enemyRadius }, 0.0f);
+            enemy.GemWarsRigidBody2D = CreateRef<Component::GemWarsRigidBody2D>(enemyRadius, Random::Float(2.0, 5.0f), Random::Float(glm::radians(30.0f), glm::radians(90.0f)));
             while (Collide(enemy, *m_Player))
             {
-                enemy.Transform2D->Position = glm::vec3(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y), 0.0f);
+                enemy.GemWarsTransform2D->Position = glm::vec3(Random::Float(allowedXRegion.x, allowedXRegion.y), Random::Float(allowedYRegion.x, allowedYRegion.y), 0.0f);
             }
 
-            enemy.RigidBody2D->Velocity = glm::normalize(Random::Float2(-1.0, 1.0));
-            enemy.Mesh2D = CreateRef<Component::Mesh2D>(Random::UInt(3, 8), nullptr, glm::vec4(Random::Float3(0.2f, 0.6f), 1.0));
-            enemy.Score = CreateRef<Component::Score>(enemy.Mesh2D->Shape.GetNumberOfVertices() * 10);
+            enemy.GemWarsRigidBody2D->Velocity = glm::normalize(Random::Float2(-1.0, 1.0));
+            enemy.GemWarsMesh2D = CreateRef<Component::Mesh2D>(Random::UInt(3, 8), nullptr, glm::vec4(Random::Float3(0.2f, 0.6f), 1.0));
+            enemy.GemWarsScore = CreateRef<Component::GemWarsScore>(enemy.GemWarsMesh2D->Shape.GetNumberOfVertices() * 10);
         }
        
         m_LastEnemySpawnTime = m_CurrentFrame;
@@ -120,30 +119,30 @@ void GemWarsExample::sEnemySpawner()
 
 void GemWarsExample::SpawnParticles(Entity& entity)
 {
-    U32 numberOfParticles = entity.Mesh2D->Shape.GetNumberOfVertices();
-    glm::vec2 particlesSize = entity.Transform2D->Scale / 2.0f;
+    U32 numberOfParticles = entity.GemWarsMesh2D->Shape.GetNumberOfVertices();
+    glm::vec2 particlesSize = entity.GemWarsTransform2D->Scale / 2.0f;
     F32 particleSpeed = 2.0f;
     I32 particlesLifetime = 60;
 
     for (U32 i = 0; i < numberOfParticles; i++)
     {
         F32 phase = 2.0f * glm::pi<float>() * i / numberOfParticles;
-        F32 rotation = entity.Transform2D->Rotation;
-        glm::vec3 particlePos = glm::vec3(glm::vec2(glm::sin(phase), glm::cos(phase)), 0.0f) * entity.RigidBody2D->CollisionRadius;
+        F32 rotation = entity.GemWarsTransform2D->Rotation;
+        glm::vec3 particlePos = glm::vec3(glm::vec2(glm::sin(phase), glm::cos(phase)), 0.0f) * entity.GemWarsRigidBody2D->CollisionRadius;
         particlePos = {
             glm::cos(rotation) * particlePos.x - glm::sin(rotation) * particlePos.y,
             glm::sin(rotation) * particlePos.x + glm::cos(rotation) * particlePos.y,
             0.0f
         };
-        particlePos += entity.Transform2D->Position;
-        glm::vec2 particleVelocity = glm::normalize(particlePos - entity.Transform2D->Position);
+        particlePos += entity.GemWarsTransform2D->Position;
+        glm::vec2 particleVelocity = glm::normalize(particlePos - entity.GemWarsTransform2D->Position);
 
         Entity& particle = m_Manager.AddEntity("particle");
-        particle.Transform2D = CreateRef<Component::Transform2D>(particlePos, particlesSize, 0.0f);
-        particle.RigidBody2D = CreateRef<Component::RigidBody2D>(particlesSize.x, particleSpeed);
-        particle.RigidBody2D->Velocity = particleVelocity;
-        particle.Mesh2D = CreateRef<Component::Mesh2D>(numberOfParticles, nullptr, entity.Mesh2D->Tint);
-        particle.LifeSpan = CreateRef<Component::LifeSpan>(particlesLifetime);
+        particle.GemWarsTransform2D = CreateRef<Component::GemWarsTransform2D>(particlePos, particlesSize, 0.0f);
+        particle.GemWarsRigidBody2D = CreateRef<Component::GemWarsRigidBody2D>(particlesSize.x, particleSpeed);
+        particle.GemWarsRigidBody2D->Velocity = particleVelocity;
+        particle.GemWarsMesh2D = CreateRef<Component::Mesh2D>(numberOfParticles, nullptr, entity.GemWarsMesh2D->Tint);
+        particle.GemWarsLifeSpan = CreateRef<Component::GemWarsLifeSpan>(particlesLifetime);
     }
 
 }
@@ -152,61 +151,61 @@ void GemWarsExample::SpawnBullet(Entity& entity, const glm::vec2& target)
 {
     F32 bulletSpeed = 15.0f;
     F32 bulletRadius = 0.02f;
-    glm::vec2 bulletVelocity = target - glm::vec2(entity.Transform2D->Position);
+    glm::vec2 bulletVelocity = target - glm::vec2(entity.GemWarsTransform2D->Position);
     bulletVelocity += Random::Float2(-0.3f, 0.3f);
     bulletVelocity = glm::normalize(bulletVelocity);
-    glm::vec2 bulletPosition = glm::vec2(entity.Transform2D->Position) + entity.RigidBody2D->CollisionRadius * bulletVelocity;
+    glm::vec2 bulletPosition = glm::vec2(entity.GemWarsTransform2D->Position) + entity.GemWarsRigidBody2D->CollisionRadius * bulletVelocity;
     Entity& bullet = m_Manager.AddEntity("bullet");
-    bullet.Transform2D = CreateRef<Component::Transform2D>(bulletPosition, glm::vec2{ bulletRadius }, 0.0f);
-    bullet.RigidBody2D = CreateRef<Component::RigidBody2D>(bulletRadius, bulletSpeed);
-    bullet.RigidBody2D->Velocity = bulletVelocity;
-    bullet.Mesh2D = CreateRef<Component::Mesh2D>(4, nullptr, glm::vec4(0.6f, 0.9f, 0.2f, 1.0f));
+    bullet.GemWarsTransform2D = CreateRef<Component::GemWarsTransform2D>(bulletPosition, glm::vec2{ bulletRadius }, 0.0f);
+    bullet.GemWarsRigidBody2D = CreateRef<Component::GemWarsRigidBody2D>(bulletRadius, bulletSpeed);
+    bullet.GemWarsRigidBody2D->Velocity = bulletVelocity;
+    bullet.GemWarsMesh2D = CreateRef<Component::Mesh2D>(4, nullptr, glm::vec4(0.6f, 0.9f, 0.2f, 1.0f));
 }
 
 void GemWarsExample::sSpecialAbility()
 {
     static I32 cloud = 150;
-    if (m_Player->Input->SpecialAbility)
+    if (m_Player->GemWarsInput->SpecialAbility)
     {
-        if (m_Player->SpecialAbility->RemainingCoolDown == 0)
+        if (m_Player->GemWarsSpecialAbility->RemainingCoolDown == 0)
         {
             for (I32 i = 0; i < cloud; i++)
             {
                 F32 phase = float(i) / cloud * 2 * glm::pi<F32>();
-                glm::vec2 position = { glm::sin(phase) * m_Player->RigidBody2D->CollisionRadius, glm::cos(phase) * m_Player->RigidBody2D->CollisionRadius };
-                position += glm::vec2(m_Player->Transform2D->Position);
+                glm::vec2 position = { glm::sin(phase) * m_Player->GemWarsRigidBody2D->CollisionRadius, glm::cos(phase) * m_Player->GemWarsRigidBody2D->CollisionRadius };
+                position += glm::vec2(m_Player->GemWarsTransform2D->Position);
                 SpawnBullet(*m_Player, position);
             }
-            m_Player->SpecialAbility->RemainingCoolDown = m_Player->SpecialAbility->CoolDown;
+            m_Player->GemWarsSpecialAbility->RemainingCoolDown = m_Player->GemWarsSpecialAbility->CoolDown;
         }
     }
-    if (m_Player->SpecialAbility->RemainingCoolDown > 0) m_Player->SpecialAbility->RemainingCoolDown--;
+    if (m_Player->GemWarsSpecialAbility->RemainingCoolDown > 0) m_Player->GemWarsSpecialAbility->RemainingCoolDown--;
 
 }
 
 void GemWarsExample::sAddScore(Entity& entity)
 {
-    m_Player->Score->TotalScore += entity.Score->TotalScore;
-    entity.Score->TotalScore = 0;
+    m_Player->GemWarsScore->TotalScore += entity.GemWarsScore->TotalScore;
+    entity.GemWarsScore->TotalScore = 0;
 }
 
 void GemWarsExample::sMovement(F32 dt)
 {
     // Update player.
     glm::vec2 velocity = glm::vec2(0.0f);
-    if (m_Player->Input->Left)  velocity.x -= 1.0f;
-    if (m_Player->Input->Right) velocity.x += 1.0f;
-    if (m_Player->Input->Up)    velocity.y += 1.0f;
-    if (m_Player->Input->Down)  velocity.y -= 1.0f;
+    if (m_Player->GemWarsInput->Left)  velocity.x -= 1.0f;
+    if (m_Player->GemWarsInput->Right) velocity.x += 1.0f;
+    if (m_Player->GemWarsInput->Up)    velocity.y += 1.0f;
+    if (m_Player->GemWarsInput->Down)  velocity.y -= 1.0f;
     if (velocity != glm::vec2(0.0f)) velocity = glm::normalize(velocity);
-    m_Player->RigidBody2D->Velocity = velocity;
+    m_Player->GemWarsRigidBody2D->Velocity = velocity;
 
-    if (m_Player->Input->Shoot) SpawnBullet(*m_Player, m_CameraController->GetCamera()->ScreenToWorldPoint(Input::MousePosition()));
+    if (m_Player->GemWarsInput->Shoot) SpawnBullet(*m_Player, m_CameraController->GetCamera()->ScreenToWorldPoint(Input::MousePosition()));
     // Update all.
     for (auto& entity : m_Manager.GetEntities())
     {
-        entity->Transform2D->Position += glm::vec3(entity->RigidBody2D->Velocity * entity->RigidBody2D->Speed * dt, 0.0f);
-        entity->Transform2D->Rotation += entity->RigidBody2D->RotationSpeed * dt;
+        entity->GemWarsTransform2D->Position += glm::vec3(entity->GemWarsRigidBody2D->Velocity * entity->GemWarsRigidBody2D->Speed * dt, 0.0f);
+        entity->GemWarsTransform2D->Rotation += entity->GemWarsRigidBody2D->RotationSpeed * dt;
     }
        
 }
@@ -234,8 +233,8 @@ void GemWarsExample::sCollision()
     }
 
     // Check for player-walls collision.
-    F32 playerRadius = m_Player->RigidBody2D->CollisionRadius;
-    glm::vec3& playerPosition = m_Player->Transform2D->Position;
+    F32 playerRadius = m_Player->GemWarsRigidBody2D->CollisionRadius;
+    glm::vec3& playerPosition = m_Player->GemWarsTransform2D->Position;
     if (playerPosition.x + playerRadius > m_Bounds.TopRight.x) playerPosition.x = m_Bounds.TopRight.x - playerRadius;
     if (playerPosition.y + playerRadius > m_Bounds.TopRight.y) playerPosition.y = m_Bounds.TopRight.y - playerRadius;
     if (playerPosition.x - playerRadius < m_Bounds.BottomLeft.x) playerPosition.x = m_Bounds.BottomLeft.x + playerRadius;
@@ -244,15 +243,15 @@ void GemWarsExample::sCollision()
     // Check for enemy-walls collision.
     for (auto& entity : m_Manager.GetEntities("enemy"))
     {
-        if (entity->Transform2D->Position.x + entity->RigidBody2D->CollisionRadius > m_Bounds.TopRight.x ||
-            entity->Transform2D->Position.x - entity->RigidBody2D->CollisionRadius < m_Bounds.BottomLeft.x)
+        if (entity->GemWarsTransform2D->Position.x + entity->GemWarsRigidBody2D->CollisionRadius > m_Bounds.TopRight.x ||
+            entity->GemWarsTransform2D->Position.x - entity->GemWarsRigidBody2D->CollisionRadius < m_Bounds.BottomLeft.x)
         {
-            entity->RigidBody2D->Velocity.x *= -1.0f;
+            entity->GemWarsRigidBody2D->Velocity.x *= -1.0f;
         }
-        if (entity->Transform2D->Position.y + entity->RigidBody2D->CollisionRadius > m_Bounds.TopRight.y ||
-            entity->Transform2D->Position.y - entity->RigidBody2D->CollisionRadius < m_Bounds.BottomLeft.y)
+        if (entity->GemWarsTransform2D->Position.y + entity->GemWarsRigidBody2D->CollisionRadius > m_Bounds.TopRight.y ||
+            entity->GemWarsTransform2D->Position.y - entity->GemWarsRigidBody2D->CollisionRadius < m_Bounds.BottomLeft.y)
         {
-            entity->RigidBody2D->Velocity.y *= -1.0f;
+            entity->GemWarsRigidBody2D->Velocity.y *= -1.0f;
         }
     }
     
@@ -273,13 +272,13 @@ void GemWarsExample::sCollision()
     // Check bullet-wall collision.
     for (auto& bullet : m_Manager.GetEntities("bullet"))
     {
-        if (bullet->Transform2D->Position.x - bullet->RigidBody2D->CollisionRadius > m_Bounds.TopRight.x ||
-            bullet->Transform2D->Position.x + bullet->RigidBody2D->CollisionRadius < m_Bounds.BottomLeft.x)
+        if (bullet->GemWarsTransform2D->Position.x - bullet->GemWarsRigidBody2D->CollisionRadius > m_Bounds.TopRight.x ||
+            bullet->GemWarsTransform2D->Position.x + bullet->GemWarsRigidBody2D->CollisionRadius < m_Bounds.BottomLeft.x)
         {
             bullet->Destroy();
         }
-        if (bullet->Transform2D->Position.y - bullet->RigidBody2D->CollisionRadius > m_Bounds.TopRight.y ||
-            bullet->Transform2D->Position.y + bullet->RigidBody2D->CollisionRadius < m_Bounds.BottomLeft.y)
+        if (bullet->GemWarsTransform2D->Position.y - bullet->GemWarsRigidBody2D->CollisionRadius > m_Bounds.TopRight.y ||
+            bullet->GemWarsTransform2D->Position.y + bullet->GemWarsRigidBody2D->CollisionRadius < m_Bounds.BottomLeft.y)
         {
             bullet->Destroy();
         }
@@ -288,12 +287,12 @@ void GemWarsExample::sCollision()
 
 void GemWarsExample::sUserInput()
 {
-    m_Player->Input->Left = Input::GetKey(Key::A);
-    m_Player->Input->Right = Input::GetKey(Key::D);
-    m_Player->Input->Up = Input::GetKey(Key::W);
-    m_Player->Input->Down = Input::GetKey(Key::S);
-    m_Player->Input->Shoot = Input::GetMouseButton(Mouse::Button0);
-    m_Player->Input->SpecialAbility = Input::GetMouseButton(Mouse::Button1);
+    m_Player->GemWarsInput->Left = Input::GetKey(Key::A);
+    m_Player->GemWarsInput->Right = Input::GetKey(Key::D);
+    m_Player->GemWarsInput->Up = Input::GetKey(Key::W);
+    m_Player->GemWarsInput->Down = Input::GetKey(Key::S);
+    m_Player->GemWarsInput->Shoot = Input::GetMouseButton(Mouse::Button0);
+    m_Player->GemWarsInput->SpecialAbility = Input::GetMouseButton(Mouse::Button1);
 
     if (Input::GetKeyDown(Key::P)) SetPaused(m_IsRunning);
 }
@@ -304,25 +303,36 @@ void GemWarsExample::sRender()
     RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera());
 
-    Renderer2D::DrawQuad({ .Position{ 0.0f, 0.0f, -10.0f },
-        .Scale{ 40.0f, 40.0f }, 
-        .Texture{m_Background.get()},
-        .TextureTiling{20, 20}}
-    );
+    Component::Transform2D transform;
+    transform.Scale = {40.0f, 40.0f};
+    Component::SpriteRenderer sp;
+    sp.Texture = m_Background.get();
+    sp.Tiling = {20.0f, 20.0f};
+    sp.OrderInLayer = -1;
+    Renderer2D::DrawQuad(transform, sp);
 
     for (auto& entity : m_Manager.GetEntities())
     {
-        if (!entity->Mesh2D) continue;
-        Renderer2D::DrawPolygon(entity->Mesh2D->Shape, 
-            { .Position{ entity->Transform2D->Position },
-                .Scale{ entity->Transform2D->Scale },
-                .Rotation{ entity->Transform2D->Rotation },
-                .Color { entity->Mesh2D->Tint } ,
-                .UV { entity->Mesh2D->Shape.GetUVs() } }
-        );
+        if (!entity->GemWarsMesh2D) continue;
+        Component::Transform2D transform;
+        transform.Position = entity->GemWarsTransform2D->Position;
+        transform.Scale = entity->GemWarsTransform2D->Scale;
+        transform.Rotation = entity->GemWarsTransform2D->Rotation;
+        Component::PolygonRenderer pr;
+        pr.Polygon = &entity->GemWarsMesh2D->Shape;
+        pr.Tint = entity->GemWarsMesh2D->Tint;
+        pr.OrderInLayer = 1;
+        Renderer2D::DrawPolygon(transform, pr);
     }
-    Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("score: {:d}", m_Player->Score->TotalScore), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
-    Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 90.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("GemWars example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
+    Component::FontRenderer fr;
+    fr.Font = m_Font.get();
+    fr.Tint = {0.6f, 0.9f, 0.7f, 1.0f};
+    fr.FontSize = 36.0f;
+    fr.FontRect = {.Min = {10.0f, 10.0f}, .Max = {1600.0f, 10.0f}};
+    Renderer2D::DrawFontFixed(fr, std::format("score: {:d}", m_Player->GemWarsScore->TotalScore));
+    fr.FontSize = 14.0f;
+    fr.FontRect = {.Min = {(F32)m_FrameBuffer->GetSpec().Width - 90.0f, 10.0f}, .Max = {(F32)m_FrameBuffer->GetSpec().Width, 10.0f}};
+    Renderer2D::DrawFontFixed(fr,"GemWars example");
 
     Renderer2D::EndScene();
 
@@ -338,14 +348,14 @@ void GemWarsExample::sParticleUpdate()
 {
     for (auto& particle : m_Manager.GetEntities("particle"))
     {
-        I32 lifeSpan = particle->LifeSpan->Remaining;
+        I32 lifeSpan = particle->GemWarsLifeSpan->Remaining;
         if (lifeSpan <= 0) particle->Destroy();
         else
         {
-            I32 lifeSpanTotal = particle->LifeSpan->Total;
+            I32 lifeSpanTotal = particle->GemWarsLifeSpan->Total;
             F32 alpha = F32(lifeSpan) / lifeSpanTotal;
-            particle->Mesh2D->Tint.a = alpha;
-            particle->LifeSpan->Remaining--;
+            particle->GemWarsMesh2D->Tint.a = alpha;
+            particle->GemWarsLifeSpan->Remaining--;
         }
     }
 }
@@ -360,8 +370,8 @@ void GemWarsExample::SetBounds()
 
 bool GemWarsExample::Collide(Entity& a, Entity& b)
 {
-    F32 minDistance = (a.RigidBody2D->CollisionRadius + b.RigidBody2D->CollisionRadius) * (a.RigidBody2D->CollisionRadius + b.RigidBody2D->CollisionRadius);
-    return (glm::length2(glm::vec2(a.Transform2D->Position) - glm::vec2(b.Transform2D->Position)) < minDistance);
+    F32 minDistance = (a.GemWarsRigidBody2D->CollisionRadius + b.GemWarsRigidBody2D->CollisionRadius) * (a.GemWarsRigidBody2D->CollisionRadius + b.GemWarsRigidBody2D->CollisionRadius);
+    return (glm::length2(glm::vec2(a.GemWarsTransform2D->Position) - glm::vec2(b.GemWarsTransform2D->Position)) < minDistance);
 }
 
 void GemWarsExample::OnEvent(Event& event)

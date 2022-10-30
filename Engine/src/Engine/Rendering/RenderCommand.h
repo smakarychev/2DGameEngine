@@ -23,6 +23,8 @@ namespace Engine
 		static void DrawFontBatched(void* parameters);
 		static void DrawLine(void* parameters);
 
+		static void EnableCull(bool enable);
+		static void SetCullFrontFace(RendererAPI::CullFrontFace face);
 		static void SetClearColor(const glm::vec3& color);
 		static void SetDepthTestMode(RendererAPI::Mode mode);
 		static void ClearScreen();

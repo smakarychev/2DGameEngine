@@ -1,5 +1,6 @@
 #pragma once
 
+#include  "Engine/Core/Core.h"
 #include "Engine/Core/LayerStack.h"
 #include "Engine/Core/Window.h"
 
@@ -16,6 +17,8 @@ namespace Engine {
 	{
 	public:
 		Application();
+		Application(const Application&) = delete;
+		Application& operator=(Application&) = delete;
 		~Application();
 		void Run();
 
@@ -42,6 +45,6 @@ namespace Engine {
 	};
 
 	// Client shall define this function.
-	std::unique_ptr<Application> CreateApplication();
+	std::unique_ptr<Application> createApplication();
 }
 

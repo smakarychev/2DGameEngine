@@ -32,11 +32,12 @@ namespace Engine
                 bodyColor = glm::vec4{ 0.45f, 0.31f, 0.38f, 1.0f };
                 break;
             }
-            Renderer2D::DrawQuad({
-                .Position = body->GetTransform().Transform(body->GetCenterOfMass()),
-                .Scale = glm::vec2{0.05f, 0.05f},
-                .Color = glm::vec4{0.5f,0.5f,0.5f, 1.0f} }
-            );
+            Component::Transform2D bodyTransform;
+            bodyTransform.Position = body->GetTransform().Transform(body->GetCenterOfMass());
+            bodyTransform.Scale = glm::vec2{0.05f, 0.05f};
+            Component::SpriteRenderer sp;
+            sp.Tint = {0.5f,0.5f,0.5f, 1.0f};
+            Renderer2D::DrawQuad(bodyTransform, sp);
             for (const ColliderListEntry2D* colliderEntry = body->GetColliderList(); colliderEntry != nullptr; colliderEntry = colliderEntry->Next)
             {
                 Collider2D* collider = colliderEntry->Collider;
@@ -56,12 +57,9 @@ namespace Engine
                 glm::mat3 transformBody = translateBody * rotateBody;
                 glm::mat3 transfromCol = translateCol * scaleCol;
                 glm::mat3 transform = transformBody * transfromCol;
-
-                Renderer2D::DrawQuad({
-                    .Transform { transform },
-                    .Color{ collider->IsSensor() ? glm::vec4{ 1.0f, 0.76f, 0.05f, 1.0f } : bodyColor },
-                    .Type {RendererAPI::PrimitiveType::Line } }
-                );
+                Component::SpriteRenderer colliderSp;
+                colliderSp.Tint = { collider->IsSensor() ? glm::vec4{ 1.0f, 0.76f, 0.05f, 1.0f } : bodyColor };
+                Renderer2D::DrawQuad(transform, colliderSp, RendererAPI::PrimitiveType::Line);
             }
            
         }

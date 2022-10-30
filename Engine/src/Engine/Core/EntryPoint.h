@@ -7,7 +7,7 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 
-extern std::unique_ptr<Engine::Application> Engine::CreateApplication();
+extern std::unique_ptr<Engine::Application> Engine::createApplication();
 
 int main(int argc, char** argv)
 {
@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 	Engine::MemoryManager::Init();
 	// Scope, so app gets destroyed before MemoryManager.
 	{
-		auto app = Engine::CreateApplication();
+		auto app = Engine::createApplication();
 		app->Run();
 	}
 	Engine::Renderer::ShutDown();

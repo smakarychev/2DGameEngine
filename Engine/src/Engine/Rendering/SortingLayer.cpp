@@ -12,9 +12,9 @@ namespace Engine
 		m_Layers.push_back(defaultLayer);
 	}
 	
-	SortingLayer::Layer SortingLayer::CreateLayer(const std::string& name)
+	SortingLayer::Layer SortingLayer::CreateLayer(std::string_view name)
 	{
-		Layer newLayer{ .Name = name, .Id = m_LastId++, .Priority = m_Layers.back().Priority + 1 };
+		Layer newLayer{ .Name = name, .Id = m_LastId++, .Priority = U8(m_Layers.back().Priority + 1) };
 		m_Layers.push_back(newLayer);
 		return newLayer;
 	}
@@ -22,14 +22,14 @@ namespace Engine
 	void SortingLayer::PlaceBefore(const Layer& first, const Layer& second)
 	{
 		// Layer's priority is same as layer's index in array.
-		U32 firstIndex = first.Priority;
-		U32 secondIndex = second.Priority;
+		U32 firstIndex =  static_cast<U32>(first.Priority);
+		U32 secondIndex = static_cast<U32>(second.Priority);
 		std::swap(m_Layers[firstIndex], m_Layers[secondIndex]);
 		m_Layers[firstIndex].Priority = firstIndex;
 		m_Layers[secondIndex].Priority = secondIndex;
 	}
 
-	const SortingLayer::Layer& SortingLayer::GetLayer(const std::string& name) const
+	const SortingLayer::Layer& SortingLayer::GetLayer(std::string_view name) const
 	{
 		auto it = std::find_if(m_Layers.begin(), m_Layers.end(), [&name](auto& layer) { return layer.Name == name; });
 		if (it == m_Layers.end())
@@ -40,7 +40,7 @@ namespace Engine
 		return *it;
 	}
 
-	void SortingLayer::RemoveLayer(const std::string& name)
+	void SortingLayer::RemoveLayer(std::string_view name)
 	{
 		if (name == "Default")
 		{
@@ -56,6 +56,11 @@ namespace Engine
 		m_Layers.erase(it);
 	}
 
+	F32 SortingLayer::CalculateLayerDepth(const Layer& layer, I16 orderInLayer) const
+	{
+		const F32 depth = ((I32)layer.Priority - (I32)GetLayers().size()) * 2.0f + orderInLayer * (4.0f / (1 << 16));
+		return depth;
+	}
 }
 
 

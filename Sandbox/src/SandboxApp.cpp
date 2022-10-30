@@ -5,10 +5,7 @@
 #include "QuadTreeExample/QuadTreeExample.h"
 #include "ParticlePhysicsExample/ParticlePhysicsExample.h"
 #include "RigidBodyPhysicsExample/RigidBodyPhysicsExample.h"
-
-#include <chrono> // TEMP
-#include <random>
-
+#include "MarioExample/MarioGame.h"
 
 class SandboxApp : public Engine::Application
 {
@@ -18,7 +15,8 @@ public:
 		//PushLayer(Engine::CreateRef<GemWarsExample>());
 		//PushLayer(Engine::CreateRef<QuadTreeExample>());
 		//PushLayer(Engine::CreateRef<ParticlePhysicsExample>());
-		PushLayer(Engine::CreateRef<RigidBodyPhysicsExample>());
+		//PushLayer(Engine::CreateRef<RigidBodyPhysicsExample>());
+		PushLayer(Engine::CreateRef<MarioGame>());
 	}
 	~SandboxApp()
 	{
@@ -27,7 +25,7 @@ public:
 };
 
 
-std::unique_ptr<Engine::Application> Engine::CreateApplication()
+std::unique_ptr<Engine::Application> Engine::createApplication()
 {
 	return std::make_unique<SandboxApp>();
 }

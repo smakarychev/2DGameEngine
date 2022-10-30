@@ -12,7 +12,7 @@ namespace Engine
     }
 
     Font::Font(const std::string name, Ref<Texture> atlas, F32 size) :
-        m_FontName(name), m_Atlas(atlas), m_BaseFontSize(size)
+        m_FontName(name), m_Atlas(std::move(atlas)), m_BaseFontSize(size)
     { }
 
 }

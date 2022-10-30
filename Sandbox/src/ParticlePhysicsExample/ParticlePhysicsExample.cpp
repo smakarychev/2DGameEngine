@@ -69,10 +69,12 @@ void ParticlePhysicsExample::Render()
     // Render particles.
     for (auto& particle : m_World.GetParticles())
     {
-        Renderer2D::DrawQuad({ .Position{particle->GetPosition() },
-            .Scale{ glm::vec2{ 0.2f } },
-            .Color{ glm::vec4{ 1.0f } } }
-        );
+        Component::Transform2D transform;
+        transform.Position = particle->GetPosition();
+        transform.Scale = {0.2f, 0.2f};
+        Component::SpriteRenderer sp;
+        
+        Renderer2D::DrawQuad(transform, sp);
     }
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[0]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[1]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
@@ -80,18 +82,23 @@ void ParticlePhysicsExample::Render()
     Renderer2D::DrawLine(m_World.GetParticles()[3]->GetPosition(), m_World.GetParticles()[5]->GetPosition(), glm::vec4{ 0.2f, 0.8f, 0.2f, 1.0f });
 
     Renderer2D::DrawLine(m_World.GetParticles()[4]->GetPosition(), m_World.GetParticles()[5]->GetPosition(), glm::vec4{ 0.2f, 0.2f, 0.8f, 1.0f });
-    Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 130.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("particle physics example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
+    Component::FontRenderer fr;
+    fr.Font = m_Font.get();
+    fr.Tint = {0.6f, 0.9f, 0.7f, 1.0f};
+    fr.FontSize = 14.0f;
+    fr.FontRect = {.Min = {(F32)m_FrameBuffer->GetSpec().Width - 130.0f, 10.0f}, .Max = {(F32)m_FrameBuffer->GetSpec().Width, 10.0f}};
+    Renderer2D::DrawFontFixed(fr, "particle physics example");
 
     Renderer2D::EndScene();
 
     m_FrameBuffer->Unbind();
 }
 
-Rect ParticlePhysicsExample::GetCameraBounds()
+CRect ParticlePhysicsExample::GetCameraBounds()
 {
     glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, m_ViewportSize.y });
     glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  0 });
-    Rect bounds;
+    CRect bounds;
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };
     return bounds;

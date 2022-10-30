@@ -16,7 +16,7 @@ public:
 private:
 	void ValidateViewport();
 	void Render();
-	Rect GetCameraBounds();
+	CRect GetCameraBounds();
 	
 private:
 	Ref<CameraController> m_CameraController;

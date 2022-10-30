@@ -32,7 +32,7 @@ namespace Engine
 	
 	Entity& EntityManager::AddEntity(const std::string& tag)
 	{
-		auto entity = std::shared_ptr<Entity>(New<Entity>(tag, m_TotalEntites++), Delete<Entity>);
+		auto entity = CreateRef<Entity>(tag, m_TotalEntites++);
 		m_ToAdd.push_back(entity);
 		return *entity;
 	}

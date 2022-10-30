@@ -18,7 +18,7 @@ namespace Engine
 	template <typename T>
 	struct QuadTreeItemLocation
 	{
-		FreeList<std::pair<Rect, T>>* Container;
+		FreeList<std::pair<CRect, T>>* Container;
 		U32 Index;
 	};
 
@@ -32,24 +32,24 @@ namespace Engine
 	class QuadTree
 	{
 	public:
-		QuadTree(const Rect& bounds = { {0.0f, 0.0f}, {100.0f, 100.0f} }, U32 depth = 0) :
+		QuadTree(const CRect& bounds = { {0.0f, 0.0f}, {100.0f, 100.0f} }, U32 depth = 0) :
 			m_Depth(depth), m_MaxDepth(8)
 		{
 			Resize(bounds);
 		}
 
-		const Rect& GetBounds() const { return m_Rect; }
+		const CRect& GetBounds() const { return m_Rect; }
 
-		void Resize(const Rect& bounds)
+		void Resize(const CRect& bounds)
 		{
 			Clear();
 			m_Rect = bounds;
 			glm::vec2 childSize = bounds.HalfSize * 0.5f;
 			m_RectChild = {
-				Rect{ { bounds.Center + glm::vec2{ -childSize.x,  childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{  childSize.x,  childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{  childSize.x, -childSize.y} }, childSize },
-				Rect{ { bounds.Center + glm::vec2{ -childSize.x, -childSize.y} }, childSize },
+				CRect{ { bounds.Center + glm::vec2{ -childSize.x,  childSize.y} }, childSize },
+				CRect{ { bounds.Center + glm::vec2{  childSize.x,  childSize.y} }, childSize },
+				CRect{ { bounds.Center + glm::vec2{  childSize.x, -childSize.y} }, childSize },
+				CRect{ { bounds.Center + glm::vec2{ -childSize.x, -childSize.y} }, childSize },
 			};
 		}
 
@@ -74,7 +74,7 @@ namespace Engine
 			return size;
 		}
 
-		QuadTreeItemLocation<U32> Insert(U32 id, const Rect& itemBounds)
+		QuadTreeItemLocation<U32> Insert(U32 id, const CRect& itemBounds)
 		{
 			for (U32 i = 0; i < 4; i++)
 			{
@@ -98,14 +98,14 @@ namespace Engine
 		}
 
 		// Returns the list of item in specified area.
-		std::vector<U32> Search(const Rect& bounds)
+		std::vector<U32> Search(const CRect& bounds)
 		{
 			std::vector<U32> result;
 			Search(bounds, result);
 			return result;
 		}
 
-		void Search(const Rect& bounds, std::vector<U32>& foundElements)
+		void Search(const CRect& bounds, std::vector<U32>& foundElements)
 		{
 			// First create an array of free elements, so we don't push it to result.
 			std::vector<I32> freeItems;
@@ -207,16 +207,16 @@ namespace Engine
 		U32 m_MaxDepth = 0;
 
 		// Containing rect.
-		Rect m_Rect;
+		CRect m_Rect;
 
 		// 4 rect for children.
-		std::array<Rect, 4> m_RectChild{};
+		std::array<CRect, 4> m_RectChild{};
 
 		// 4 children.
 		std::array<Ref<QuadTree>, 4> m_Child{};
 
 		// Elements of quadtree.
-		FreeList<std::pair<Rect, U32>> m_Items;
+		FreeList<std::pair<CRect, U32>> m_Items;
 
 	};
 
@@ -224,12 +224,12 @@ namespace Engine
 	class QuadTreeContainer
 	{
 	public:
-		QuadTreeContainer(const Rect& bounds = { {0.0f, 0.0f}, {50.0f, 50.0f} }, U32 depth = 0) : m_QuadTree(bounds, depth)
+		QuadTreeContainer(const CRect& bounds = { {0.0f, 0.0f}, {50.0f, 50.0f} }, U32 depth = 0) : m_QuadTree(bounds, depth)
 		{}
 
-		const Rect& GetBounds() const { return m_QuadTree.GetBounds(); }
+		const CRect& GetBounds() const { return m_QuadTree.GetBounds(); }
 
-		void Resize(const Rect& bounds)
+		void Resize(const CRect& bounds)
 		{
 			m_QuadTree.Resize(bounds);
 		}
@@ -245,7 +245,7 @@ namespace Engine
 			m_Items.clear();
 		}
 
-		void Insert(const T& item, const Rect& itemsize)
+		void Insert(const T& item, const CRect& itemsize)
 		{
 			QuadTreeItem<T> newItem;
 			newItem.Item = item;
@@ -259,13 +259,13 @@ namespace Engine
 			item->Location.Container->Erase(item->Location.Index);
 		}
 
-		void Relocate(typename const std::vector<QuadTreeItem<T>>::iterator& item, const Rect& newLocation)
+		void Relocate(typename const std::vector<QuadTreeItem<T>>::iterator& item, const CRect& newLocation)
 		{
 			item->Location.Container->Erase(item->Location.Index);
 			item->Location = m_QuadTree.Insert(static_cast<I32>(item - m_Items.begin()), newLocation);
 		}
 
-		const std::vector<typename std::vector<QuadTreeItem<T>>::iterator> Search(const Rect& bounds)
+		const std::vector<typename std::vector<QuadTreeItem<T>>::iterator> Search(const CRect& bounds)
 		{
 			std::vector<U32> itemIndices;
 			m_QuadTree.Search(bounds, itemIndices);

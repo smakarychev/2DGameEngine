@@ -18,7 +18,7 @@ namespace Engine
         ImGui::Begin(windowName.c_str());
 
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        U64 textureID = frameBuffer.GetColorBufferId();
+        U64 textureID = frameBuffer.GetColorBufferId(0);
         ImGui::Image(reinterpret_cast<void*>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
         ImGui::PopStyleVar(1);
         ImGui::End();

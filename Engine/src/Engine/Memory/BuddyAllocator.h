@@ -25,13 +25,13 @@ namespace Engine
 		void* AllocAligned(U64 sizeBytes, [[maybe_unused]] U16 alignment) { return Alloc(sizeBytes); }
 
 		template <typename T>
-		T* Alloc(U64 count = 1) { return reinterpret_cast<T*>(Alloc(count * sizeof(T))); }
+		T* Alloc(U64 count = 1) { return static_cast<T*>(Alloc(count * sizeof(T))); }
 
 		template <typename T>
-		T* AllocAligned(U64 count, U16 alignment) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignment)); }
+		T* AllocAligned(U64 count, U16 alignment) { return static_cast<T*>(AllocAligned(count * sizeof(T), alignment)); }
 
 		template <typename T>
-		T* AllocAligned(U64 count = 1) { return reinterpret_cast<T*>(AllocAligned(count * sizeof(T), alignof(T))); }
+		T* AllocAligned(U64 count = 1) { return static_cast<T*>(AllocAligned(count * sizeof(T), alignof(T))); }
 
 		void Dealloc(void* memory);
 		void Dealloc(void* memory, U64 sizeBytes);

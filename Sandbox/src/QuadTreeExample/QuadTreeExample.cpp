@@ -42,7 +42,7 @@ void QuadTreeExample::OnImguiUpdate()
 
 void QuadTreeExample::PopulateQuadTree()
 {
-    const Rect& bounds = m_QuadTree.GetBounds();
+    const CRect& bounds = m_QuadTree.GetBounds();
     for (U32 i = 0; i < m_MaxQuads; i++)
     {
         ColoredQuad quad;
@@ -68,10 +68,13 @@ void QuadTreeExample::Render()
     for (auto& quad : quadsToRender)
     {
         //Renderer2D::DrawQuad(quad.pos, quad.size, quad.color);
-        Renderer2D::DrawQuad({ .Position{ quad->Item.pos },
-            .Scale{ quad->Item.size },
-            .Color{ quad->Item.color } }
-        );
+        Component::Transform2D transform;
+        transform.Position = quad->Item.pos;
+        transform.Scale = quad->Item.size;
+        Component::SpriteRenderer sp;
+        sp.Tint = quad->Item.color;
+        sp.OrderInLayer = 2;
+        Renderer2D::DrawQuad(transform, sp);
     }
     for (U32 i = 0; i < m_QuadTree.GetItems().size(); i++)
     {
@@ -98,26 +101,36 @@ void QuadTreeExample::Render()
         }
     }
     auto duration = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count();
-    ENGINE_INFO("Frame time: {:.5f} ({:.0f} fps)", duration, 1.0 / duration);
-    Renderer2D::DrawFontFixed(*m_Font, 36.0f, 10.0f, 1600.0f, 10.0f, std::format("Visible (drawn) quads: {:d} out of {}", quadsToRender.size(), m_MaxQuads), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
-    Renderer2D::DrawFontFixed(*m_Font, 14.0f, (F32)m_FrameBuffer->GetSpec().Width - 90.0f, (F32)m_FrameBuffer->GetSpec().Width, 10.0f, std::format("Quad tree example"), glm::vec4(0.6f, 0.9f, 0.7f, 1.0f));
+    ENGINE_INFO("Frame time: {:.5f} ({:.0f} fps)", duration, 1.0f / duration);
+    Component::FontRenderer fr;
+    fr.Font = m_Font.get();
+    fr.Tint = {0.6f, 0.9f, 0.7f, 1.0f};
+    fr.FontSize = 36.0f;
+    fr.FontRect = {.Min = {10.0f, 10.0f}, .Max = {1600.0f, 10.0f}};
+    Renderer2D::DrawFontFixed(fr, std::format("Visible (drawn) quads: {:d} out of {}", quadsToRender.size(), m_MaxQuads));
+    fr.FontSize = 14.0f;
+    fr.FontRect = {.Min = {(F32)m_FrameBuffer->GetSpec().Width - 90.0f, 10.0f}, .Max = {(F32)m_FrameBuffer->GetSpec().Width, 10.0f}};
+    Renderer2D::DrawFontFixed(fr,"Quad tree example");
 
     Renderer2D::EndScene();
 
     m_FrameBuffer->Unbind();
 }
 
-Rect QuadTreeExample::GetCameraBounds()
+CRect QuadTreeExample::GetCameraBounds()
 {
     glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, m_ViewportSize.y });
     glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  0 });
-    Rect bounds;
+    CRect bounds;
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };
     bounds.HalfSize *= 0.9f;
-    Renderer2D::DrawQuad({ .Position{ glm::vec3(bounds.Center, -2.0) },
-        .Scale{ bounds.HalfSize * 2.0f },
-        .Color{ glm::vec4(1.0f, 0.0f, 0.0f, 0.1f) } }
-    );
+    Component::Transform2D transform;
+    transform.Position = bounds.Center;
+    transform.Scale = bounds.HalfSize * 2.0f;
+    Component::SpriteRenderer sp;
+    sp.Tint = glm::vec4{1.0f, 0.0f, 0.0f, 0.1f};
+    sp.OrderInLayer = 1;
+    Renderer2D::DrawQuad(transform, sp);
     return bounds;
 }

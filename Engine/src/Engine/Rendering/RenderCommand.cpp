@@ -33,6 +33,16 @@ namespace Engine
 		s_API->DrawIndexed(vertexArray, count, type);
 	}
 
+	void RenderCommand::EnableCull(bool enable)
+	{
+		s_API->EnableCull(enable);
+	}
+
+	void RenderCommand::SetCullFrontFace(RendererAPI::CullFrontFace face)
+	{
+		s_API->SetCullFrontFace(face);
+	}
+
 	void RenderCommand::SetClearColor(const glm::vec3& color)
 	{
 		s_API->SetClearColor(color);
@@ -55,87 +65,32 @@ namespace Engine
 
 	void RenderCommand::DrawQuadBatched(void* parameters)
 	{
-		using Unpacked = Renderer2D::DrawInfo;
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawQuadCall(*unpacked);
+		
 	}
 	
 	void RenderCommand::DrawQuadMatBatched(void* parameters)
 	{
-		using Unpacked = Renderer2D::DrawInfoMat;
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawQuadMatCall(*unpacked);
+		
 	}
 	
 	void RenderCommand::DrawPolygonBatched(void* parameters)
 	{
-		struct Unpacked
-		{
-			RegularPolygon Polygon;
-			Renderer2D::DrawInfo DrawInfo;
-		};
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawPolygonCall(unpacked->Polygon, unpacked->DrawInfo);
+		
 	}
 	
 	void RenderCommand::DrawFontFixedBatched(void* parameters)
 	{
-		struct Unpacked
-		{
-			Font Font;
-			F32 FontSize;
-			F32 XminPx; 
-			F32 XmaxPx;
-			F32 YminPx; 
-			std::string Text;
-			glm::vec4 Color;
-		};
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawFontFixedCall(
-			unpacked->Font,
-			unpacked->FontSize,
-			unpacked->XminPx,
-			unpacked->XmaxPx,
-			unpacked->YminPx,
-			unpacked->Text,
-			unpacked->Color
-		);
+		
 	}
 	
 	void RenderCommand::DrawFontBatched(void* parameters)
 	{
-		struct Unpacked
-		{
-			Font Font;
-			F32 FontSize;
-			F32 Xmin;
-			F32 Xmax;
-			F32 Ymin;
-			std::string Text;
-			glm::vec4 Color;
-		};
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawFontFixedCall(
-			unpacked->Font,
-			unpacked->FontSize,
-			unpacked->Xmin,
-			unpacked->Xmax,
-			unpacked->Ymin,
-			unpacked->Text,
-			unpacked->Color
-		);
+	
 	}
 	
 	void RenderCommand::DrawLine(void* parameters)
 	{
-		struct Unpacked
-		{
-			glm::vec2 From;
-			glm::vec2 To;
-			glm::vec4 Color;
-		};
-		Unpacked* unpacked = (Unpacked*)(parameters);
-		Renderer2D::DrawLineCall(unpacked->From, unpacked->To, unpacked->Color);
+		
 	}
 }
 

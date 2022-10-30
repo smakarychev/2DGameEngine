@@ -23,7 +23,7 @@ namespace Engine
         Font(const std::string name, Ref<Texture> atlas, F32 fontSize);
 
         Texture& GetAtlas() const { return *m_Atlas; }
-        std::vector<CharacterInfo>& GetCharacters() { return m_Characters; }
+        const std::vector<CharacterInfo>& GetCharacters() const { return m_Characters; }
         void SetCharacters(const std::vector<CharacterInfo>& chars) { m_Characters = chars; }
         void SetLineHeight(F32 lineHeight) { m_LineHeight = lineHeight; }
         F32 GetLineHeight() const { return m_LineHeight; }
@@ -31,7 +31,7 @@ namespace Engine
         void SetGeometryScale(F32 scale) { m_GeometryScale = scale; }
         F32 GetGeometryScale() const { return m_GeometryScale; }
 
-        F32 GetBaseFontSize() { return m_BaseFontSize; }
+        F32 GetBaseFontSize() const { return m_BaseFontSize; }
 
     private:
         std::vector<CharacterInfo> m_Characters;

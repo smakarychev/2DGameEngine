@@ -3,6 +3,7 @@
 #include "Camera.h"
 
 #include "Engine/Core/Input.h"
+#include "Engine/Memory/MemoryManager.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -19,26 +20,33 @@ namespace Engine
 	const Camera::ProjectionType Camera::DEFAULT_PROJECTION_TYPE	= Camera::ProjectionType::Perspective;
 
 
-	std::shared_ptr<Camera> Camera::Create()
+	Ref<Camera> Camera::Create()
 	{
-		return std::shared_ptr<Camera>(New<Camera>(), Delete<Camera>);
+		return CreateRef<Camera>();
 	}
 
-	std::shared_ptr<Camera> Camera::Create(const glm::vec3& position, F32 fov, F32 aspect)
+	Ref<Camera> Camera::Create(const glm::vec3& position, F32 fov, F32 aspect)
 	{
-		return std::shared_ptr<Camera>(New<Camera>(position, fov, aspect), Delete<Camera>);
+		return CreateRef<Camera>(position, fov, aspect);
 	}
 
-	Camera::Camera() : m_FieldOfView(DEFAULT_FOV), m_Aspect(DEFAULT_ASPECT),
-		m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR), m_ProjectionType(DEFAULT_PROJECTION_TYPE),
-		m_Position(DEFAULT_POSITION), m_Orientation(DEFAULT_ORIENTATION)
+	Camera::Camera()
+		: 	m_ProjectionType(DEFAULT_PROJECTION_TYPE), m_Aspect(DEFAULT_ASPECT),
+			m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR), m_FieldOfView(DEFAULT_FOV),
+			m_Position(DEFAULT_POSITION), m_Orientation(DEFAULT_ORIENTATION),
+			m_ViewProjection(glm::mat4{1.0f}), m_ViewProjectionInverse(glm::mat4{1.0f}),
+			m_ViewMatrix(glm::mat4{1.0f}), m_ProjectionMatrix(glm::mat4{1.0f})
 	{
 		UpdateViewMatrix();
 	}
 
-	Camera::Camera(const glm::vec3& position, F32 fov, F32 aspect) : m_FieldOfView(fov), m_Aspect(aspect),
-		m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR), m_ProjectionType(DEFAULT_PROJECTION_TYPE),
-		m_Position(position), m_Orientation(DEFAULT_ORIENTATION)
+	Camera::Camera(const glm::vec3& position, F32 fov, F32 aspect)
+	:	m_ProjectionType(DEFAULT_PROJECTION_TYPE), m_Aspect(aspect),
+		m_NearClipPlane(DEFAULT_NEAR), m_FarClipPlane(DEFAULT_FAR),
+		m_FieldOfView(fov),
+		m_Position(position), m_Orientation(DEFAULT_ORIENTATION),
+		m_ViewProjection(glm::mat4{1.0f}), m_ViewProjectionInverse(glm::mat4{1.0f}),
+		m_ViewMatrix(glm::mat4{1.0f}), m_ProjectionMatrix(glm::mat4{1.0f})
 	{
 		UpdateViewMatrix();
 	}
@@ -80,10 +88,10 @@ namespace Engine
 		return GetPixelCoefficient(m_OrthoZoom);
 	}
 
-	F32 Camera::GetPixelCoefficient(F32 distance)
+	F32 Camera::GetPixelCoefficient(F32 distance) const
 	{
 		if (m_ProjectionType == ProjectionType::Perspective) return 1.0f;
-		return 2.0f * distance / m_ViewportHeight;
+		return 2.0f * distance / (F32)m_ViewportHeight;
 	}
 
 	void Camera::SetProjection(ProjectionType type)
@@ -125,7 +133,7 @@ namespace Engine
 			m_ProjectionMatrix = glm::ortho(
 				-1.0f * m_Aspect * m_OrthoZoom, 1.0f * m_Aspect * m_OrthoZoom,
 				-1.0f * m_OrthoZoom, 1.0f * m_OrthoZoom,
-				m_NearClipPlane, m_FarClipPlane
+				-1.0f, m_FarClipPlane
 			);
 			break;
 		}
@@ -145,7 +153,7 @@ namespace Engine
 
 	glm::vec2 Camera::ScreenToWorldPoint(const glm::vec2& screenPosition) const
 	{
-		ENGINE_CORE_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "Use raycast instead");
+		ENGINE_CORE_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "Use raycast instead")
 		glm::vec2 modified;
 		modified.x = screenPosition.x * 2.0f / F32(m_ViewportWidth) - 1;
 		modified.y = -(screenPosition.y * 2.0f / F32(m_ViewportHeight) - 1);
@@ -156,19 +164,18 @@ namespace Engine
 		return glm::vec2(worldCoords);
 	}
 
-	std::shared_ptr<CameraController> CameraController::Create(ControllerType type, std::shared_ptr<Camera> camera)
+	Ref<CameraController> CameraController::Create(ControllerType type, Ref<Camera> camera)
 	{
 		switch (type)
 		{
 		case Engine::CameraController::ControllerType::FPS:
-			return std::shared_ptr<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
+			return Ref<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
 		case Engine::CameraController::ControllerType::Editor:
-			return std::shared_ptr<EditorCameraController>(New<EditorCameraController>(camera), Delete<EditorCameraController>);
+			return Ref<EditorCameraController>(New<EditorCameraController>(camera), Delete<EditorCameraController>);
 		case Engine::CameraController::ControllerType::Editor2D:
-			return std::shared_ptr<Editor2DCameraController>(New<Editor2DCameraController>(camera), Delete<Editor2DCameraController>);
-		default:
-			return std::shared_ptr<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
+			return Ref<Editor2DCameraController>(New<Editor2DCameraController>(camera), Delete<Editor2DCameraController>);
 		}
+		return {};
 	}
 
 	const F32 FPSCameraController::DEFAULT_TRANSLATION_SPEED		= 1.0f;
@@ -176,9 +183,9 @@ namespace Engine
 	const F32 FPSCameraController::DEFAULT_E_YAW					= 0.0f;
 	const F32 FPSCameraController::DEFAULT_E_PITCH					= 0.0f;
 
-	FPSCameraController::FPSCameraController(std::shared_ptr<Camera> camera) : m_Camera(camera),
+	FPSCameraController::FPSCameraController(Ref<Camera> camera) : m_Camera(std::move(camera)),
 		m_TranslationSpeed(DEFAULT_TRANSLATION_SPEED), m_MouseSensitivity(DEFAULT_SENSITIVITY),
-		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH)
+		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH), m_MouseCoords(glm::vec2{0.0f})
 	{ 
 		m_MouseCoords = Input::MousePosition();
 		m_Camera->UpdateViewMatrix();
@@ -244,13 +251,14 @@ namespace Engine
 	const F32 EditorCameraController::DEFAULT_DISTANCE					= 5.0f;
 	const glm::vec3 EditorCameraController::DEFAULT_FOCAL_POINT			= glm::vec3(0.0);
 
-	EditorCameraController::EditorCameraController(std::shared_ptr<Camera> camera) : m_Camera(camera),
+	EditorCameraController::EditorCameraController(Ref<Camera> camera) : m_Camera(std::move(camera)),
 		m_TranslationSpeed(DEFAULT_TRANSLATION_SPEED), m_RotationSpeed(DEFAULT_ROTATION_SPEED),
-		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH), 
-		m_Distance(DEFAULT_DISTANCE), m_FocalPoint(DEFAULT_FOCAL_POINT)
+		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH),
+		m_MouseCoords(0, 0), m_FocalPoint(DEFAULT_FOCAL_POINT),
+		m_Distance(DEFAULT_DISTANCE)
 	{
 		m_MouseCoords = Input::MousePosition();
-		m_Camera->m_OrthoZoom = m_Distance;
+		m_Distance = m_Camera->m_OrthoZoom;
 		m_Camera->SetPosition(m_FocalPoint - m_Distance * m_Camera->GetForward());
 		m_Camera->UpdateViewMatrix();
 	}
@@ -259,8 +267,8 @@ namespace Engine
 	{
 		if (Input::GetKey(Key::LeftAlt))
 		{
-			F32 prevMouseX = m_MouseCoords.x;
-			F32 prevMouseY = m_MouseCoords.y;
+			const F32 prevMouseX = m_MouseCoords.x;
+			const F32 prevMouseY = m_MouseCoords.y;
 			m_MouseCoords = Input::MousePosition();
 			F32 xOffset = m_MouseCoords.x - prevMouseX;
 			F32 yOffset = m_MouseCoords.y - prevMouseY;
@@ -270,9 +278,9 @@ namespace Engine
 			{
 				if (Input::GetMouseButton(Mouse::Button0))
 				{
-					xOffset *= -m_TranslationSpeed * dt * m_Distance, yOffset *= m_TranslationSpeed * dt * m_Distance;
+					xOffset *= -m_TranslationSpeed * dt * m_Distance; yOffset *= m_TranslationSpeed * dt * m_Distance;
 					m_FocalPoint += glm::vec3(xOffset, yOffset, 0.0f);
-					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
+					const glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->SetPosition(newCameraPosition);
 					m_Camera->UpdateViewMatrix();
 					m_Camera->UpdateViewProjection();
@@ -282,14 +290,14 @@ namespace Engine
 			{
 				if (!m_AnglesConstrained && Input::GetMouseButton(Mouse::Button0))
 				{
-					xOffset *= m_RotationSpeed * dt, yOffset *= -m_RotationSpeed * dt;
-					F32 yawSign = m_Camera->GetUp().y < 0 ? 1.0f : -1.0f;
+					xOffset *= m_RotationSpeed * dt; yOffset *= -m_RotationSpeed * dt;
+					const F32 yawSign = m_Camera->GetUp().y < 0 ? 1.0f : -1.0f;
 					m_Yaw += xOffset * yawSign * m_RotationSpeed;
 					m_Pitch += yOffset * m_RotationSpeed;
 
-					glm::quat newOrientation = glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
+					const glm::quat newOrientation = glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
 					m_Camera->SetOrientation(newOrientation);
-					glm::vec3 newPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
+					const glm::vec3 newPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->SetPosition(newPosition);
 
 					m_Camera->UpdateViewMatrix();
@@ -298,10 +306,10 @@ namespace Engine
 
 				if (Input::GetMouseButton(Mouse::Button1))
 				{
-					F32 deltaDistance = yOffset * ZoomSpeed() * dt;
+					const F32 deltaDistance = yOffset * ZoomSpeed() * dt;
 					m_Distance += deltaDistance;
-					if (m_Distance < 0.0) m_Distance = 1;
-					glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
+					if (m_Distance < 0.0f) m_Distance = 1;
+					const glm::vec3 newCameraPosition = m_FocalPoint - m_Distance * m_Camera->GetForward();
 					m_Camera->m_OrthoZoom = m_Distance;
 					m_Camera->SetPosition(newCameraPosition);
 					m_Camera->UpdateViewMatrix();
@@ -317,9 +325,9 @@ namespace Engine
 		return false;
 	}
 
-	F32 EditorCameraController::ZoomSpeed()
+	F32 EditorCameraController::ZoomSpeed() const
 	{
-		F32 dist = std::max(m_Distance * 0.2f, 0.0f);
+		const F32 dist = std::max(m_Distance * 0.2f, 0.0f);
 		F32 speed = dist * dist;
 		speed = std::min(speed, 100.0f);
 		return speed;

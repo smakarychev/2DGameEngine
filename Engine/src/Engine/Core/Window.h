@@ -11,8 +11,8 @@ namespace Engine
 		U32 Width;
 		U32 Height;
 
-		WindowProps(const std::string& title = "Engine", U32 width = 1600, U32 height = 900) :
-			Title(title), Width(width), Height(height) 
+		WindowProps(std::string title = "Engine", U32 width = 1600, U32 height = 900) :
+			Title(std::move(title)), Width(width), Height(height) 
 		{}
 	};
 
