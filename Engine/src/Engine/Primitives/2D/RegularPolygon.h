@@ -17,8 +17,9 @@ namespace Engine
 		const std::vector<glm::vec2>& GetVertices() const { return m_Vertices; }
 		const std::vector<glm::vec2>& GetUVs() const { return m_UV; }
 		const std::vector<U32>& GetIndices() const { return m_Indices; }
-		const U32 GetNumberOfTriangles() const { return m_Angles - 2; }
-		const U32 GetNumberOfVertices() const { return m_Angles; }
+		U32 GetNumberOfTriangles() const { return m_Angles - 2; }
+		U32 GetNumberOfVertices() const { return m_Angles; }
+		U32 GetNumberOfIndices() const { return (U32)m_Indices.size();}
 		UShapePrimitive GetPrimitiveType() const { return m_PrimitiveType; }
 
 		void GenerateUVs(const std::vector<glm::vec2> uv);
