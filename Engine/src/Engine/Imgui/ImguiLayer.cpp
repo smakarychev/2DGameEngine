@@ -2,6 +2,8 @@
 
 #include "ImguiLayer.h"
 
+#include "ImguiCommon.h"
+
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Input.h"
 #include "Engine/Memory/MemoryManager.h"
@@ -9,9 +11,9 @@
 namespace Engine
 {
 	ImguiLayer::ImguiLayer() : Layer("Imgui layer"), 
-		m_DockspaceOpen(true), m_DockspaceFlags(ImGuiDockNodeFlags_None), m_MainDockNodeFlags(ImGuiWindowFlags_None)
+		m_DockSpaceOpen(true), m_DockSpaceFlags(ImGuiDockNodeFlags_None), m_MainDockNodeFlags(ImGuiWindowFlags_None)
 	{
-		m_DockspaceID = 0;
+		m_DockSpaceID = 0;
 	}
 
 	void ImguiLayer::OnAttach()
@@ -44,19 +46,23 @@ namespace Engine
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("DockSpace", &m_DockspaceOpen, m_MainDockNodeFlags);
+		ImGui::Begin("DockSpace", &m_DockSpaceOpen, m_MainDockNodeFlags);
 		ImGui::PopStyleVar(3);
-		m_DockspaceID = ImGui::GetID("MyDockSpace");
-		ImGui::DockSpace(m_DockspaceID, ImVec2(0.0f, 0.0f), m_DockspaceFlags);
+		m_DockSpaceID = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(m_DockSpaceID, ImVec2(0.0f, 0.0f), m_DockSpaceFlags);
 		ImGui::End();
 	}
 	
 	void ImguiLayer::EndFrame()
 	{
 		ImGui::Begin("Viewport");
-		F32 offsetY = ImGui::GetWindowContentRegionMin().y + ImGui::GetWindowPos().y;
-		F32 offsetX = ImGui::GetWindowContentRegionMin().x + ImGui::GetWindowPos().x;
+		ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+		ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+		F32 offsetY = contentMin.y + ImGui::GetWindowPos().y;
+		F32 offsetX = contentMin.x + ImGui::GetWindowPos().x;
+		
 		Input::SetMainViewportOffset({ -offsetX, -offsetY });
+		Input::SetMainViewportSize({contentMax.x - contentMin.x, contentMax.y - contentMin.y });
 		ImGui::End();
 
 		ImGui::Render();
@@ -65,9 +71,10 @@ namespace Engine
 
 	void ImguiLayer::OnEvent(Event& e)
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		const ImGuiIO& io = ImGui::GetIO();
 		e.Handled |= e.IsInCategory(EventCategory::Mouse) & io.WantCaptureMouse;
 		e.Handled |= e.IsInCategory(EventCategory::Keyboard) & io.WantCaptureKeyboard;
+		e.Handled &= ImguiState::BlockEventPropagation;
 	}
 	
 	void ImguiLayer::OnDetach()

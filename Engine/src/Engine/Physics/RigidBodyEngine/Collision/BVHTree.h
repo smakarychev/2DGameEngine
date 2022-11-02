@@ -5,6 +5,12 @@
 #include <stack>
 
 
+namespace Engine
+{
+	// Defined in Rendering/Drawers/BVHTreeDrawer.h
+	class BVHTreeDrawer;
+}
+
 /**
 * Heavily inspired by box2d (very heavily).
 * Use callback in query (instead of returning a vector of elements / indices)
@@ -12,9 +18,8 @@
 *
 *
 */
-namespace Engine
+namespace Engine::Physics
 {
-
 	template <typename Bounds>
 	struct BVHNode
 	{
@@ -22,8 +27,8 @@ namespace Engine
 		static constexpr auto NULL_ITEM = -1;
 		// Stores enlarged bounds (box2d like).
 		Bounds Bounds;
-		I32 LeftChild = BVHNode::NULL_NODE;
-		I32 RightChild = BVHNode::NULL_NODE;
+		I32 LeftChild = NULL_NODE;
+		I32 RightChild = NULL_NODE;
 		// 0 for leaves, -1 if node is free.
 		I32 Height = -1;
 		// If node is free, stores the index of next free node, 
@@ -31,7 +36,7 @@ namespace Engine
 		union
 		{
 			I32 Parent;
-			I32 Next = BVHNode::NULL_NODE;
+			I32 Next = NULL_NODE;
 		};
 		// It is assumed that Payload is of type Collider2D.
 		void* Payload = nullptr;
@@ -43,14 +48,10 @@ namespace Engine
 		}
 	};
 
-	// Defined in Rendering/Drawers/BVHTreeDrawer.h
-	template <typename Bounds>
-	class BVHTreeDrawer;
-
 	template <typename Bounds>
 	class BVHTree2D
 	{
-		friend class BVHTreeDrawer<Bounds>;
+		friend class Engine::BVHTreeDrawer;
 	public:
 		BVHTree2D();
 
@@ -107,7 +108,7 @@ namespace Engine
 
 	template<typename Bounds>
 	template<typename Callback>
-	inline void Engine::BVHTree2D<Bounds>::Query(const Callback& callback, const Bounds& bounds)
+	inline void BVHTree2D<Bounds>::Query(const Callback& callback, const Bounds& bounds)
 	{
 		std::stack<I32> toProcess;
 		toProcess.push(m_TreeRoot);
@@ -550,5 +551,4 @@ namespace Engine
 		}
 		return cost;
 	}
-
 }

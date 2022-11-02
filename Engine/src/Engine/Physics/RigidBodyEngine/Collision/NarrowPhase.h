@@ -5,7 +5,7 @@
 #include "Engine/Physics/RigidBodyEngine/Collision/BroadPhase.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	using namespace Types;
 

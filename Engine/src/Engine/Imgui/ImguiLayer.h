@@ -16,11 +16,11 @@ namespace Engine
 		void OnDetach() override;
 		void BeginFrame();
 		void EndFrame();
-		void OnEvent(Event& e);
+		void OnEvent(Event& e) override;
 	private:
-		bool m_DockspaceOpen;
-		ImGuiDockNodeFlags m_DockspaceFlags;
+		bool m_DockSpaceOpen;
+		ImGuiDockNodeFlags m_DockSpaceFlags;
 		ImGuiWindowFlags m_MainDockNodeFlags;
-		ImGuiID m_DockspaceID;
+		ImGuiID m_DockSpaceID;
 	};
 }

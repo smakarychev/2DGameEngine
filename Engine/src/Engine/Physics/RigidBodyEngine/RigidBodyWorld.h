@@ -10,7 +10,7 @@
 #include <vector>
 
 
-namespace Engine
+namespace Engine::Physics
 {
 	using namespace Types;
 

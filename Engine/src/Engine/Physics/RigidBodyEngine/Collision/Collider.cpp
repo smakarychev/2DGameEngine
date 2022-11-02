@@ -4,7 +4,7 @@
 
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	bool Filter::ShouldCollide(Collider2D* first, Collider2D* second)
 	{
@@ -172,5 +172,4 @@ namespace Engine
 		}
 		}
 	}
-
 }

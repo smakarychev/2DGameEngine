@@ -4,9 +4,8 @@
 
 #include "Engine/Math/MathUtils.h"
 
-namespace Engine
+namespace Engine::Physics
 {
-
 	Drag2D::Drag2D(F32 k1, F32 k2) 
 		: m_K1(k1), m_K2(k2)
 	{
@@ -102,5 +101,3 @@ namespace Engine
 		}
 	}
 }
-
-

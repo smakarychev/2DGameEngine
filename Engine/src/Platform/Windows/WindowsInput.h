@@ -27,6 +27,6 @@ namespace Engine
 		F64 xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 
-		return { (F32)xpos + s_MainViewportOffset.x, (F32)ypos + s_MainViewportOffset.y };
+		return { (F32)xpos + s_MainViewportOffset.x,  s_MainViewportSize.y - ((F32)ypos + s_MainViewportOffset.y) };
 	}
 }

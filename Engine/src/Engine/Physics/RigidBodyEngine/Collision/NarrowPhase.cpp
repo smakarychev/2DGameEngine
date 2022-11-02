@@ -4,7 +4,7 @@
 #include "Engine/Core/Core.h"
 #include "Engine/Memory/MemoryManager.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	NarrowPhase2D::NarrowPhase2D(BroadPhase2D<>& broadPhase)
 		: m_BroadPhase(broadPhase), m_ContactListener(DefaultContactListener::Get())
@@ -139,5 +139,3 @@ namespace Engine
 		m_ContactInfosCount--;
 	}
 }
-
-

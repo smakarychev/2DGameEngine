@@ -16,13 +16,6 @@ namespace Engine
 		static void DrawIndexed(Ref<VertexArray> vertexArray, RendererAPI::PrimitiveType type);
 		static void DrawIndexed(Ref<VertexArray> vertexArray, U32 count, RendererAPI::PrimitiveType type);
 
-		static void DrawQuadBatched(void* parameters);
-		static void DrawQuadMatBatched(void* parameters);
-		static void DrawPolygonBatched(void* parameters);
-		static void DrawFontFixedBatched(void* parameters);
-		static void DrawFontBatched(void* parameters);
-		static void DrawLine(void* parameters);
-
 		static void EnableCull(bool enable);
 		static void SetCullFrontFace(RendererAPI::CullFrontFace face);
 		static void SetClearColor(const glm::vec3& color);

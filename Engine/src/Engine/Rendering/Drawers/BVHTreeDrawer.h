@@ -7,14 +7,13 @@
 
 namespace Engine
 {
-	template <>
-	class BVHTreeDrawer<AABB2D>
+	class BVHTreeDrawer
 	{
 	public:
-		static void Draw(const BVHTree2D<AABB2D>& tree);
+		static void Draw(const Physics::BVHTree2D<Physics::AABB2D>& tree);
 	};
 
-	inline void BVHTreeDrawer<AABB2D>::Draw(const BVHTree2D<AABB2D>& tree)
+	inline void BVHTreeDrawer::Draw(const Physics::BVHTree2D<Physics::AABB2D>& tree)
 	{
 		for (const auto& node : tree.m_Nodes)
 		{
@@ -41,7 +40,6 @@ namespace Engine
 			}
 		}
 	}
-
 }
 
 

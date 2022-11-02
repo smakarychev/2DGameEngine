@@ -65,7 +65,7 @@ void ParticlePhysicsExample::Render()
 {
     m_FrameBuffer->Bind();
     RenderCommand::ClearScreen();
-    Renderer2D::BeginScene(m_CameraController->GetCamera());
+    Renderer2D::BeginScene(m_CameraController->GetCamera().get());
     // Render particles.
     for (auto& particle : m_World.GetParticles())
     {
@@ -96,8 +96,8 @@ void ParticlePhysicsExample::Render()
 
 CRect ParticlePhysicsExample::GetCameraBounds()
 {
-    glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, m_ViewportSize.y });
-    glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  0 });
+    glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, 0 });
+    glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  m_ViewportSize.y });
     CRect bounds;
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };

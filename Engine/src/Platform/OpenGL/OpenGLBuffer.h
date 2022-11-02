@@ -75,17 +75,16 @@ namespace Engine
 		void Resize(U32 width, U32 height) override;
 		const Spec& GetSpec() const override { return m_Spec; }
 		U32 GetColorBufferId(U32 colorBufferIndex) const override;
-		Texture& GetColorBuffer(U32 colorBufferIndex) const override { return *m_ColorAttachments[colorBufferIndex]; }
-		Texture& GetAttachment(U32 attachmentBufferIndex) const override { return *m_TextureAttachments[attachmentBufferIndex]; }
-		PixelData ReadPixel(U32 textureBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) override;
+		Texture& GetColorBuffer(U32 colorBufferIndex) const override { return *m_TextureAttachments[colorBufferIndex]; }
+		PixelData ReadPixel(U32 textureBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) const override;
+		void ClearAttachment(U32 colorBufferIndex, RendererAPI::DataType dataType, void* value) override;
 	private:
 		void CreateBuffers();
 		Texture::TextureData CreateTextureDataFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex = 0);
-		U32 CreateRenderBufferFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex = 0);
+		U32 CreateRenderBufferFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex = 0) const;
 	private:
 		U32 m_Id;
 		std::vector<Ref<Texture>> m_TextureAttachments;
-		std::vector<Ref<Texture>> m_ColorAttachments;
 		std::vector<U32> m_RenderBufferAttachments;
 		Spec m_Spec;
 	};

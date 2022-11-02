@@ -45,7 +45,7 @@ namespace Engine
 	inline void RenderQueue::PushParameter(const T& parameter)
 	{
 		ENGINE_CORE_ASSERT(m_CommandDescStarted == true, "No active command");
-		// Copy paremeters to buffer, increment parameters size.
+		// Copy parameters to buffer, increment parameters size.
 		m_LastCommand = m_QueueAllocator.Alloc(sizeof parameter);
 		if (m_LastCommand == nullptr)
 		{

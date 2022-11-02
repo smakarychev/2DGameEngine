@@ -4,7 +4,7 @@
 
 #include "Engine/Memory/MemoryManager.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	RigidBodyWorld2D::RigidBodyWorld2D(const glm::vec2& gravity)
 		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_WarmStartEnabled(true)
@@ -187,6 +187,4 @@ namespace Engine
 	{
 		m_Registry.Add(forceGenerator, &body);
 	}
-	
 }
-

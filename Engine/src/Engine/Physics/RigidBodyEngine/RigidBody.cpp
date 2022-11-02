@@ -2,7 +2,7 @@
 
 #include "RigidBody.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	RigidBody2D::RigidBody2D(const RigidBodyDef2D& rbDef) :
 		m_Position(rbDef.Position), m_Rotation(rbDef.Rotation.RotationVec),
@@ -20,11 +20,11 @@ namespace Engine
 		}
 		switch (m_Type)
 		{
-		case Engine::RigidBodyType2D::Dynamic:
+		case RigidBodyType2D::Dynamic:
 			break;
-		case Engine::RigidBodyType2D::Kinematic:
+		case RigidBodyType2D::Kinematic:
 			break;
-		case Engine::RigidBodyType2D::Static:
+		case RigidBodyType2D::Static:
 			m_InverseMass = 0.0f;
 			m_InverseInertiaTensor = 0.0f;
 			break;
@@ -101,10 +101,10 @@ namespace Engine
 	{
 		switch (mode)
 		{
-		case Engine::ForceMode::Force: 
+		case ForceMode::Force: 
 			AddForce(force);
 			break;
-		case Engine::ForceMode::Impulse: 
+		case ForceMode::Impulse: 
 			m_LinearVelocity += force * m_InverseMass;
 			break;
 		}
@@ -156,9 +156,5 @@ namespace Engine
 	glm::vec2 RigidBody2D::TransformDirectionToLocal(const glm::vec2& dir) const
 	{
 		return GetTransform().InverseTransformDirection(dir);
-	}
-	
-	
+	}	
 }
-
-

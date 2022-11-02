@@ -156,7 +156,7 @@ namespace Engine
 		ENGINE_CORE_ASSERT(m_ProjectionType == ProjectionType::Orthographic, "Use raycast instead")
 		glm::vec2 modified;
 		modified.x = screenPosition.x * 2.0f / F32(m_ViewportWidth) - 1;
-		modified.y = -(screenPosition.y * 2.0f / F32(m_ViewportHeight) - 1);
+		modified.y = screenPosition.y * 2.0f / F32(m_ViewportHeight) - 1;
 
 		glm::vec4 augmented = glm::vec4(modified, 0, 1.0f);
 		glm::vec4 worldCoords = m_ViewProjectionInverse * augmented;
@@ -209,7 +209,7 @@ namespace Engine
 		if (Input::GetKey(Key::D))
 		{
 			m_Camera->SetPosition(m_Camera->GetPosition() + m_TranslationSpeed * dt * m_Camera->GetRight());
-		}
+		}	
 		m_Camera->UpdateViewMatrix();
 		m_Camera->UpdateViewProjection();
 	}
@@ -225,7 +225,7 @@ namespace Engine
 			m_MouseCoords.y = e.GetY();
 
 			F32 xOffset = m_MouseCoords.x - prevMouseX;
-			F32 yOffset = m_MouseCoords.y - prevMouseY;
+			F32 yOffset = -(m_MouseCoords.y - prevMouseY);
 
 			xOffset *= m_MouseSensitivity; yOffset *= m_MouseSensitivity;
 
@@ -271,7 +271,7 @@ namespace Engine
 			const F32 prevMouseY = m_MouseCoords.y;
 			m_MouseCoords = Input::MousePosition();
 			F32 xOffset = m_MouseCoords.x - prevMouseX;
-			F32 yOffset = m_MouseCoords.y - prevMouseY;
+			F32 yOffset = -(m_MouseCoords.y - prevMouseY);
 
 
 			if (Input::GetKey(Key::LeftShift))

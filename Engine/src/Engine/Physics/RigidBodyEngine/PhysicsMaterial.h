@@ -2,7 +2,7 @@
 
 #include "Engine/Core/Types.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	using namespace Types;
 
@@ -17,5 +17,4 @@ namespace Engine
 			: Friction(friction), Restitution(restituion), Density(density)
 		{}
 	};
-
 }

@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 
-namespace Engine
+namespace Engine::Physics
 {
 	using namespace Types;
 

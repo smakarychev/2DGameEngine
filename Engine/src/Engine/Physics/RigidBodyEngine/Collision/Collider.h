@@ -14,10 +14,9 @@
 
 /*
 TODO: abandon box for general polygon?
-TODO: use filtering instead of 3d position!
 */
 
-namespace Engine
+namespace Engine::Physics
 {
 	// Represents the bounds of some collider,
 	// collider therefore has an ability
@@ -28,13 +27,13 @@ namespace Engine
 		template <typename OtherImpl>
 		bool Intersects(const OtherImpl& other) const
 		{
-			return Engine::Intersects(*reinterpret_cast<const Impl*>(this), other);
+			return Engine::Physics::Intersects(*reinterpret_cast<const Impl*>(this), other);
 		}
 
 		template <typename OtherImpl>
 		bool Contains(const OtherImpl& other) const
 		{
-			return Engine::Contains(*reinterpret_cast<const Impl*>(this), other);
+			return Engine::Physics::Contains(*reinterpret_cast<const Impl*>(this), other);
 		}
 	};
 

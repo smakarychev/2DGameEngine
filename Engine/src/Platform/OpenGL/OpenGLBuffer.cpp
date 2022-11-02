@@ -5,6 +5,9 @@
 
 #include <glad/glad.h>
 
+#include "OpenGLRendererAPI.h"
+#include "OpenGLTexture.h"
+
 namespace Engine
 {
 	OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, U32 size) :
@@ -89,14 +92,45 @@ namespace Engine
 		{
 			glEnableVertexArrayAttrib(m_Id, m_AttributeIndex);
 			glVertexArrayAttribBinding(m_Id, m_AttributeIndex, m_VertexBufferIndex);
-			glVertexArrayAttribFormat(
-				(GLint)m_Id,
-				m_AttributeIndex,
-				layoutElement.Count,
-				GetOpenGLAPIType(layoutElement.Type),
-				layoutElement.Normalized ? GL_TRUE : GL_FALSE,
-				layoutElement.Offset
-			);
+			switch (layoutElement.Type)
+			{
+			case LayoutElement::Float: 
+			case LayoutElement::Float2:
+			case LayoutElement::Float3:
+			case LayoutElement::Float4:
+			{
+				glVertexArrayAttribFormat(
+					(GLint)m_Id,
+					m_AttributeIndex,
+					(GLint)layoutElement.Count,
+					GetOpenGLAPIType(layoutElement.Type),
+					layoutElement.Normalized ? GL_TRUE : GL_FALSE,
+					layoutElement.Offset
+				);
+				break;
+			}
+			case LayoutElement::Int: 
+			case LayoutElement::Int2: 
+			case LayoutElement::Int3: 
+			case LayoutElement::Int4: 
+			case LayoutElement::UInt: 
+			case LayoutElement::UInt2:
+			case LayoutElement::UInt3:
+			case LayoutElement::UInt4:
+			{
+				glVertexArrayAttribIFormat(
+					(GLint)m_Id,
+					m_AttributeIndex,
+					(GLint)layoutElement.Count,
+					GetOpenGLAPIType(layoutElement.Type),
+					layoutElement.Offset
+				);
+				break;
+			}
+			case LayoutElement::None:
+				ENGINE_CORE_FATAL("Unknown layout element type");
+				break;
+			}
 			m_AttributeIndex++;
 		}
 		m_VertexBufferIndex++;
@@ -147,7 +181,7 @@ namespace Engine
 
 	U32 OpenGLFrameBuffer::GetColorBufferId(U32 colorBufferIndex) const
 	{
-		return m_ColorAttachments[colorBufferIndex]->GetId();
+		return m_TextureAttachments[colorBufferIndex]->GetId();
 	}
 
 	void OpenGLFrameBuffer::CreateBuffers()
@@ -156,16 +190,14 @@ namespace Engine
 		{
 			glDeleteFramebuffers(1, &m_Id);
 			for (auto& texAttachment : m_TextureAttachments) texAttachment.reset();
-			for (auto& texAttachment : m_ColorAttachments) texAttachment.reset();
 			for (auto rbAttachment : m_RenderBufferAttachments) glDeleteRenderbuffers(1, &rbAttachment);
 			m_TextureAttachments.clear();
 			m_RenderBufferAttachments.clear();
-			m_ColorAttachments.clear();
 		}
 			
 		glCreateFramebuffers(1, &m_Id);
-
-		for (auto& attachment : m_Spec.Attachments)
+		std::vector<GLenum> colorAttachmentIds;
+		for (const auto& attachment : m_Spec.Attachments)
 		{
 			switch (attachment.Category)
 			{
@@ -174,10 +206,7 @@ namespace Engine
 				U32 currentIndex = (U32)m_TextureAttachments.size();
 				Texture::TextureData data = CreateTextureDataFromAttachment(attachment.Type, currentIndex);
 				m_TextureAttachments.emplace_back(Texture::Create(data));
-				if (attachment.Type == Spec::AttachmentFormat::Color)
-				{
-					m_ColorAttachments.emplace_back(m_TextureAttachments.back());
-				}
+				colorAttachmentIds.emplace_back(GL_COLOR_ATTACHMENT0 + currentIndex);
 				glNamedFramebufferTexture(m_Id, GL_COLOR_ATTACHMENT0 + currentIndex, m_TextureAttachments.back()->GetId(), 0);
 				break;
 			}
@@ -190,18 +219,25 @@ namespace Engine
 			}
 		}
 			
+		glNamedFramebufferDrawBuffers(m_Id, (GLsizei)colorAttachmentIds.size(), colorAttachmentIds.data());
+
 		if (glCheckNamedFramebufferStatus(m_Id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			ENGINE_CORE_FATAL("Framebuffer is not complete. Status: {}", glCheckFramebufferStatus(GL_FRAMEBUFFER));
 		}
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
-	PixelData OpenGLFrameBuffer::ReadPixel(U32 textureBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType)
+	PixelData OpenGLFrameBuffer::ReadPixel(U32 textureBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) const
 	{
 		glReadBuffer(GL_COLOR_ATTACHMENT0 + textureBufferIndex);
-		return GetAttachment(textureBufferIndex).ReadPixel(x, y, dataType);
+		return GetColorBuffer(textureBufferIndex).ReadPixel(x, y, dataType);
+	}
+
+	void OpenGLFrameBuffer::ClearAttachment(U32 colorBufferIndex, RendererAPI::DataType dataType, void* value)
+	{
+		const Texture& attachment = OpenGLFrameBuffer::GetColorBuffer(colorBufferIndex);
+		glClearTexImage(attachment.GetId(), 0, OpenGLTexture::GetFormat(attachment.GetData().PixelFormat), OpenGLRendererAPI::GetNativeDataType(dataType), &value);
 	}
 
 	Texture::TextureData OpenGLFrameBuffer::CreateTextureDataFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex)
@@ -209,7 +245,7 @@ namespace Engine
 		Texture::TextureData data;
 		data.Width = m_Spec.Width; data.Height = m_Spec.Height;
 		data.Data = nullptr;
-		data.WrapS = data.WrapT = Texture::WrapMode::None;
+		data.WrapS = data.WrapT = Texture::WrapMode::Repeat;
 		data.GenerateMipmaps = false;
 		switch (type)
 		{
@@ -230,13 +266,11 @@ namespace Engine
 			data.Minification = data.Magnification = Texture::Filter::Nearest;
 			data.Name = std::format("fb{}red_integer{}", m_Id, attachmentIndex);
 			break;
-		default:
-			break;
 		}
 		return data;
 	}
 	
-	U32 OpenGLFrameBuffer::CreateRenderBufferFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex)
+	U32 OpenGLFrameBuffer::CreateRenderBufferFromAttachment(Spec::AttachmentFormat type, U32 attachmentIndex) const
 	{
 		U32 renderBufferId = 0;
 
@@ -244,20 +278,18 @@ namespace Engine
 		switch (type)
 		{
 		case Engine::FrameBuffer::Spec::AttachmentFormat::Color:
-			glNamedRenderbufferStorage(renderBufferId, GL_RGB8, m_Spec.Width, m_Spec.Height);
+			glNamedRenderbufferStorage(renderBufferId, GL_RGB8, (GLint)m_Spec.Width, (GLint)m_Spec.Height);
 			glNamedFramebufferRenderbuffer(m_Id, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_RENDERBUFFER, renderBufferId);
 			break;
 		case Engine::FrameBuffer::Spec::AttachmentFormat::Depth24Stencil8:
 		{
-			glNamedRenderbufferStorage(renderBufferId, GL_DEPTH24_STENCIL8, m_Spec.Width, m_Spec.Height);
+			glNamedRenderbufferStorage(renderBufferId, GL_DEPTH24_STENCIL8, (GLint)m_Spec.Width, (GLint)m_Spec.Height);
 			glNamedFramebufferRenderbuffer(m_Id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferId);
 			break;
 		}
 		case Engine::FrameBuffer::Spec::AttachmentFormat::RedInteger:
-			glNamedRenderbufferStorage(renderBufferId, GL_R32I, m_Spec.Width, m_Spec.Height);
+			glNamedRenderbufferStorage(renderBufferId, GL_R32I, (GLint)m_Spec.Width, (GLint)m_Spec.Height);
 			glNamedFramebufferRenderbuffer(m_Id, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_RENDERBUFFER, renderBufferId);
-			break;
-		default:
 			break;
 		}
 		

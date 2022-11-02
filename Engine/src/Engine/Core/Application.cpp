@@ -70,7 +70,7 @@ namespace Engine {
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); it++)
 		{
-			(*it)->OnEvent(event);
+ 			(*it)->OnEvent(event);
 			if (event.Handled) break;
 		}
 	}
@@ -83,7 +83,7 @@ namespace Engine {
 
 	void Application::PushOverlay(Ref<Layer> overlay)
 	{
-		m_LayerStack.PushLayer(overlay);
+		m_LayerStack.PushOverlay(overlay);
 		overlay->OnAttach();
 	}
 

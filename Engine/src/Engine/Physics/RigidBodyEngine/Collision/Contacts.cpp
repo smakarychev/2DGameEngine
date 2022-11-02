@@ -5,7 +5,7 @@
 
 #include "Engine/Math/LinearAlgebra.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	BoxBoxContact2D::BoxBoxContact2D(BoxCollider2D* first, BoxCollider2D* second)
 		: m_First(first), m_Second(second)
@@ -742,8 +742,5 @@ namespace Engine
 		if (s_Instance == nullptr)
 			Init();
 		return s_Instance;
-	}
-
+	}	
 }
-
-

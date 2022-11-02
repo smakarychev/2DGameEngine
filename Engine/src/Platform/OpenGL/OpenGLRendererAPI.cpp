@@ -39,10 +39,9 @@ namespace Engine
 		case Engine::RendererAPI::DataType::UInt:  return GL_UNSIGNED_INT;
 		case Engine::RendererAPI::DataType::Int:   return GL_INT;
 		case Engine::RendererAPI::DataType::Float: return GL_FLOAT;
-		default:
-			ENGINE_CORE_FATAL("Unimplemented type!");
-			return 0;
 		}
+		ENGINE_CORE_FATAL("Unknown type");
+		return 0;
 	}
 
 	void OpenGLRendererAPI::EnableCull(bool enable)

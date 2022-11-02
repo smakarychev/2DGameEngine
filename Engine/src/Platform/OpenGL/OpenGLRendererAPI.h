@@ -22,6 +22,6 @@ namespace Engine
 
 		static U32 GetNativeDataType(RendererAPI::DataType type);
 	private:
-		glm::vec3 m_ClearColor;
+		glm::vec3 m_ClearColor = {0.0f, 0.0f, 1.0f};
 	};
 }

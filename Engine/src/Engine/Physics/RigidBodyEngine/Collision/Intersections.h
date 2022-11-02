@@ -5,15 +5,17 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
-namespace Engine
+#include "Engine/Common/Geometry2D.h"
+
+namespace Engine::Physics
 {
 	using namespace Types;
 
 	struct AABB2D;
 	struct CircleBounds2D;
-	struct Transform2D;
-	struct LineSegment2D;
-	struct Line2D;
+	struct Engine::Transform2D;
+	struct Engine::LineSegment2D;
+	struct Engine::Line2D;
 	class BoxCollider2D;
 	class EdgeCollider2D;
 
@@ -64,5 +66,5 @@ namespace Engine
 		const glm::vec2& refFace,
 		const Transform2D& seekTf);
 	// Performs the clipping of line segment by line, returns the number of points in resulting line segment.
-	U32 ClipLineSegmentToLine(LineSegment2D& clippingResult, const LineSegment2D& lineSegment, const Line2D& line);
+	U32 ClipLineSegmentToLine(LineSegment2D& clippingResult, const LineSegment2D& lineSegment, const Line2D& line);	
 }

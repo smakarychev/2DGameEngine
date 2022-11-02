@@ -10,7 +10,7 @@
 * Use enlarged aabbs for less replace operations
 */
 
-namespace Engine
+namespace Engine::Physics
 {
 	// Holds a pair of colliders, whose bounds are colliding.
 	struct PotentialContact2D
@@ -19,7 +19,7 @@ namespace Engine
 		std::array<I32, 2> NodeIds;
 	};
 
-	template <typename Bounds = Engine::DefaultBounds2D>
+	template <typename Bounds = DefaultBounds2D>
 	class BroadPhase2D
 	{
 	public:
@@ -182,6 +182,5 @@ namespace Engine
 		PotentialContact2D contact{ {primaryCollider, otherCollider},{ m_CurrentlyTestedNode, otherNode } };
 		callback(contact);
 		m_ContactsMap[m_CurrentlyTestedNode].push_back(otherNode);
-	}
-
+	}	
 }

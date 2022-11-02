@@ -87,3 +87,7 @@
 #include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Intersections.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/NarrowPhase.h"
+
+/* All scene related. */
+#include "Engine/Scene/Action.h"
+#include "Engine/Scene/Scene.h"

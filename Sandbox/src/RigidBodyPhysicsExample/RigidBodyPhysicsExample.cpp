@@ -21,23 +21,23 @@ void RigidBodyPhysicsExample::OnAttach()
     RenderCommand::SetClearColor(glm::vec3{ 0.1f, 0.1f, 0.1f });
 
     m_World.SetContactListener(m_ContactListener.get());
-    ContactResolver::StoreContactPoints(true);
+    Physics::ContactResolver::StoreContactPoints(true);
 
     m_World.SetGravity(glm::vec2{ 0.0f });
-    m_World.AddForce(CreateRef<Drag2D>(Drag2D(0.0f, 0.0f)));
+    m_World.AddForce(CreateRef<Physics::Drag2D>(Physics::Drag2D(0.0f, 0.0f)));
 
-    CircleCollider2D circleCol(glm::vec3{ 0.0f }, 0.1f);
-    BoxCollider2D boxCol(glm::vec3{ 0.0f }, glm::vec2{ 0.1f, 0.1f });
-    BoxCollider2D wideBoxCol(glm::vec3{ 0.0f }, glm::vec2{ 18.0f, 0.5f });
+    Physics::CircleCollider2D circleCol(glm::vec3{ 0.0f }, 0.1f);
+    Physics::BoxCollider2D boxCol(glm::vec3{ 0.0f }, glm::vec2{ 0.1f, 0.1f });
+    Physics::BoxCollider2D wideBoxCol(glm::vec3{ 0.0f }, glm::vec2{ 18.0f, 0.5f });
    
-    ColliderDef2D colDef;
-    RigidBodyDef2D rbDef{
+    Physics::ColliderDef2D colDef;
+    Physics::RigidBodyDef2D rbDef{
         .Position {0.0f, 1.0f},
     };
 
     colDef.Collider = &wideBoxCol;
     rbDef.Position = glm::vec2{ 0.0f, -9.0f };
-    rbDef.Type = RigidBodyType2D::Static;
+    rbDef.Type = Physics::RigidBodyType2D::Static;
     auto floorB = m_World.CreateBody(rbDef);
     m_World.AddCollider(floorB, colDef);
 
@@ -54,9 +54,9 @@ void RigidBodyPhysicsExample::OnAttach()
     auto floorL = m_World.CreateBody(rbDef);
     m_World.AddCollider(floorL, colDef);
 
-    rbDef.Type = RigidBodyType2D::Dynamic;
+    rbDef.Type = Physics::RigidBodyType2D::Dynamic;
     rbDef.Position = glm::vec2{ -10.0f, 0.0f };
-    BoxCollider2D box{ glm::vec2 {0.0f}, glm::vec2{1.5f} };
+    Physics::BoxCollider2D box{ glm::vec2 {0.0f}, glm::vec2{1.5f} };
     colDef.Collider = &box;
     colDef.PhysicsMaterial.Restitution = 0.0f;
     rbDef.Mass = 10.0f;
@@ -80,7 +80,7 @@ void RigidBodyPhysicsExample::OnAttach()
 
     //boulder.AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
     //boulder.GetCollider()->SetSensor(true);
-    rbDef.Type = RigidBodyType2D::Dynamic;
+    rbDef.Type = Physics::RigidBodyType2D::Dynamic;
     rbDef.Rotation = 0.0f;
     F32 step = 0.2f / 0.25f;
     for (U32 y = 0; y < 20; y++)
@@ -89,8 +89,8 @@ void RigidBodyPhysicsExample::OnAttach()
         {
             rbDef.Position = glm::vec2{ x * step, y * step - 10 * step };
             //rbDef.Position += glm::vec2(Random::Float2(-step * 0.5f, step * 0.5f));
-            CircleCollider2D circle{ glm::vec2{0.0f}, step * 0.25f };
-            BoxCollider2D box{ glm::vec2{0.0f}, glm::vec2{ 1 * step * 0.25f, step * 0.25f} };
+            Physics::CircleCollider2D circle{ glm::vec2{0.0f}, step * 0.25f };
+            Physics::BoxCollider2D box{ glm::vec2{0.0f}, glm::vec2{ 1 * step * 0.25f, step * 0.25f} };
             colDef.Collider = &box;
             colDef.PhysicsMaterial.Restitution = 0.3f;
             rbDef.Mass = 1.1f;
@@ -117,10 +117,10 @@ void RigidBodyPhysicsExample::OnUpdate()
         ENGINE_INFO("Simulation time: {:.4f}ms ({} fps)", timer.GetTime(), timer.GetFPS());
         if (Input::GetKey(Key::Space)) m_World.SetGravity(glm::vec2{ 0.0f, -10.0f });
         if (Input::GetKeyDown(Key::R)) m_World.SetGravity(Random::Float2(-30.0f, 30.0f));
-        if (Input::GetKey(Key::A)) m_Mover->AddForce({ -10.0f,   0.0f }, ForceMode::Impulse);
-        if (Input::GetKey(Key::D)) m_Mover->AddForce({  10.0f,   0.0f }, ForceMode::Impulse);
-        if (Input::GetKey(Key::S)) m_Mover->AddForce({   0.0f, -10.0f }, ForceMode::Impulse);
-        if (Input::GetKey(Key::W)) m_Mover->AddForce({   0.0f,  10.0f }, ForceMode::Impulse);
+        if (Input::GetKey(Key::A)) m_Mover->AddForce({ -10.0f,   0.0f }, Physics::ForceMode::Impulse);
+        if (Input::GetKey(Key::D)) m_Mover->AddForce({  10.0f,   0.0f }, Physics::ForceMode::Impulse);
+        if (Input::GetKey(Key::S)) m_Mover->AddForce({   0.0f, -10.0f }, Physics::ForceMode::Impulse);
+        if (Input::GetKey(Key::W)) m_Mover->AddForce({   0.0f,  10.0f }, Physics::ForceMode::Impulse);
     }
     static glm::vec2 defGrav = { 0.0f, -10.0f };
     Transform2D tr;
@@ -152,7 +152,7 @@ void RigidBodyPhysicsExample::Render()
 {
     m_FrameBuffer->Bind();
     RenderCommand::ClearScreen();
-    Renderer2D::BeginScene(m_CameraController->GetCamera());
+    Renderer2D::BeginScene(m_CameraController->GetCamera().get());
     // Render rigid bodies.
     RigidBodyWorldDrawer::Draw(m_World);
 
@@ -171,7 +171,7 @@ void RigidBodyPhysicsExample::Render()
     if (drawContactPoint)
     {
         // Render contact points
-        for (auto& p : ContactResolver::GetContactPoints())
+        for (auto& p : Physics::ContactResolver::GetContactPoints())
         {
             Component::Transform2D transform;
             transform.Position = p;
@@ -183,10 +183,10 @@ void RigidBodyPhysicsExample::Render()
     }
     if (drawContactNormals)
     {
-        for (U32 i = 0; i < ContactResolver::GetContactPoints().size(); i++)
+        for (U32 i = 0; i < Physics::ContactResolver::GetContactPoints().size(); i++)
         {
-            glm::vec2 base = ContactResolver::GetContactPoints()[i];
-            glm::vec2 dir = ContactResolver::GetContactNormals()[i];
+            glm::vec2 base = Physics::ContactResolver::GetContactPoints()[i];
+            glm::vec2 dir = Physics::ContactResolver::GetContactNormals()[i];
             Renderer2D::DrawLine(base, base + dir * 0.25f);
         }
     }
@@ -198,7 +198,7 @@ void RigidBodyPhysicsExample::Render()
         renderBVH = !renderBVH;
     
     if (renderBVH)
-        BVHTreeDrawer<AABB2D>::Draw(m_World.GetBroadPhase().GetBVHTree());
+        BVHTreeDrawer::Draw(m_World.GetBroadPhase().GetBVHTree());
 
     Renderer2D::EndScene();
 
@@ -207,8 +207,8 @@ void RigidBodyPhysicsExample::Render()
 
 CRect RigidBodyPhysicsExample::GetCameraBounds()
 {
-    glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, m_ViewportSize.y });
-    glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  0 });
+    glm::vec2 min = m_CameraController->GetCamera()->ScreenToWorldPoint({ 0, 0 });
+    glm::vec2 max = m_CameraController->GetCamera()->ScreenToWorldPoint({ m_ViewportSize.x,  m_ViewportSize.y });
     CRect bounds;
     bounds.Center   = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };

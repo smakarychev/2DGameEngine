@@ -142,5 +142,6 @@ namespace Engine
 			RightSuper = 347,
 			Menu = 348
 		};
+	static constexpr auto KEY_COUNT = Key::Menu + 1;
 	}
 }

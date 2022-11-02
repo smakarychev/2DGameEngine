@@ -8,17 +8,393 @@
 #include "Shader.h"
 #include "SortingLayer.h"
 #include "Texture.h"
-#include "Font.h"
 
 #include "Engine/ECS/Components.h"
 #include "Engine/Core/Camera.h"
-#include "Engine/Primitives/2D/RegularPolygon.h"
 
 #include <glm/glm.hpp>
 
 namespace Engine
 {
     using namespace Types;
+
+    template <typename VerticesContainer>
+    struct ShadingInfo
+    {
+        Texture* Texture = nullptr;
+        VerticesContainer UV{};
+        glm::vec4 Tint = glm::vec4{1.0f};
+        glm::vec2 Tiling = glm::vec2{1.0f};
+    };
+
+    struct ShadingInfoCr
+    {
+        static ShadingInfo<std::array<glm::vec2, 4>> Create(const Component::SpriteRenderer& sr)
+        {
+            ShadingInfo<std::array<glm::vec2, 4>> sInfo{
+                .Texture = sr.Texture,
+                .UV = sr.UV,
+                .Tint = sr.Tint,
+                .Tiling = sr.Tiling
+            };
+            return sInfo;
+        }
+
+        static ShadingInfo<std::array<glm::vec2, 4>> Create(const Component::FontRenderer& fr, const char& character)
+        {
+            ShadingInfo<std::array<glm::vec2, 4>> sInfo{
+                .Texture = &fr.Font->GetAtlas(),
+                .UV = fr.Font->GetCharacters()[character].UV,
+                .Tint = fr.Tint
+            };
+            return sInfo;
+        }
+
+        static ShadingInfo<std::vector<glm::vec2>> Create(const Component::PolygonRenderer& pr)
+        {
+            ShadingInfo<std::vector<glm::vec2>> sInfo{
+                .Texture = pr.Texture,
+                .UV = pr.Polygon->GetUVs(),
+                .Tint = pr.Tint,
+                .Tiling = pr.Tiling
+            };
+            return sInfo;
+        }
+    };
+
+    template <typename Vertex>
+    class BatchRenderer2D
+    {
+    private:
+        struct Data
+        {
+            Ref<Shader> Shader;
+            Ref<VertexArray> Vao;
+            Camera* Camera = nullptr;
+
+            RendererAPI::PrimitiveType Type = RendererAPI::PrimitiveType::Triangle;
+            U32 MaxVertices = U32(2_MiB) / sizeof(Vertex);
+            U32 MaxIndices = U32(2_MiB) / sizeof(U32);
+            U32 MaxTextures = 32;
+            Texture* UsedTextures[32] = {nullptr};
+            U32 CurrentTextureIndex = 0;
+            U32 CurrentVertices = 0;
+            U32 CurrentIndices = 0;
+
+            U8* VerticesMemory = nullptr;
+            Vertex* CurrentVertexPointer = nullptr;
+            U8* IndicesMemory = nullptr;
+            U32* CurrentIndexPointer = nullptr;
+        };
+
+    public:
+        // TODO: allow for predefined indices.
+        void InitData(const std::string& shaderPath);
+        void SetCamera(Camera* camera) { m_Data.Camera = camera; }
+        void SetPrimitiveType(RendererAPI::PrimitiveType type) { m_Data.Type = type; }
+        void Shutdown();
+        void Flush();
+        void Reset();
+        bool ShouldFlush() const { return m_Data.CurrentVertices != 0; }
+        template <typename Transform, typename VerticesContainer, typename IndicesContainer>
+        void PushVertices(const Transform& transform,
+                          F32 depth,
+                          const ShadingInfo<VerticesContainer>& shadingInfo,
+                          const VerticesContainer& referenceVertices,
+                          const IndicesContainer& indices);
+        template <typename Transform, typename VerticesContainer, typename IndicesContainer>
+        void PushVertices(I32 entityId,
+                          const Transform& transform,
+                          F32 depth,
+                          const ShadingInfo<VerticesContainer>& shadingInfo,
+                          const VerticesContainer& referenceVertices,
+                          const IndicesContainer& indices);
+        template <typename VerticesContainer, typename IndicesContainer>
+        void PushVertices(F32 depth,
+                          const ShadingInfo<VerticesContainer>& shadingInfo,
+                          const VerticesContainer& transformedVertices,
+                          const IndicesContainer& indices);
+        template <typename VerticesContainer, typename IndicesContainer>
+        void PushVertices(I32 entityId,
+                          F32 depth,
+                          const ShadingInfo<VerticesContainer>& shadingInfo,
+                          const VerticesContainer& transformedVertices,
+                          const IndicesContainer& indices);
+    private:
+        void PushVertex(const glm::vec2& referenceVertex,
+                        const Component::Transform2D& transform,
+                        F32 depth,
+                        F32 textureIndex,
+                        const glm::vec2& uv,
+                        const glm::vec4& tint,
+                        const glm::vec2& tiling);
+        void PushVertex(const glm::vec2& referenceVertex,
+                        const glm::mat3& transform,
+                        F32 depth,
+                        F32 textureIndex,
+                        const glm::vec2& uv,
+                        const glm::vec4& tint,
+                        const glm::vec2& tiling);
+        void PushVertex(const glm::vec2& transformedVertex,
+                        F32 depth,
+                        F32 textureIndex,
+                        const glm::vec2& uv,
+                        const glm::vec4& tint,
+                        const glm::vec2& tiling);
+        void CheckForFlush(U32 newVerticesCount, U32 newIndicesCount);
+        F32 GetTextureIndex(Texture* texture);
+        static void InitVertexGeometryData(Vertex& vertex,
+                                           const glm::vec3& position,
+                                           const glm::vec2& scale,
+                                           const glm::vec2& rotation);
+        static void InitVertexColorData(Vertex& vertex,
+                                        F32 textureIndex,
+                                        const glm::vec2& uv,
+                                        const glm::vec4& tint,
+                                        const glm::vec2& textureTiling = glm::vec2{1.0f});
+    private:
+        Data m_Data;
+    };
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::InitData(const std::string& shaderPath)
+    {
+        m_Data.Shader = Shader::ReadShaderFromFile(shaderPath);
+        auto vbo = VertexBuffer::Create(nullptr, m_Data.MaxVertices * sizeof(Vertex));
+        vbo->SetVertexLayout(Vertex::GetLayout());
+        auto ibo = IndexBuffer::Create(nullptr, m_Data.MaxIndices);
+        m_Data.Vao = VertexArray::Create();
+        m_Data.Vao->AddVertexBuffer(vbo);
+        m_Data.Vao->SetIndexBuffer(ibo);
+        // Allocate memory for vertices / indices.
+
+        m_Data.VerticesMemory = NewArr<U8>(m_Data.MaxVertices * sizeof(Vertex));
+        m_Data.IndicesMemory = NewArr<U8>(m_Data.MaxIndices * sizeof(U32));
+        m_Data.CurrentVertexPointer = reinterpret_cast<Vertex*>(m_Data.VerticesMemory);
+        m_Data.CurrentIndexPointer = reinterpret_cast<U32*>(m_Data.IndicesMemory);
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::Shutdown()
+    {
+        m_Data.Shader.reset();
+        m_Data.Vao.reset();
+        DeleteArr<Vertex>(reinterpret_cast<Vertex*>(m_Data.VerticesMemory), m_Data.MaxVertices);
+        DeleteArr<U32>(reinterpret_cast<U32*>(m_Data.IndicesMemory), m_Data.MaxIndices);
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::Flush()
+    {
+        m_Data.Shader->Bind();
+        for (U32 i = 0; i < m_Data.CurrentTextureIndex; i++) m_Data.UsedTextures[i]->Bind(i);
+        ENGINE_CORE_ASSERT(m_Data.Vao->GetVertexBuffers().size() == 1, "Batch must have only one vbo.")
+
+        m_Data.Vao->GetVertexBuffers()[0]->SetData(m_Data.VerticesMemory, sizeof(Vertex) * m_Data.CurrentVertices);
+        m_Data.Vao->GetIndexBuffer()->SetData(reinterpret_cast<U32*>(m_Data.IndicesMemory), m_Data.CurrentIndices);
+
+        m_Data.Shader->SetUniformMat4("u_modelViewProjection", m_Data.Camera->GetViewProjection());
+        RenderCommand::DrawIndexed(m_Data.Vao, m_Data.CurrentIndices, m_Data.Type);
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::Reset()
+    {
+        m_Data.CurrentVertices = 0;
+        m_Data.CurrentIndices = 0;
+        m_Data.CurrentTextureIndex = 0;
+        m_Data.CurrentVertexPointer = reinterpret_cast<Vertex*>(m_Data.VerticesMemory);
+        m_Data.CurrentIndexPointer = reinterpret_cast<U32*>(m_Data.IndicesMemory);
+    }
+
+    template <typename Vertex>
+    template <typename Transform, typename VerticesContainer, typename IndicesContainer>
+    void BatchRenderer2D<Vertex>::PushVertices(const Transform& transform,
+                                               F32 depth,
+                                               const ShadingInfo<VerticesContainer>& shadingInfo,
+                                               const VerticesContainer& referenceVertices,
+                                               const IndicesContainer& indices)
+    {
+        CheckForFlush((U32)referenceVertices.size(), (U32)indices.size());
+        const F32 textureIndex = GetTextureIndex(shadingInfo.Texture);
+        for (U32 i = 0; i < referenceVertices.size(); i++)
+        {
+            PushVertex(referenceVertices[i], transform, depth, textureIndex,
+                       shadingInfo.UV[i], shadingInfo.Tint, shadingInfo.Tiling);
+        }
+        for (const auto i : indices)
+        {
+            U32* index = m_Data.CurrentIndexPointer;
+            *index = i + m_Data.CurrentVertices;
+            m_Data.CurrentIndexPointer = m_Data.CurrentIndexPointer + 1;
+        }
+        m_Data.CurrentVertices += U32(referenceVertices.size());
+        m_Data.CurrentIndices += U32(indices.size());
+    }
+
+    template <typename Vertex>
+    template <typename Transform, typename VerticesContainer, typename IndicesContainer>
+    void BatchRenderer2D<Vertex>::PushVertices(I32 entityId,
+                                               const Transform& transform,
+                                               F32 depth,
+                                               const ShadingInfo<VerticesContainer>& shadingInfo,
+                                               const VerticesContainer& referenceVertices,
+                                               const IndicesContainer& indices)
+    {
+        Vertex* firstVertex = m_Data.CurrentVertexPointer;
+        PushVertices(transform, depth, shadingInfo, referenceVertices, indices);
+        while (firstVertex < m_Data.CurrentVertexPointer)
+        {
+            firstVertex->EntityId = entityId;
+            firstVertex = firstVertex + 1;
+        }
+    }
+
+    template <typename Vertex>
+    template <typename VerticesContainer, typename IndicesContainer>
+    void BatchRenderer2D<Vertex>::PushVertices(F32 depth, const ShadingInfo<VerticesContainer>& shadingInfo,
+                                               const VerticesContainer& transformedVertices,
+                                               const IndicesContainer& indices)
+    {
+        CheckForFlush((U32)transformedVertices.size(), (U32)indices.size());
+        const F32 textureIndex = GetTextureIndex(shadingInfo.Texture);
+        for (U32 i = 0; i < transformedVertices.size(); i++)
+        {
+            PushVertex(transformedVertices[i], depth, textureIndex,
+                       shadingInfo.UV[i], shadingInfo.Tint, shadingInfo.Tiling);
+        }
+        for (const auto i : indices)
+        {
+            U32* index = m_Data.CurrentIndexPointer;
+            *index = i + m_Data.CurrentVertices;
+            m_Data.CurrentIndexPointer = m_Data.CurrentIndexPointer + 1;
+        }
+        m_Data.CurrentVertices += U32(transformedVertices.size());
+        m_Data.CurrentIndices += U32(indices.size());
+    }
+
+    template <typename Vertex>
+    template <typename VerticesContainer, typename IndicesContainer>
+    void BatchRenderer2D<Vertex>::PushVertices(I32 entityId, F32 depth,
+                                               const ShadingInfo<VerticesContainer>& shadingInfo,
+                                               const VerticesContainer& transformedVertices,
+                                               const IndicesContainer& indices)
+    {
+        Vertex* firstVertex = m_Data.CurrentVertexPointer;
+        PushVertices(depth, shadingInfo, transformedVertices, indices);
+        while (firstVertex < m_Data.CurrentVertexPointer)
+        {
+            firstVertex->EntityId = entityId;
+            firstVertex = firstVertex + 1;
+        }
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::PushVertex(const glm::vec2& referenceVertex,
+                                             const Component::Transform2D& transform,
+                                             F32 depth,
+                                             F32 textureIndex,
+                                             const glm::vec2& uv,
+                                             const glm::vec4& tint,
+                                             const glm::vec2& tiling)
+    {
+        Vertex* vertex = m_Data.CurrentVertexPointer;
+        vertex->Position = glm::vec3{referenceVertex, 0.0f};
+        InitVertexGeometryData(*vertex, glm::vec3{transform.Position, depth}, transform.Scale, transform.Rotation);
+        InitVertexColorData(*vertex, textureIndex, uv, tint, tiling);
+        m_Data.CurrentVertexPointer = m_Data.CurrentVertexPointer + 1;
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::PushVertex(const glm::vec2& referenceVertex,
+                                             const glm::mat3& transform,
+                                             F32 depth,
+                                             F32 textureIndex,
+                                             const glm::vec2& uv,
+                                             const glm::vec4& tint,
+                                             const glm::vec2& tiling)
+    {
+        Vertex* vertex = m_Data.CurrentVertexPointer;
+        vertex->Position = transform * glm::vec3{referenceVertex, 1.0f} + glm::vec3{0.0f, 0.0f, depth};
+        InitVertexColorData(*vertex, textureIndex, uv, tint, tiling);
+        m_Data.CurrentVertexPointer = m_Data.CurrentVertexPointer + 1;
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::PushVertex(const glm::vec2& transformedVertex, F32 depth, F32 textureIndex,
+                                             const glm::vec2& uv, const glm::vec4& tint, const glm::vec2& tiling)
+    {
+        Vertex* vertex = m_Data.CurrentVertexPointer;
+        vertex->Position = glm::vec3{transformedVertex, depth};
+        InitVertexColorData(*vertex, textureIndex, uv, tint, tiling);
+        m_Data.CurrentVertexPointer = m_Data.CurrentVertexPointer + 1;
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::CheckForFlush(U32 newVerticesCount, U32 newIndicesCount)
+    {
+        if (m_Data.CurrentVertices + newVerticesCount > m_Data.MaxVertices ||
+            m_Data.CurrentIndices + newIndicesCount > m_Data.MaxIndices)
+        {
+            Flush();
+            Reset();
+        }
+    }
+
+    template <typename Vertex>
+    F32 BatchRenderer2D<Vertex>::GetTextureIndex(Texture* texture)
+    {
+        F32 textureIndex = -1.0f;
+        if (texture != nullptr)
+        {
+            bool textureFound = false;
+            for (U32 i = 0; i < m_Data.CurrentTextureIndex; i++)
+            {
+                if (m_Data.UsedTextures[i] == texture)
+                {
+                    textureIndex = F32(i);
+                    textureFound = true;
+                    break;
+                }
+            }
+            // If no such texture in the batch.
+            if (textureFound == false)
+            {
+                if (m_Data.CurrentTextureIndex >= m_Data.MaxTextures)
+                {
+                    Flush();
+                    Reset();
+                }
+                m_Data.UsedTextures[m_Data.CurrentTextureIndex] = texture;
+                textureIndex = F32(m_Data.CurrentTextureIndex);
+                m_Data.CurrentTextureIndex = m_Data.CurrentTextureIndex + 1;
+            }
+        }
+        return textureIndex;
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::InitVertexGeometryData(Vertex& vertex, const glm::vec3& position,
+                                                         const glm::vec2& scale, const glm::vec2& rotation)
+    {
+        vertex.Position *= glm::vec3{scale, 1.0f};
+        vertex.Position = glm::vec3{
+            rotation.x * vertex.Position.x - rotation.y * vertex.Position.y,
+            rotation.y * vertex.Position.x + rotation.x * vertex.Position.y,
+            0.0f
+        };
+        vertex.Position += position;
+    }
+
+    template <typename Vertex>
+    void BatchRenderer2D<Vertex>::InitVertexColorData(Vertex& vertex, F32 textureIndex, const glm::vec2& uv,
+                                                      const glm::vec4& tint, const glm::vec2& textureTiling)
+    {
+        vertex.TextureIndex = textureIndex;
+        vertex.Color = tint;
+        vertex.TextureTiling = textureTiling;
+        vertex.UV = uv;
+    }
 
     class Renderer2D
     {
@@ -65,12 +441,12 @@ namespace Engine
         struct BatchVertexEditor
         {
             // vec3 for position to have the ability to render something on top.
-            I32 EntityId = -1;
             glm::vec3 Position = glm::vec3{0.0f};
             F32 TextureIndex = -1.0f;
             glm::vec2 UV = glm::vec2{0.0f};
             glm::vec2 TextureTiling = glm::vec2{1.0f};
             glm::vec4 Color = glm::vec4{1.0f};
+            I32 EntityId = -1;
 
             // Maybe just static member?
             static const VertexLayout& GetLayout()
@@ -82,21 +458,21 @@ namespace Engine
                         {LayoutElement::Float2, "a_uv"},
                         {LayoutElement::Float2, "a_textureTiling"},
                         {LayoutElement::Float4, "a_color"},
-                        {LayoutElement::Int, "a_enityId"},
+                        {LayoutElement::Int,    "a_entityId"},
                     }
                 };
                 return layout;
             }
 
             BatchVertexEditor(I32 entityId, const glm::vec3& pos, const glm::vec2& uv, const glm::vec4 color) :
-                EntityId(entityId), Position(pos), UV(uv), Color(color)
+                Position(pos), UV(uv), Color(color), EntityId(entityId)
             {
             }
 
             BatchVertexEditor(I32 entityId, const glm::vec3& pos, const glm::vec2& uv, const Texture& texture,
                               const glm::vec2& textureTiling = glm::vec2{1.0f}) :
-                EntityId(entityId), Position(pos), TextureIndex(F32(texture.GetId())), UV(uv),
-                TextureTiling(textureTiling)
+                Position(pos), TextureIndex(F32(texture.GetId())), UV(uv), TextureTiling(textureTiling),
+                EntityId(entityId)
             {
             }
 
@@ -153,46 +529,6 @@ namespace Engine
             BatchVertexLineEditor() = default;
         };
 
-        template <typename VT>
-        struct BatchDataT
-        {
-            // TODO: move to config.
-            U32 MaxVertices = U32(2_MiB) / sizeof(VT);
-            U32 MaxIndices = U32(2_MiB) / sizeof(U32);
-            U32 MaxTextures = 32;
-            Texture* UsedTextures[32] = {nullptr};
-            U32 CurrentTextureIndex = 0;
-            U32 CurrentVertices = 0;
-            U32 CurrentIndices = 0;
-            Ref<VertexArray> VAO;
-
-            U8* VerticesMemory = nullptr;
-            VT* CurrentVertexPointer = nullptr;
-            U8* IndicesMemory = nullptr;
-            U32* CurrentIndexPointer = nullptr;
-        };
-
-        template <typename VT>
-        struct BatchDataLinesT
-        {
-            // TODO: move to config.
-            U32 MaxVertices = U32(2_MiB) / sizeof(BatchVertexLine);
-            U32 MaxIndices = U32(2_MiB) / sizeof(U32);
-            U32 CurrentVertices = 0;
-            U32 CurrentIndices = 0;
-            Ref<VertexArray> VAO;
-
-            U8* VerticesMemory = nullptr;
-            BatchVertexLine* CurrentVertexPointer = nullptr;
-            U8* IndicesMemory = nullptr;
-            U32* CurrentIndexPointer = nullptr;
-        };
-
-        using BatchData = BatchDataT<BatchVertex>;
-        using BatchDataEditor = BatchDataT<BatchVertexEditor>;
-        using BatchDataLines = BatchDataLinesT<BatchVertexLine>;
-        using BatchDataLinesEditor = BatchDataLinesT<BatchVertexLineEditor>;
-
         struct BatchRendererData
         {
             U32 DrawCalls = 0;
@@ -210,22 +546,19 @@ namespace Engine
 
             struct ReferenceQuad
             {
-                // Vec4 for alignment.
-                std::array<glm::vec4, 4> Position;
-                std::array<glm::vec2, 4> UV;
+                std::array<glm::vec2, 4> Position;
+                std::array<U32, 6> Indices;
             };
 
             ReferenceQuad ReferenceQuad{};
 
-            BatchData QuadBatch;
-            BatchData PolygonBatch;
-            BatchData TextBatch;
-            BatchDataLines LineBatch;
+            BatchRenderer2D<BatchVertex> TriangleBatch;
+            BatchRenderer2D<BatchVertexLine> LineBatch;
+            BatchRenderer2D<BatchVertex> TextBatch;
 
-            BatchDataEditor QuadBatchEditor;
-            BatchDataEditor PolygonBatchEditor;
-            BatchDataEditor TextBatchEditor;
-            BatchDataLinesEditor LineBatchEditor;
+            BatchRenderer2D<BatchVertexEditor> TriangleBatchEditor;
+            BatchRenderer2D<BatchVertexLineEditor> LineBatchEditor;
+            BatchRenderer2D<BatchVertexEditor> TextBatchEditor;
 
             SortingLayer* SortingLayer = nullptr;
             RenderQueue RenderQueue;
@@ -244,7 +577,10 @@ namespace Engine
         static void Init();
         static void ShutDown();
 
-        static void BeginScene(Ref<Camera> camera, SortingLayer* sortingLayer = &DefaultSortingLayer);
+        static void SetSortingLayer(const SortingLayer& layer) { *s_BatchData.SortingLayer = layer; }
+        static const SortingLayer& GetSortingLayer() { return *s_BatchData.SortingLayer; }
+        
+        static void BeginScene(Camera* camera, SortingLayer* sortingLayer = &DefaultSortingLayer);
         static void EndScene();
 
         static void DrawQuad(const Component::Transform2D& transform, const Component::SpriteRenderer& spriteRenderer,
@@ -276,20 +612,8 @@ namespace Engine
                                         const std::string& text);
         static void DrawLineEditor(I32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color);
 
-        template <typename VT>
-        static void Flush(BatchDataT<VT>& batch, Shader& shader = *s_BatchData.BatchShader);
-        template <typename VT>
-        static void Flush(BatchDataLinesT<VT>& batch, Shader& shader = *s_BatchData.LineShader);
-        template <typename VT>
-        static void ResetBatch(BatchDataT<VT>& batch);
-        template <typename VT>
-        static void ResetBatch(BatchDataLinesT<VT>& batch);
-    private:
-        template <typename VT>
-        static void CheckForFlush(BatchDataT<VT>& batch, U32 verticesCount, U32 indicesCount);
-        template <typename VT>
-        static void CheckForFlush(BatchDataLinesT<VT>& batch, U32 verticesCount, U32 indicesCount);
 
+    private:
         // These functions are to be executed by a command queue (currently unimplemented).
 
         static void DrawQuadCall(const Component::Transform2D& transform,
@@ -328,156 +652,22 @@ namespace Engine
                                     const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f);
         static void DrawOutlineCall(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
                                     F32 depth = 0.0f);
-
-        static F32 GetTextureIndex(BatchData& batch, Texture* texture);
-
-        template <typename VT>
-        static void PushVertex(BatchDataT<VT>& batch, const glm::vec2& referenceVertex,
-                               const Component::Transform2D& transform, F32 depth, F32 textureIndex,
-                               const glm::vec2& uv, const glm::vec4& tint,
-                               const glm::vec2& tiling);
-
-        template <typename VT>
-        static void PushVertex(BatchDataT<VT>& batch, const glm::vec2& referenceVertex,
-                               const glm::mat3& transform, F32 depth, F32 textureIndex, const glm::vec2& uv,
-                               const glm::vec4& tint,
-                               const glm::vec2& tiling);
-
-        template <typename VT>
-        static void InitVertexGeometryData(VT& vertex,
-                                           const glm::vec3& position,
-                                           const glm::vec2& scale,
-                                           const glm::vec2& rotation);
-
-        template <typename VT>
-        static void InitVertexColorData(VT& vertex,
-                                        F32 textureIndex,
-                                        const glm::vec2& uv,
-                                        const glm::vec4& tint,
-                                        const glm::vec2& textureTiling = glm::vec2{1.0f});
-
     private:
         static BatchRendererData s_BatchData;
     };
 
-    template <typename VT>
-    void Renderer2D::Flush(BatchDataT<VT>& batch, Shader& shader)
+    template <>
+    inline void BatchRenderer2D<Renderer2D::BatchVertexLine>::InitVertexColorData(
+        Renderer2D::BatchVertexLine& vertex, F32 textureIndex, const glm::vec2& uv,
+        const glm::vec4& tint, const glm::vec2& textureTiling)
     {
-        shader.Bind();
-        for (U32 i = 0; i < batch.CurrentTextureIndex; i++) batch.UsedTextures[i]->Bind(i);
-        ENGINE_CORE_ASSERT(batch.VAO->GetVertexBuffers().size() == 1, "Batch must have only one vbo.")
-
-        batch.VAO->GetVertexBuffers()[0]->SetData(batch.VerticesMemory, sizeof(VT) * batch.CurrentVertices);
-        if ((void*)&batch == (void*)&s_BatchData.PolygonBatch || (void*)&batch == (void*)&s_BatchData.
-            PolygonBatchEditor)
-            batch.VAO->GetIndexBuffer()->SetData(reinterpret_cast<U32*>(batch.IndicesMemory), batch.CurrentIndices);
-        if ((void*)&batch == (void*)&s_BatchData.TextBatch || (void*)&batch == (void*)&s_BatchData.TextBatchEditor)
-            RenderCommand::SetDepthTestMode(RendererAPI::Mode::Read);
-
-        shader.SetUniformMat4("u_modelViewProjection", s_BatchData.CameraViewProjection);
-        s_BatchData.DrawCalls++;
-        RenderCommand::DrawIndexed(batch.VAO, batch.CurrentIndices);
-        if ((void*)&batch == (void*)&s_BatchData.TextBatch || (void*)&batch == (void*)&s_BatchData.TextBatchEditor)
-            RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
-    }
-
-    template <typename VT>
-    void Renderer2D::Flush(BatchDataLinesT<VT>& batch, Shader& shader)
-    {
-        shader.Bind();
-        ENGINE_CORE_ASSERT(batch.VAO->GetVertexBuffers().size() == 1, "Batch must have only one vbo.")
-        batch.VAO->GetVertexBuffers()[0]->SetData(batch.VerticesMemory, sizeof(VT) * batch.CurrentVertices);
-
-        shader.SetUniformMat4("u_modelViewProjection", s_BatchData.CameraViewProjection);
-        s_BatchData.DrawCalls++;
-        RenderCommand::DrawIndexed(batch.VAO, batch.CurrentIndices, RendererAPI::PrimitiveType::Line);
-    }
-
-    template <typename VT>
-    void Renderer2D::ResetBatch(BatchDataT<VT>& batch)
-    {
-        batch.CurrentVertices = 0;
-        batch.CurrentIndices = 0;
-        batch.CurrentTextureIndex = 0;
-        batch.CurrentVertexPointer = reinterpret_cast<VT*>(batch.VerticesMemory);
-        batch.CurrentIndexPointer = reinterpret_cast<U32*>(batch.IndicesMemory);
-    }
-
-    template <typename VT>
-    void Renderer2D::ResetBatch(BatchDataLinesT<VT>& batch)
-    {
-        batch.CurrentVertices = 0;
-        batch.CurrentIndices = 0;
-        batch.CurrentVertexPointer = reinterpret_cast<VT*>(batch.VerticesMemory);
-        batch.CurrentIndexPointer = reinterpret_cast<U32*>(batch.IndicesMemory);
-    }
-
-    template <typename VT>
-    void Renderer2D::CheckForFlush(BatchDataT<VT>& batch, U32 verticesCount, U32 indicesCount)
-    {
-        if (batch.CurrentVertices + verticesCount > batch.MaxVertices || batch.CurrentIndices + indicesCount > batch.
-            MaxIndices)
-        {
-            Flush(batch);
-            ResetBatch(batch);
-        }
-    }
-
-    template <typename VT>
-    void Renderer2D::CheckForFlush(BatchDataLinesT<VT>& batch, U32 verticesCount, U32 indicesCount)
-    {
-        if (batch.CurrentVertices + verticesCount > batch.MaxVertices || batch.CurrentIndices + indicesCount > batch.
-            MaxIndices)
-        {
-            Flush(batch);
-            ResetBatch(batch);
-        }
-    }
-
-    template <typename VT>
-    void Renderer2D::PushVertex(BatchDataT<VT>& batch, const glm::vec2& referenceVertex,
-                                const Component::Transform2D& transform, F32 depth, F32 textureIndex,
-                                const glm::vec2& uv, const glm::vec4& tint,
-                                const glm::vec2& tiling)
-    {
-        VT* vertex = batch.CurrentVertexPointer;
-        vertex->Position = glm::vec3{referenceVertex, 0.0f};
-        InitVertexGeometryData(*vertex, glm::vec3{transform.Position, depth}, transform.Scale, transform.Rotation);
-        InitVertexColorData(*vertex, textureIndex, uv, tint, tiling);
-        batch.CurrentVertexPointer = batch.CurrentVertexPointer + 1;
-    }
-
-    template <typename VT>
-    void Renderer2D::PushVertex(BatchDataT<VT>& batch, const glm::vec2& referenceVertex, const glm::mat3& transform,
-                                F32 depth, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint,
-                                const glm::vec2& tiling)
-    {
-        VT* vertex = batch.CurrentVertexPointer;
-        vertex->Position = transform * glm::vec3{referenceVertex, 1.0f} + glm::vec3{0.0f, 0.0f, depth};
-        InitVertexColorData(*vertex, textureIndex, uv, tint, tiling);
-        batch.CurrentVertexPointer = batch.CurrentVertexPointer + 1;
-    }
-
-    template <typename VT>
-    void Renderer2D::InitVertexGeometryData(VT& vertex, const glm::vec3& position, const glm::vec2& scale,
-                                            const glm::vec2& rotation)
-    {
-        vertex.Position *= glm::vec3{scale, 1.0f};
-        vertex.Position = glm::vec3{
-            rotation.x * vertex.Position.x - rotation.y * vertex.Position.y,
-            rotation.y * vertex.Position.x + rotation.x * vertex.Position.y,
-            0.0f
-        };
-        vertex.Position += position;
-    }
-
-    template <typename VT>
-    void Renderer2D::InitVertexColorData(VT& vertex, F32 textureIndex, const glm::vec2& uv, const glm::vec4& tint,
-                                         const glm::vec2& textureTiling)
-    {
-        vertex.TextureIndex = textureIndex;
         vertex.Color = tint;
-        vertex.TextureTiling = textureTiling;
-        vertex.UV = uv;
+    }
+    template <>
+    inline void BatchRenderer2D<Renderer2D::BatchVertexLineEditor>::InitVertexColorData(
+        Renderer2D::BatchVertexLineEditor& vertex, F32 textureIndex, const glm::vec2& uv,
+        const glm::vec4& tint, const glm::vec2& textureTiling)
+    {
+        vertex.Color = tint;
     }
 }

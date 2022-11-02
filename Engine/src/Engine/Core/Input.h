@@ -35,6 +35,7 @@ namespace Engine
 		static void OnEvent(Event& event);
 
 		static void SetMainViewportOffset(const glm::vec2& offset) { s_MainViewportOffset = offset; }
+		static void SetMainViewportSize(const glm::vec2& size) { s_MainViewportSize = size; }
 
 	private:
 		static std::map<KeyCode, bool> s_PressedKeys;
@@ -45,6 +46,7 @@ namespace Engine
 		// Not the best way.
 
 		static glm::vec2 s_MainViewportOffset;
+		static glm::vec2 s_MainViewportSize;
 
 		static bool SetKeyPressed(KeyPressedEvent& event);
 		static bool SetKeyReleased(KeyReleasedEvent& event);

@@ -13,7 +13,7 @@ namespace Engine
     public:
         struct CharacterInfo
         {
-            std::vector<glm::vec2> UV = std::vector<glm::vec2>(4, glm::vec2{});
+            std::array<glm::vec2, 4> UV{};
             glm::vec2 Size = glm::vec2{ 0.0f };
             glm::vec2 Bearing = glm::vec2{0.0f};
             F32 Advance = 0.0f;

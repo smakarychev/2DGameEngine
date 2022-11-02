@@ -16,15 +16,15 @@ namespace Engine
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_Id);
 
-		SetWrapSMode(textureData.WrapS);
-		SetWrapTMode(textureData.WrapT);
-		SetMinificationFilter(textureData.Minification);
-		SetMagnificationFilter(textureData.Magnification);
+		OpenGLTexture::SetWrapSMode(textureData.WrapS);
+		OpenGLTexture::SetWrapTMode(textureData.WrapT);
+		OpenGLTexture::SetMinificationFilter(textureData.Minification);
+		OpenGLTexture::SetMagnificationFilter(textureData.Magnification);
 
 		auto&& [internalFormat, dataFormat] = GetInternalFormatFormatPair(textureData.PixelFormat);
 
 		glTextureStorage2D(m_Id, 1, internalFormat, (GLsizei)textureData.Width, (GLsizei)textureData.Height);
-		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GL_UNSIGNED_BYTE, textureData.Data);
+		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GetPixelDataType(textureData.PixelFormat), textureData.Data);
 
 		if (textureData.GenerateMipmaps)
 		{
@@ -40,14 +40,14 @@ namespace Engine
 
 	void OpenGLTexture::UpdateData(void* data, PixelFormat format)
 	{
-		glTextureSubImage2D(m_Id, 0, 0, 0, m_Data.Width, m_Data.Height, GetFormat(format), GL_UNSIGNED_BYTE, data);
+		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)m_Data.Width, (GLsizei)m_Data.Height, GetFormat(format), GetPixelDataType(format), data);
 	}
 
 	void OpenGLTexture::UpdateData(U32 width, U32 height, void* data, PixelFormat format)
 	{
 		m_Data.Width = width;
 		m_Data.Height = height;
-		glTextureSubImage2D(m_Id, 0, 0, 0, width, height, GetFormat(format), GL_UNSIGNED_BYTE, data);
+		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)width, (GLsizei)height, GetFormat(format), GetPixelDataType(format), data);
 	}
 
 	PixelData OpenGLTexture::ReadPixel(U32 x, U32 y, RendererAPI::DataType dataType)
@@ -83,9 +83,9 @@ namespace Engine
 	std::array<glm::vec2, 4> OpenGLTexture::GetSubTextureUV(const glm::uvec2& tileSize, const glm::uvec2& subtexCoords, const glm::uvec2& subtexSize)
 	{
 		// Normalize tilesize to get uv.
-		glm::vec2 normalizedTile = glm::vec2{ (F32)tileSize.x / m_Data.Width, (F32)tileSize.y / m_Data.Height };
-		glm::vec2 begin = glm::vec2{ subtexCoords.x * normalizedTile.x, subtexCoords.y * normalizedTile.y };
-		glm::vec2 end = begin + glm::vec2{ subtexSize.x * normalizedTile.x, subtexSize.y * normalizedTile.y };
+		glm::vec2 normalizedTile = glm::vec2{ (F32)tileSize.x / (F32)m_Data.Width, (F32)tileSize.y / (F32)m_Data.Height };
+		glm::vec2 begin = glm::vec2{ (F32)subtexCoords.x * normalizedTile.x, (F32)subtexCoords.y * normalizedTile.y };
+		glm::vec2 end = begin + glm::vec2{ (F32)subtexSize.x * normalizedTile.x, (F32)subtexSize.y * normalizedTile.y };
 		return { {
 			{ begin.x,	begin.y },
 			{ end.x,	begin.y },
@@ -191,20 +191,36 @@ namespace Engine
 	{
 		switch (format)
 		{
-		case Texture::PixelFormat::Red:			    return GL_RED;
 		case Texture::PixelFormat::RedInteger:	    return GL_RED_INTEGER;
-		case Texture::PixelFormat::RG:		        return GL_RG;
-		case Texture::PixelFormat::RGInteger:	    return GL_RG_INTEGER;
 		case Texture::PixelFormat::RGB:		        return GL_RGB;
-		case Texture::PixelFormat::RGBInteger:	    return GL_RGB_INTEGER;
 		case Texture::PixelFormat::RGBA:			return GL_RGBA;
-		case Texture::PixelFormat::RGBAInteger:	    return GL_RGBA_INTEGER;
-		case Texture::PixelFormat::Depth:		    return GL_DEPTH;
 		case Texture::PixelFormat::DepthStencil:	return GL_DEPTH_STENCIL;
-		case Texture::PixelFormat::Alpha:		    return GL_ALPHA;
+		case Engine::Texture::PixelFormat::None:
+			ENGINE_CORE_FATAL("Pixel format for texture is unset!");
+			break;
+		default:
+			ENGINE_CORE_FATAL("Pixel format in unimplemented!");
+			break;
 		}
 		ENGINE_CORE_ERROR("Unknown type of pixel format");
 		return 0;
 	}
 
+	U32 OpenGLTexture::GetPixelDataType(Texture::PixelFormat format)
+	{
+		switch (format)
+		{
+		case Texture::PixelFormat::RedInteger:	    return GL_INT;
+		case Texture::PixelFormat::RGB:		        return GL_UNSIGNED_BYTE;
+		case Texture::PixelFormat::RGBA:			return GL_UNSIGNED_BYTE;
+		case Engine::Texture::PixelFormat::None:
+			ENGINE_CORE_FATAL("Pixel format for texture is unset!");
+			break;
+		default:
+			ENGINE_CORE_FATAL("Pixel format in unimplemented!");
+			break;
+		}
+		ENGINE_CORE_ERROR("Unknown type of pixel format");
+		return 0;
+	}
 }

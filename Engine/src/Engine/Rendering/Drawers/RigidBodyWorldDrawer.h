@@ -11,11 +11,12 @@ namespace Engine
 	class RigidBodyWorldDrawer
 	{
     public:
-		static void Draw(const RigidBodyWorld2D& world);
+		static void Draw(const Physics::RigidBodyWorld2D& world);
 	};
 
-	inline void RigidBodyWorldDrawer::Draw(const RigidBodyWorld2D& world)
+	inline void RigidBodyWorldDrawer::Draw(const Physics::RigidBodyWorld2D& world)
 	{
+	    using namespace Physics;
         for (const RigidBodyListEntry2D* bodyEntry = world.GetBodyList(); bodyEntry != nullptr; bodyEntry = bodyEntry->Next)
         {
             RigidBody2D* body = bodyEntry->Body;

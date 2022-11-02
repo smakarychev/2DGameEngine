@@ -1,4 +1,3 @@
-#pragma once
 #include "enginepch.h"
 
 #include "Platform/Windows/WindowsInput.h"
@@ -10,6 +9,7 @@ namespace Engine
 	std::map<KeyCode, bool>		Input::s_ReleasedKeys;
 	std::map<MouseCode, bool>	Input::s_ReleasedButtons;
 	glm::vec2					Input::s_MainViewportOffset = glm::vec2(0.0f, 0.0f);
+	glm::vec2					Input::s_MainViewportSize = glm::vec2(1600.0f, 900.0f);
 
 	void Input::OnUpdate()
 	{

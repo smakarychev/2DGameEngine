@@ -3,10 +3,11 @@
 
 namespace Engine
 {
-	SpriteAnimation::SpriteAnimation(Texture* sprites, const glm::uvec2& startPoint, const glm::uvec2& spriteSize, U32 frameCount, U32 fpsSpeed)
-		: m_SpriteSheet(sprites), m_StartPosition(startPoint), m_SpriteSize(spriteSize), m_FrameCount(frameCount), m_FrameDuration(1.0f / fpsSpeed)
+	SpriteAnimation::SpriteAnimation(Texture* sprites, const glm::uvec2& startPoint, const glm::uvec2& spriteSize, U32 frameCount, U32 fpsSpeed, F32 maxDuration)
+		: m_SpriteSheet(sprites), m_StartPosition(startPoint), m_SpriteSize(spriteSize), m_FrameCount(frameCount),
+		  m_FrameDuration(1.0f / static_cast<F32>(fpsSpeed)), m_MaxDuration(maxDuration)
 	{
-		std::array<glm::vec2, 2> uvRect;
+		std::array<glm::vec2, 2> uvRect{};
 		uvRect[0] = { m_StartPosition.x + m_SpriteSize.x * m_CurrentFrame, m_StartPosition.y };
 		uvRect[1] = { m_StartPosition.x + m_SpriteSize.x * (m_CurrentFrame + 1), m_StartPosition.y + m_SpriteSize.y };
 		uvRect[0] /= glm::vec2{ m_SpriteSheet->GetData().Width, m_SpriteSheet->GetData().Height };
@@ -21,16 +22,18 @@ namespace Engine
 	
 	void SpriteAnimation::Update(F32 dt)
 	{
+		// If animation is not looped.
 		m_TotalDuration += dt;
-		// If frame is displayed long enought.
-		if (m_TotalDuration < m_FrameDuration) return;
-		while (m_TotalDuration > m_FrameDuration)
+		m_TimeAccumulator += dt;
+		// If frame is displayed long enough.
+		if (m_TimeAccumulator < m_FrameDuration) return;
+		while (m_TimeAccumulator > m_FrameDuration)
 		{
 			m_CurrentFrame++;
-			m_TotalDuration -= m_FrameDuration;
+			m_TimeAccumulator -= m_FrameDuration;
 		}
 		m_CurrentFrame = m_CurrentFrame % m_FrameCount;
-		std::array<glm::vec2, 2> uvRect;
+		std::array<glm::vec2, 2> uvRect{};
 		uvRect[0] = { m_StartPosition.x + m_SpriteSize.x * m_CurrentFrame, m_StartPosition.y };
 		uvRect[1] = { m_StartPosition.x + m_SpriteSize.x * (m_CurrentFrame + 1), m_StartPosition.y + m_SpriteSize.y };
 		uvRect[0] /= glm::vec2{ m_SpriteSheet->GetData().Width, m_SpriteSheet->GetData().Height };

@@ -41,6 +41,8 @@ namespace Engine
 		};
 
 	public:
+		virtual ~RendererAPI() = default;
+		
 		virtual void Init() = 0;
 		
 		virtual void ClearScreen() = 0;
@@ -59,7 +61,7 @@ namespace Engine
 
 		static U32 GetNativeDataType(RendererAPI::DataType type);
 
-		static APIType Get() { return s_APIType; };
+		static APIType Get() { return s_APIType; }
 
 		static Ref<RendererAPI> Create();
 	private:

@@ -6,7 +6,7 @@
 
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	bool Intersects(const AABB2D& first, const AABB2D& second)
 	{
@@ -294,6 +294,5 @@ namespace Engine
 			}
 			return 2;
 		}
-	}
+	}	
 }
-

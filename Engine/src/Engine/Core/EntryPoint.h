@@ -20,6 +20,6 @@ int main(int argc, char** argv)
 	}
 	Engine::Renderer::ShutDown();
 	Engine::ResourceManager::ShutDown();
-	Engine::DefaultContactListener::Shutdown();
+	Engine::Physics::DefaultContactListener::Shutdown();
 	Engine::MemoryManager::ShutDown();
 }

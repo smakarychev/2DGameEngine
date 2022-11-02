@@ -3,7 +3,6 @@
 #include "Renderer2D.h"
 #include "RenderCommand.h"
 
-#include "Engine/Core/Core.h"
 #include "Engine/Memory/MemoryManager.h"
 
 namespace Engine
@@ -12,158 +11,81 @@ namespace Engine
 
     void Renderer2D::Init()
     {
-        // Initialize batch shader and batch buffers.
-        s_BatchData.BatchShader = Shader::ReadShaderFromFile("assets/shaders/batchShader.glsl");
-        s_BatchData.TextShader = Shader::ReadShaderFromFile("assets/shaders/textShader.glsl");
-        s_BatchData.LineShader = Shader::ReadShaderFromFile("assets/shaders/lineShader.glsl");
+        s_BatchData.TriangleBatchEditor.InitData("assets/shaders/batchShaderEditor.glsl");
+        s_BatchData.TriangleBatch.InitData("assets/shaders/batchShader.glsl");
 
-        //*************** Init lines *********************************************************
-        {
-            BatchDataLines lineBatch;
-            auto vbo = VertexBuffer::Create(nullptr, lineBatch.MaxVertices * sizeof(BatchVertexLine));
-            vbo->SetVertexLayout(BatchVertexLine::GetLayout());
-            U32* indices = NewArr<U32>(lineBatch.MaxIndices);
-            for (U32 i = 0; i + 2 < lineBatch.MaxIndices; i += 2)
-            {
-                indices[i] = i;
-                indices[i + 1] = i + 1;
-            }
-            auto ibo = IndexBuffer::Create(indices, lineBatch.MaxIndices);
-            lineBatch.VAO = VertexArray::Create();
-            lineBatch.VAO->AddVertexBuffer(vbo);
-            lineBatch.VAO->SetIndexBuffer(ibo);
+        s_BatchData.LineBatch.InitData("assets/shaders/lineShader.glsl");
+        s_BatchData.LineBatch.SetPrimitiveType(RendererAPI::PrimitiveType::Line);
+        
+        s_BatchData.TextBatch.InitData("assets/shaders/textShader.glsl");
 
-            lineBatch.VerticesMemory = NewArr<U8>(lineBatch.MaxVertices * sizeof(BatchVertexLine));
-            lineBatch.CurrentVertexPointer = reinterpret_cast<BatchVertexLine*>(lineBatch.VerticesMemory);
-            s_BatchData.LineBatch = lineBatch;
-
-            DeleteArr<U32>(indices, lineBatch.MaxIndices);
-        }
-        //*************** Init quad **********************************************************
-        {
-            s_BatchData.ReferenceQuad.Position[0] = glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
-            s_BatchData.ReferenceQuad.Position[1] = glm::vec4(0.5f, -0.5f, 0.0f, 1.0f);
-            s_BatchData.ReferenceQuad.Position[2] = glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
-            s_BatchData.ReferenceQuad.Position[3] = glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f);
-
-            s_BatchData.ReferenceQuad.UV[0] = glm::vec2(0.0f, 0.0f);
-            s_BatchData.ReferenceQuad.UV[1] = glm::vec2(1.0f, 0.0f);
-            s_BatchData.ReferenceQuad.UV[2] = glm::vec2(1.0f, 1.0f);
-            s_BatchData.ReferenceQuad.UV[3] = glm::vec2(0.0f, 1.0f);
-
-            // Indices structure is predictable.
-            BatchData quadBatch;
-            U32* indices = NewArr<U32>(quadBatch.MaxIndices);
-            for (U32 i = 0; i + 6 < quadBatch.MaxIndices; i += 6)
-            {
-                U32 currVer = quadBatch.CurrentVertices;
-                indices[i] = currVer + 0;
-                indices[i + 1] = currVer + 1;
-                indices[i + 2] = currVer + 3;
-                indices[i + 3] = currVer + 1;
-                indices[i + 4] = currVer + 2;
-                indices[i + 5] = currVer + 3;
-                quadBatch.CurrentVertices += 4;
-            }
-            quadBatch.CurrentVertices = 0;
-
-            auto vbo = VertexBuffer::Create(nullptr, quadBatch.MaxVertices * sizeof(BatchVertex));
-            vbo->SetVertexLayout(BatchVertex::GetLayout());
-            auto ibo = IndexBuffer::Create(indices, quadBatch.MaxIndices);
-            quadBatch.VAO = VertexArray::Create();
-            quadBatch.VAO->AddVertexBuffer(vbo);
-            quadBatch.VAO->SetIndexBuffer(ibo);
-
-            quadBatch.VerticesMemory = NewArr<U8>(quadBatch.MaxVertices * sizeof(BatchVertex));
-            quadBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(quadBatch.VerticesMemory);
-            s_BatchData.QuadBatch = quadBatch;
-
-            DeleteArr<U32>(indices, quadBatch.MaxIndices);
-        }
-        //*************** Init regular polygon ***********************************************
-        {
-            BatchData polygonBatch;
-            auto vbo = VertexBuffer::Create(nullptr, polygonBatch.MaxVertices * sizeof(BatchVertex));
-            vbo->SetVertexLayout(BatchVertex::GetLayout());
-            auto ibo = IndexBuffer::Create(nullptr, polygonBatch.MaxIndices);
-            polygonBatch.VAO = VertexArray::Create();
-            polygonBatch.VAO->AddVertexBuffer(vbo);
-            polygonBatch.VAO->SetIndexBuffer(ibo);
-
-            polygonBatch.VerticesMemory = NewArr<U8>(polygonBatch.MaxVertices * sizeof(BatchVertex));
-            polygonBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(polygonBatch.VerticesMemory);
-            polygonBatch.IndicesMemory = NewArr<U8>(polygonBatch.MaxIndices * sizeof(U32));
-            polygonBatch.CurrentIndexPointer = reinterpret_cast<U32*>(polygonBatch.IndicesMemory);
-            s_BatchData.PolygonBatch = polygonBatch;
-        }
-        //*************** Init text **********************************************************
-        {
-            BatchData textBatch;
-            U32* indices = NewArr<U32>(textBatch.MaxIndices);
-            for (U32 i = 0; i + 6 < textBatch.MaxIndices; i += 6)
-            {
-                U32 currVer = textBatch.CurrentVertices;
-                indices[i] = currVer + 0;
-                indices[i + 1] = currVer + 1;
-                indices[i + 2] = currVer + 3;
-                indices[i + 3] = currVer + 1;
-                indices[i + 4] = currVer + 2;
-                indices[i + 5] = currVer + 3;
-                textBatch.CurrentVertices += 4;
-            }
-            textBatch.CurrentVertices = 0;
-
-            auto vbo = VertexBuffer::Create(nullptr, textBatch.MaxVertices * sizeof(BatchVertex));
-            vbo->SetVertexLayout(BatchVertex::GetLayout());
-            auto ibo = IndexBuffer::Create(indices, textBatch.MaxIndices);
-            textBatch.VAO = VertexArray::Create();
-            textBatch.VAO->AddVertexBuffer(vbo);
-            textBatch.VAO->SetIndexBuffer(ibo);
-
-            textBatch.VerticesMemory = NewArr<U8>(textBatch.MaxVertices * sizeof(BatchVertex));
-            textBatch.CurrentVertexPointer = reinterpret_cast<BatchVertex*>(textBatch.VerticesMemory);
-            s_BatchData.TextBatch = textBatch;
-
-            DeleteArr<U32>(indices, textBatch.MaxIndices);
-        }
+        
+        s_BatchData.ReferenceQuad.Position = {
+            glm::vec2{-0.5f, -0.5f}, glm::vec2{0.5f, -0.5f}, glm::vec2{0.5f, 0.5f}, glm::vec2{-0.5f, 0.5f}
+        };
+        s_BatchData.ReferenceQuad.Indices = {0, 1, 3, 1, 2, 3};
     }
 
-    void Renderer2D::BeginScene(Ref<Camera> camera, SortingLayer* sortingLayer)
+    void Renderer2D::BeginScene(Camera* camera, SortingLayer* sortingLayer)
     {
         s_BatchData.CameraViewProjection = camera->GetViewProjection();
         s_BatchData.SortingLayer = sortingLayer;
-        s_BatchData.Camera = camera.get();
+        s_BatchData.Camera = camera;
         s_BatchData.RenderQueue.Clear();
+        
+        s_BatchData.TriangleBatch.SetCamera(camera);
+        s_BatchData.LineBatch.SetCamera(camera);
+        s_BatchData.TextBatch.SetCamera(camera);
+        s_BatchData.TriangleBatchEditor.SetCamera(camera);
+        s_BatchData.LineBatchEditor.SetCamera(camera);
+        s_BatchData.TextBatchEditor.SetCamera(camera);
     }
 
     void Renderer2D::EndScene()
     {
         RenderCommand::EnableCull(false);
-
-        //s_BatchData.RenderQueue.Execute();
-        // Lines are rendered first because they are less likely to be transparent.
-        // (transparency is only partially supported yet).
-        if (s_BatchData.LineBatch.CurrentIndices > 0)
+        if (s_BatchData.TriangleBatch.ShouldFlush())
         {
-            Flush(s_BatchData.LineBatch);
-            ResetBatch(s_BatchData.LineBatch);
+            s_BatchData.TriangleBatch.Flush();
+            s_BatchData.TriangleBatch.Reset();
         }
 
-        if (s_BatchData.QuadBatch.CurrentIndices > 0)
+        if (s_BatchData.LineBatch.ShouldFlush())
         {
-            Flush(s_BatchData.QuadBatch);
-            ResetBatch(s_BatchData.QuadBatch);
+            s_BatchData.LineBatch.Flush();
+            s_BatchData.LineBatch.Reset();
         }
-        if (s_BatchData.PolygonBatch.CurrentIndices > 0)
+
+        if (s_BatchData.TextBatch.ShouldFlush())
         {
-            Flush(s_BatchData.PolygonBatch);
-            ResetBatch(s_BatchData.PolygonBatch);
+            RenderCommand::SetDepthTestMode(RendererAPI::Mode::Read);
+            s_BatchData.TextBatch.Flush();
+            s_BatchData.TextBatch.Reset();
+            RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
         }
-        if (s_BatchData.TextBatch.CurrentIndices > 0)
+        
+
+        if (s_BatchData.TriangleBatchEditor.ShouldFlush())
         {
-            Flush(s_BatchData.TextBatch, *s_BatchData.TextShader);
-            ResetBatch(s_BatchData.TextBatch);
+            s_BatchData.TriangleBatchEditor.Flush();
+            s_BatchData.TriangleBatchEditor.Reset();
         }
+        
+        if (s_BatchData.LineBatchEditor.ShouldFlush())
+        {
+            s_BatchData.LineBatchEditor.Flush();
+            s_BatchData.LineBatchEditor.Reset();
+        }
+
+        if (s_BatchData.TextBatchEditor.ShouldFlush())
+        {
+            RenderCommand::SetDepthTestMode(RendererAPI::Mode::Read);
+            s_BatchData.TextBatchEditor.Flush();
+            s_BatchData.TextBatchEditor.Reset();
+            RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
+        }
+        
+        
         //ENGINE_INFO("Renderer2D total draw calls: {}", s_BatchData.DrawCalls);
         s_BatchData.DrawCalls = 0;
     }
@@ -277,19 +199,8 @@ namespace Engine
             DrawOutlineCall(transform, spriteRenderer, depth);
             return;
         }
-        BatchData& quadBatch = s_BatchData.QuadBatch;
-        CheckForFlush(quadBatch, 4, 6);
-        const F32 textureIndex = GetTextureIndex(quadBatch, spriteRenderer.Texture);
-        const auto& referenceQuad = s_BatchData.ReferenceQuad;
-
-        // Create new quad.
-        for (U32 i = 0; i < 4; i++)
-        {
-            PushVertex(quadBatch, referenceQuad.Position[i], transform, depth, textureIndex,
-                       spriteRenderer.UV[i], spriteRenderer.Tint, spriteRenderer.Tiling);
-        }
-        quadBatch.CurrentVertices += 4;
-        quadBatch.CurrentIndices += 6;
+        s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(spriteRenderer),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawQuadCall(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
@@ -300,77 +211,31 @@ namespace Engine
             DrawOutlineCall(transform, spriteRenderer, depth);
             return;
         }
-        BatchData& quadBatch = s_BatchData.QuadBatch;
-        CheckForFlush(quadBatch, 4, 6);
-        const F32 textureIndex = GetTextureIndex(quadBatch, spriteRenderer.Texture);
-        const auto& referenceQuad = s_BatchData.ReferenceQuad;
-
-        // Create new quad.
-        for (U32 i = 0; i < 4; i++)
-        {
-            PushVertex(quadBatch, referenceQuad.Position[i], transform, depth, textureIndex,
-                       spriteRenderer.UV[i], spriteRenderer.Tint, spriteRenderer.Tiling);
-        }
-        quadBatch.CurrentVertices += 4;
-        quadBatch.CurrentIndices += 6;
+        s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(spriteRenderer),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawPolygonCall(const Component::Transform2D& transform,
                                      const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
-        BatchData& polygonBatch = s_BatchData.PolygonBatch;
-        const RegularPolygon& polygon = *polygonRenderer.Polygon;
-        CheckForFlush(polygonBatch, polygon.GetNumberOfVertices(), polygon.GetNumberOfIndices());
-        const F32 textureIndex = GetTextureIndex(polygonBatch, polygonRenderer.Texture);
-
-        for (U32 i = 0; i < polygon.GetNumberOfVertices(); i++)
-        {
-            PushVertex(polygonBatch, polygon.GetVertices()[i], transform, depth, textureIndex,
-                       polygon.GetUVs()[i], polygonRenderer.Tint, polygonRenderer.Tiling);
-        }
-        for (const auto i : polygon.GetIndices())
-        {
-            U32* index = polygonBatch.CurrentIndexPointer;
-            *index = i + polygonBatch.CurrentVertices;
-            polygonBatch.CurrentIndexPointer++;
-        }
-        polygonBatch.CurrentVertices += U32(polygon.GetVertices().size());
-        polygonBatch.CurrentIndices += U32(polygon.GetIndices().size());
+        s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(polygonRenderer),
+                                               polygonRenderer.Polygon->GetVertices(),
+                                               polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawPolygonCall(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer,
                                      F32 depth)
     {
-        BatchData& polygonBatch = s_BatchData.PolygonBatch;
-        const RegularPolygon& polygon = *polygonRenderer.Polygon;
-        CheckForFlush(polygonBatch, polygon.GetNumberOfVertices(), polygon.GetNumberOfIndices());
-        const F32 textureIndex = GetTextureIndex(polygonBatch, polygonRenderer.Texture);
-
-        for (U32 i = 0; i < polygon.GetNumberOfVertices(); i++)
-        {
-            PushVertex(polygonBatch, polygon.GetVertices()[i], transform, depth, textureIndex,
-                       polygon.GetUVs()[i], polygonRenderer.Tint, polygonRenderer.Tiling);
-        }
-        for (const auto i : polygon.GetIndices())
-        {
-            U32* index = polygonBatch.CurrentIndexPointer;
-            *index = i + polygonBatch.CurrentVertices;
-            polygonBatch.CurrentIndexPointer++;
-        }
-        polygonBatch.CurrentVertices += U32(polygon.GetVertices().size());
-        polygonBatch.CurrentIndices += U32(polygon.GetIndices().size());
+        s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(polygonRenderer),
+                                               polygonRenderer.Polygon->GetVertices(),
+                                               polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawFontCall(const Component::FontRenderer& fontRenderer, const std::string& text, F32 depth)
     {
-        BatchData& textBatch = s_BatchData.TextBatch;
-        CheckForFlush(textBatch, 4, 6);
         const Font& font = *fontRenderer.Font;
-        F32 textureIndex = GetTextureIndex(textBatch, &font.GetAtlas());
-        const auto& referenceQuad = s_BatchData.ReferenceQuad;
-
-        F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() * s_BatchData.Camera->
-            GetPixelCoefficient(1.0f);
+        const F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() *
+            s_BatchData.Camera->GetPixelCoefficient(1.0f);
         F32 x = fontRenderer.FontRect.Min.x;
         F32 y = fontRenderer.FontRect.Min.y;
 
@@ -387,34 +252,20 @@ namespace Engine
                 y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
                 x = fontRenderer.FontRect.Min.x;
             }
-            // Create new quad.
-            for (U32 i = 0; i < 4; i++)
-            {
-                Component::Transform2D transform{
-                    glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff,
-                    glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
-                    glm::vec2{1.0f, 0.0f}
-                };
-                PushVertex(textBatch, referenceQuad.Position[i], transform,
-                           depth,
-                           textureIndex,
-                           fontRenderer.Font->GetCharacters()[ch].UV[i],
-                           fontRenderer.Tint,
-                           glm::vec2{1.0f});
-            }
-            textBatch.CurrentVertices += 4;
-            textBatch.CurrentIndices += 6;
+            Component::Transform2D transform{
+                glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff,
+                glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
+                glm::vec2{1.0f, 0.0f}
+            };
+            s_BatchData.TextBatch.PushVertices(transform, depth, ShadingInfoCr::Create(fontRenderer, ch),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
             x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
         }
     }
 
     void Renderer2D::DrawFontFixedCall(const Component::FontRenderer& fontRenderer, const std::string& text)
     {
-        BatchData& textBatch = s_BatchData.TextBatch;
-        CheckForFlush(textBatch, 4, 6);
         const Font& font = *fontRenderer.Font;
-        F32 textureIndex = GetTextureIndex(textBatch, &font.GetAtlas());
-        const auto& referenceQuad = s_BatchData.ReferenceQuad;
 
         F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() * s_BatchData.Camera->GetPixelCoefficient();
         F32 xminPx = fontRenderer.FontRect.Min.x;
@@ -442,95 +293,170 @@ namespace Engine
                 y -= font.GetLineHeight() * fontSizeCoeff;
                 x = xminPx;
             }
-            // Create new quad.
-            for (U32 i = 0; i < 4; i++)
-            {
-                Component::Transform2D transform{
-                    glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff + glm::vec2{
-                        s_BatchData.Camera->GetPosition()
-                    },
-                    glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
-                    glm::vec2{1.0f, 0.0f}
-                };
-                PushVertex(textBatch, referenceQuad.Position[i], transform,
-                           1.0f,
-                           textureIndex,
-                           fontRenderer.Font->GetCharacters()[ch].UV[i],
-                           fontRenderer.Tint,
-                           glm::vec2{1.0f});
-            }
-            textBatch.CurrentVertices += 4;
-            textBatch.CurrentIndices += 6;
+            Component::Transform2D transform{
+                glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff + glm::vec2{
+                    s_BatchData.Camera->GetPosition()
+                },
+                glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
+                glm::vec2{1.0f, 0.0f}
+            };
+            s_BatchData.TextBatch.PushVertices(transform, 1.0f, ShadingInfoCr::Create(fontRenderer, ch),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
             x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
         }
     }
 
     void Renderer2D::DrawLineCall(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, F32 depth)
     {
-        BatchDataLines& lineBatch = s_BatchData.LineBatch;
-        CheckForFlush(lineBatch, 2, 2);
-        // Create new line.
-        BatchVertexLine* vertex = lineBatch.CurrentVertexPointer;
-        vertex->Position = glm::vec3{from.x, from.y, depth};
-        vertex->Color = color;
-        lineBatch.CurrentVertexPointer++;
-        vertex = lineBatch.CurrentVertexPointer;
-        vertex->Position = glm::vec3{to.x, to.y, depth};
-        vertex->Color = color;
-        lineBatch.CurrentVertexPointer++;
-
-        lineBatch.CurrentVertices += 2;
-        lineBatch.CurrentIndices += 2;
+        ShadingInfo<std::array<glm::vec2, 2>> shi;
+        shi.Tint = color;
+        s_BatchData.LineBatch.PushVertices(depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
     }
 
     void Renderer2D::DrawQuadEditorCall(I32 entityId, const Component::Transform2D& transform,
                                         const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                         RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, spriteRenderer, depth);
+            return;
+        }
+        s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(spriteRenderer),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawQuadEditorCall(I32 entityId, const glm::mat3& transform,
                                         const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                         RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, spriteRenderer, depth);
+            return;
+        }
+        s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(spriteRenderer),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawPolygonEditorCall(I32 entityId, const Component::Transform2D& transform,
                                            const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
+        s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
+                                               polygonRenderer.Polygon->GetVertices(),
+                                               polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawPolygonEditorCall(I32 entityId, const glm::mat3& transform,
                                            const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
+        s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
+                                               polygonRenderer.Polygon->GetVertices(),
+                                               polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawFontEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
                                         const std::string& text, F32 depth)
     {
+        const Font& font = *fontRenderer.Font;
+        const F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() *
+            s_BatchData.Camera->GetPixelCoefficient(1.0f);
+        F32 x = fontRenderer.FontRect.Min.x;
+        F32 y = fontRenderer.FontRect.Min.y;
+
+        for (auto& ch : text)
+        {
+            if (ch == ' ')
+            {
+                x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
+                continue;
+            }
+
+            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > fontRenderer.FontRect.Min.x)
+            {
+                y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
+                x = fontRenderer.FontRect.Min.x;
+            }
+            Component::Transform2D transform{
+                glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff,
+                glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
+                glm::vec2{1.0f, 0.0f}
+            };
+            s_BatchData.TextBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(fontRenderer, ch),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+            x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
+        }
     }
 
     void Renderer2D::DrawFontFixedEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
                                              const std::string& text)
     {
+        const Font& font = *fontRenderer.Font;
+
+        F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() * s_BatchData.Camera->GetPixelCoefficient();
+        F32 xminPx = fontRenderer.FontRect.Min.x;
+        F32 xmaxPx = fontRenderer.FontRect.Max.x;
+        F32 yminPx = fontRenderer.FontRect.Min.y;
+        xminPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
+        xmaxPx -= (F32)s_BatchData.Camera->GetViewportWidth() / 2.0f;
+        yminPx = (F32)s_BatchData.Camera->GetViewportHeight() / 2.0f - fontRenderer.FontSize - yminPx;
+        xminPx *= s_BatchData.Camera->GetPixelCoefficient();
+        xmaxPx *= s_BatchData.Camera->GetPixelCoefficient();
+        yminPx *= s_BatchData.Camera->GetPixelCoefficient();
+        F32 x = xminPx;
+        F32 y = yminPx;
+
+        for (auto& ch : text)
+        {
+            if (ch == ' ')
+            {
+                x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
+                continue;
+            }
+
+            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > xmaxPx)
+            {
+                y -= font.GetLineHeight() * fontSizeCoeff;
+                x = xminPx;
+            }
+            Component::Transform2D transform{
+                glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff + glm::vec2{
+                    s_BatchData.Camera->GetPosition()
+                },
+                glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
+                glm::vec2{1.0f, 0.0f}
+            };
+            s_BatchData.TextBatchEditor.PushVertices(entityId, transform, 1.0f, ShadingInfoCr::Create(fontRenderer, ch),
+                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+            x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
+        }
     }
 
     void Renderer2D::DrawLineEditorCall(I32 entityId, const glm::vec2& from, const glm::vec2& to,
                                         const glm::vec4& color, F32 depth)
     {
+        ShadingInfo<std::array<glm::vec2, 2>> shi;
+        shi.Tint = color;
+        s_BatchData.LineBatchEditor.PushVertices(entityId, depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
     }
 
     void Renderer2D::DrawOutlineCall(const Component::Transform2D& transform,
                                      const Component::SpriteRenderer& spriteRenderer, F32 depth)
     {
-        auto& referenceQuad = s_BatchData.ReferenceQuad;
+        const auto& referenceQuad = s_BatchData.ReferenceQuad;
         BatchVertex vertices[4];
         // Create new quad.
         for (U32 i = 0; i < 4; i++)
         {
             BatchVertex& vertex = vertices[i];
-            vertex.Position = glm::vec3(referenceQuad.Position[i]);
-            InitVertexGeometryData(vertex, glm::vec3{transform.Position, depth}, transform.Scale, transform.Rotation);
+            vertex.Position = glm::vec3(referenceQuad.Position[i], 0.0f);
+            vertex.Position *= glm::vec3{transform.Scale, 1.0f};
+            vertex.Position = glm::vec3{
+                transform.Rotation.RotationVec.x * vertex.Position.x - transform.Rotation.RotationVec.y * vertex.Position.y,
+                transform.Rotation.RotationVec.y * vertex.Position.x + transform.Rotation.RotationVec.x * vertex.Position.y,
+                0.0f
+            };
+            vertex.Position += glm::vec3{transform.Position, depth};
         }
         DrawLine(vertices[0].Position, vertices[1].Position, spriteRenderer.Tint);
         DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint);
@@ -547,7 +473,7 @@ namespace Engine
         for (U32 i = 0; i < 4; i++)
         {
             BatchVertex& vertex = vertices[i];
-            vertex.Position = transform * glm::vec3(glm::vec2(referenceQuad.Position[i]), 1.0f) + glm::vec3{
+            vertex.Position = transform * glm::vec3(referenceQuad.Position[i], 1.0f) + glm::vec3{
                 0.0f, 0.0f, depth
             };
         }
@@ -557,53 +483,16 @@ namespace Engine
         DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint);
     }
 
-    F32 Renderer2D::GetTextureIndex(BatchData& batch, Texture* texture)
-    {
-        F32 textureIndex = -1.0f;
-        if (texture != nullptr)
-        {
-            bool textureFound = false;
-            for (U32 i = 0; i < batch.CurrentTextureIndex; i++)
-            {
-                if (batch.UsedTextures[i] == texture)
-                {
-                    textureIndex = F32(i);
-                    textureFound = true;
-                    break;
-                }
-            }
-            // If no such texture in the batch.
-            if (textureFound == false)
-            {
-                if (batch.CurrentTextureIndex >= batch.MaxTextures)
-                {
-                    Flush(batch, *s_BatchData.TextShader);
-                    ResetBatch(batch);
-                }
-                batch.UsedTextures[batch.CurrentTextureIndex] = texture;
-                textureIndex = F32(batch.CurrentTextureIndex);
-                batch.CurrentTextureIndex++;
-            }
-        }
-        return textureIndex;
-    }
-
     void Renderer2D::ShutDown()
     {
-        s_BatchData.BatchShader.reset();
-        s_BatchData.TextShader.reset();
-        s_BatchData.LineShader.reset();
-        s_BatchData.QuadBatch.VAO.reset();
-        s_BatchData.PolygonBatch.VAO.reset();
-        s_BatchData.TextBatch.VAO.reset();
-        s_BatchData.LineBatch.VAO.reset();
-        DeleteArr<U8>(s_BatchData.QuadBatch.VerticesMemory, s_BatchData.QuadBatch.MaxVertices * sizeof(BatchVertex));
-        DeleteArr<U8>(s_BatchData.PolygonBatch.VerticesMemory,
-                      s_BatchData.PolygonBatch.MaxVertices * sizeof(BatchVertex));
-        DeleteArr<U8>(s_BatchData.PolygonBatch.IndicesMemory, s_BatchData.PolygonBatch.MaxIndices * sizeof(U32));
-        DeleteArr<U8>(s_BatchData.TextBatch.VerticesMemory, s_BatchData.TextBatch.MaxVertices * sizeof(BatchVertex));
-        DeleteArr<U8>(s_BatchData.LineBatch.VerticesMemory,
-                      s_BatchData.LineBatch.MaxVertices * sizeof(BatchVertexLine));
+        s_BatchData.TriangleBatch.Shutdown();
+        s_BatchData.LineBatch.Shutdown();
+        s_BatchData.TextBatch.Shutdown();
+        
+        s_BatchData.TriangleBatchEditor.Shutdown();
+        s_BatchData.LineBatchEditor.Shutdown();
+        s_BatchData.TextBatchEditor.Shutdown();
+
         ENGINE_CORE_INFO("Renderer2D shutdown");
     }
 }

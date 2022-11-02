@@ -2,7 +2,7 @@
 
 namespace Engine
 {
-	// TODO: rebuild with ECS?
+	// TODO: rebuild with ECS? upd: rebuild what?
 	class Light
 	{
 

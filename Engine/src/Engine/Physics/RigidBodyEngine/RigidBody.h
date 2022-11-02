@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Engine
+namespace Engine::Physics
 {
 	using namespace Types;
 

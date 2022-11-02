@@ -4,7 +4,7 @@
 
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 
-namespace Engine
+namespace Engine::Physics
 {
 	// Represents intersection info of pair of 2 rigidbodies,
 	// after resolution those bodies are no longer intersecting,

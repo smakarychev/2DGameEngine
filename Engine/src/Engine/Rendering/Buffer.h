@@ -186,8 +186,8 @@ namespace Engine
 		virtual const Spec& GetSpec() const = 0;
 		virtual U32 GetColorBufferId(U32 colorBufferIndex) const = 0;
 		virtual Texture& GetColorBuffer(U32 colorBufferIndex) const = 0;
-		virtual Texture& GetAttachment(U32 attachmentBufferIndex) const = 0;
-		virtual PixelData ReadPixel(U32 colorBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) = 0;
+		virtual PixelData ReadPixel(U32 colorBufferIndex, U32 x, U32 y, RendererAPI::DataType dataType) const = 0;
+		virtual void ClearAttachment(U32 colorBufferIndex, RendererAPI::DataType dataType, void* value) = 0;
 
 		static Ref<FrameBuffer> Create(const Spec& spec);
 	};

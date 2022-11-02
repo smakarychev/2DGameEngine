@@ -28,12 +28,13 @@ namespace Engine
 		void SetMagnificationFilter(Filter filter) override;
 		void SetWrapSMode(WrapMode mode) override;
 		void SetWrapTMode(WrapMode mode) override;
+		static U32 GetFormat(Texture::PixelFormat format);
+		static U32 GetPixelDataType(Texture::PixelFormat format);
 	private:
 		// Returns internalformat - format pair.
 		std::pair<U32, U32> GetInternalFormatFormatPair(Texture::PixelFormat format);
-		U32 GetFormat(Texture::PixelFormat format);
 	private:
-		U32 m_Id;
+		U32 m_Id{};
 		TextureData m_Data;
 	};
 }

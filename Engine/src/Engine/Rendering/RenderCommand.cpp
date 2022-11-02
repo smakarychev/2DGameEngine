@@ -63,35 +63,6 @@ namespace Engine
 		s_API->SetViewport(width, height);
 	}
 
-	void RenderCommand::DrawQuadBatched(void* parameters)
-	{
-		
-	}
-	
-	void RenderCommand::DrawQuadMatBatched(void* parameters)
-	{
-		
-	}
-	
-	void RenderCommand::DrawPolygonBatched(void* parameters)
-	{
-		
-	}
-	
-	void RenderCommand::DrawFontFixedBatched(void* parameters)
-	{
-		
-	}
-	
-	void RenderCommand::DrawFontBatched(void* parameters)
-	{
-	
-	}
-	
-	void RenderCommand::DrawLine(void* parameters)
-	{
-		
-	}
 }
 
 
