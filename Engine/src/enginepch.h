@@ -8,7 +8,9 @@
 #include <future>
 #include <chrono>
 #include <compare>
+#include <concepts>
 
+#include <ranges>
 #include <string>
 #include <sstream>
 #include <ostream>

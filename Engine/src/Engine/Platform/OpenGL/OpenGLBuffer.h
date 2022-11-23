@@ -11,11 +11,11 @@ namespace Engine
 	{
 	public:
 		OpenGLVertexBuffer(void* data, U32 size);
-		~OpenGLVertexBuffer();
+		~OpenGLVertexBuffer() override;
 		U32 GetId() const override { return m_Id; }
 
 		void SetVertexLayout(const VertexLayout& layout) override { m_Layout = layout; }
-		VertexLayout& GetVertexLayout() override { return m_Layout; };
+		VertexLayout& GetVertexLayout() override { return m_Layout; }
 
 		void SetData(void* data, U32 size, U32 offset = 0) override;
 
@@ -30,7 +30,7 @@ namespace Engine
 	{
 	public:
 		OpenGLIndexBuffer(U32* data, U32 count);
-		~OpenGLIndexBuffer();
+		~OpenGLIndexBuffer() override;
 		U32 GetId() const override { return m_Id; }
 
 		U32 GetCount() const override { return m_Count; }
@@ -47,15 +47,15 @@ namespace Engine
 	{
 	public:
 		OpenGLVertexArray();
-		~OpenGLVertexArray();
+		~OpenGLVertexArray() override;
 
 		void AddVertexBuffer(std::shared_ptr<VertexBuffer> buffer) override;
 		void SetIndexBuffer(std::shared_ptr<IndexBuffer> buffer) override;
 		
-		std::shared_ptr<IndexBuffer> GetIndexBuffer() override { return m_IndexBuffer; };
-		std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() { return m_VertexBuffers; }
+		std::shared_ptr<IndexBuffer> GetIndexBuffer() override { return m_IndexBuffer; }
+		std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() override { return m_VertexBuffers; }
 
-		void Bind() override;
+		void Bind() const override;
 		U32 GetId() const override { return m_Id; }
 	private:
 		std::vector<std::shared_ptr<VertexBuffer>> m_VertexBuffers;
@@ -69,9 +69,9 @@ namespace Engine
 	{
 	public:
 		OpenGLFrameBuffer(FrameBuffer::Spec spec);
-		~OpenGLFrameBuffer();
-		void Bind() override;
-		void Unbind() override;
+		~OpenGLFrameBuffer() override;
+		void Bind() const override;
+		void Unbind() const override;
 		void Resize(U32 width, U32 height) override;
 		const Spec& GetSpec() const override { return m_Spec; }
 		U32 GetColorBufferId(U32 colorBufferIndex) const override;

@@ -6,7 +6,8 @@
 namespace Engine
 {
 	std::vector<MemoryManager::MarkedAllocator> MemoryManager::s_Allocators;
-
+	std::vector<Ref<MemoryManager::ManagedPoolAllocator>>  MemoryManager::s_ManagedPools;
+	
 	std::vector<MarkedInterval> MemoryManager::s_MarkedIntervals;
 	bool MemoryManager::s_IsPendingProbe;
 	MemoryManager::MemoryManagerStats MemoryManager::s_Stats;
@@ -50,7 +51,12 @@ namespace Engine
 
 	void MemoryManager::ShutDown()
 	{
-		PrintStats();
+		PrintPoolsStats();
+		// Delete all managed pools.
+		for (auto& pool : s_ManagedPools)
+		{
+			pool.reset();
+		}
 		// Delete all allocators.
 		for (auto&& markAlloc : s_Allocators)
 		{
@@ -58,6 +64,7 @@ namespace Engine
 				delete alloc;
 			}, markAlloc.Allocator);
 		}
+		PrintStats();
 	}
 
 	void* MemoryManager::Alloc(U64 sizeBytes)
@@ -107,6 +114,14 @@ namespace Engine
 		}
 	}
 
+	MemoryManager::ManagedPoolAllocator& MemoryManager::GetPoolAllocator(U64 typeSizeBytes)
+	{
+		auto newPool = CreateRef<ManagedPoolAllocator>(typeSizeBytes);
+		newPool->GetUnderlyingAllocator()->SetDebugName("mPool" + std::to_string(typeSizeBytes));
+		s_ManagedPools.emplace_back(newPool);
+		return *s_ManagedPools.back();
+	}
+
 	void MemoryManager::PrintStats()
 	{
 		// Note: imgui leaks memory >:(.
@@ -128,6 +143,29 @@ namespace Engine
 			s_Stats.IsIncomplete,
 			s_Stats.GetLeakedMemory(), !s_Stats.IsIncomplete
 		);
+		
+	}
+
+	void MemoryManager::PrintPoolsStats()
+	{
+		for (auto&& managedPool : s_ManagedPools)
+		{
+			const auto& stats = managedPool->GetStats();
+			ENGINE_CORE_INFO("Pool of {} info:", managedPool->GetUnderlyingAllocator()->GetDebugName());
+			ENGINE_CORE_TRACE(R""""(
+			Allocations: {} ({} bytes)
+			Deallocations: {} ({} bytes)
+			Total Deallocations: {}
+			Allocation / Deallocation difference: {}
+			Memory leak: {} bytes
+			)"""",
+				stats.TotalAllocations, stats.TotalAllocationsBytes,
+				stats.TotalDeallocations, stats.TotalDeallocationsBytes,
+				stats.TotalDeallocations + stats.TotalUnsizedDeallocations,
+				stats.TotalAllocations - (stats.TotalDeallocations + stats.TotalUnsizedDeallocations),
+				stats.GetLeakedMemory()
+			);
+		}
 	}
 
 	void MemoryManager::ProbeAll()

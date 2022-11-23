@@ -89,7 +89,7 @@ namespace Engine::Physics
 	template<typename Bounds>
 	inline void BroadPhase2D<Bounds>::RemoveCollider(I32 nodeId)
 	{
-		m_Tree.Remove(nodeId);
+		m_Tree.Pop(nodeId);
 	}
 
 	template<typename Bounds>

@@ -5,7 +5,7 @@
 #include "Engine/Memory/MemoryManager.h"
 #include "Engine/Resource/ResourceManager.h"
 
-#include "Platform/OpenGL/OpenGLShader.h"
+#include "Engine/Platform/OpenGL/OpenGLShader.h"
 
 namespace Engine
 {

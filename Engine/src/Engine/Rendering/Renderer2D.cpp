@@ -138,7 +138,7 @@ namespace Engine
         DrawLineCall(from, to, color, 0.0f);
     }
 
-    void Renderer2D::DrawQuadEditor(I32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawQuadEditor(U32 entityId, const Component::Transform2D& transform,
                                     const Component::SpriteRenderer& spriteRenderer,
                                     RendererAPI::PrimitiveType primitiveType)
     {
@@ -147,7 +147,7 @@ namespace Engine
         DrawQuadEditorCall(entityId, transform, spriteRenderer, depth, primitiveType);
     }
 
-    void Renderer2D::DrawQuadEditor(I32 entityId, const glm::mat3& transform,
+    void Renderer2D::DrawQuadEditor(U32 entityId, const glm::mat3& transform,
                                     const Component::SpriteRenderer& spriteRenderer,
                                     RendererAPI::PrimitiveType primitiveType)
     {
@@ -156,7 +156,7 @@ namespace Engine
         DrawQuadEditorCall(entityId, transform, spriteRenderer, depth, primitiveType);
     }
 
-    void Renderer2D::DrawPolygonEditor(I32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygonEditor(U32 entityId, const Component::Transform2D& transform,
                                        const Component::PolygonRenderer& polygonRenderer)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
@@ -164,7 +164,7 @@ namespace Engine
         DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth);
     }
 
-    void Renderer2D::DrawPolygonEditor(I32 entityId, const glm::mat3& transform,
+    void Renderer2D::DrawPolygonEditor(U32 entityId, const glm::mat3& transform,
                                        const Component::PolygonRenderer& polygonRenderer)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
@@ -172,20 +172,20 @@ namespace Engine
         DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth);
     }
 
-    void Renderer2D::DrawFontEditor(I32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text)
+    void Renderer2D::DrawFontEditor(U32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(fontRenderer.SortingLayer,
                                                                         fontRenderer.OrderInLayer);
         DrawFontEditorCall(entityId, fontRenderer, text, depth);
     }
 
-    void Renderer2D::DrawFontFixedEditor(I32 entityId, const Component::FontRenderer& fontRenderer,
+    void Renderer2D::DrawFontFixedEditor(U32 entityId, const Component::FontRenderer& fontRenderer,
                                          const std::string& text)
     {
         DrawFontFixedEditorCall(entityId, fontRenderer, text);
     }
 
-    void Renderer2D::DrawLineEditor(I32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
+    void Renderer2D::DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
     {
         DrawLineEditorCall(entityId, from, to, color, 0.0f);
     }
@@ -313,7 +313,7 @@ namespace Engine
         s_BatchData.LineBatch.PushVertices(depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
     }
 
-    void Renderer2D::DrawQuadEditorCall(I32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawQuadEditorCall(U32 entityId, const Component::Transform2D& transform,
                                         const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                         RendererAPI::PrimitiveType primitiveType)
     {
@@ -326,7 +326,7 @@ namespace Engine
                                                s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
-    void Renderer2D::DrawQuadEditorCall(I32 entityId, const glm::mat3& transform,
+    void Renderer2D::DrawQuadEditorCall(U32 entityId, const glm::mat3& transform,
                                         const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                         RendererAPI::PrimitiveType primitiveType)
     {
@@ -339,7 +339,7 @@ namespace Engine
                                                s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
-    void Renderer2D::DrawPolygonEditorCall(I32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygonEditorCall(U32 entityId, const Component::Transform2D& transform,
                                            const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
@@ -347,7 +347,7 @@ namespace Engine
                                                polygonRenderer.Polygon->GetIndices());
     }
 
-    void Renderer2D::DrawPolygonEditorCall(I32 entityId, const glm::mat3& transform,
+    void Renderer2D::DrawPolygonEditorCall(U32 entityId, const glm::mat3& transform,
                                            const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
@@ -355,7 +355,7 @@ namespace Engine
                                                polygonRenderer.Polygon->GetIndices());
     }
 
-    void Renderer2D::DrawFontEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
+    void Renderer2D::DrawFontEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
                                         const std::string& text, F32 depth)
     {
         const Font& font = *fontRenderer.Font;
@@ -388,7 +388,7 @@ namespace Engine
         }
     }
 
-    void Renderer2D::DrawFontFixedEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
+    void Renderer2D::DrawFontFixedEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
                                              const std::string& text)
     {
         const Font& font = *fontRenderer.Font;
@@ -432,7 +432,7 @@ namespace Engine
         }
     }
 
-    void Renderer2D::DrawLineEditorCall(I32 entityId, const glm::vec2& from, const glm::vec2& to,
+    void Renderer2D::DrawLineEditorCall(U32 entityId, const glm::vec2& from, const glm::vec2& to,
                                         const glm::vec4& color, F32 depth)
     {
         ShadingInfo<std::array<glm::vec2, 2>> shi;

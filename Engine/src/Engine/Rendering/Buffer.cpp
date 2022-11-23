@@ -4,7 +4,7 @@
 
 #include "Engine/Memory/MemoryManager.h"
 
-#include "Platform/OpenGL/OpenGLBuffer.h"
+#include "Engine/Platform/OpenGL/OpenGLBuffer.h"
 
 namespace Engine
 {

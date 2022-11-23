@@ -1,37 +1,34 @@
 #pragma once
 
-#include "Engine/ECS/Entity.h"
+#include "Engine/ECS/EntityId.h"
 
 namespace Engine
 {
-	using namespace Types;
-	using EntityVector = std::vector<std::shared_ptr<Entity>>;
-	using EntityMap = std::unordered_map<std::string, EntityVector>;
-	using IdToEntityMap = std::unordered_map<I32, Entity*>;
-	
 	class EntityManager
 	{
+		friend class Registry;
 	public:
-		EntityManager();
+		using EntityVector = std::vector<Entity>;
+		EntityManager() = default;
 
-		// Shall be called at the beginning of each frame.
-		void Update();
+		Entity AddEntity(const std::string& tag = "Default");
 
-		Entity& AddEntity(const std::string& tag);
+		void DeleteEntity(Entity entityId);
 
-		EntityVector& GetEntities();
-		EntityVector& GetEntities(const std::string& tag);
-		Entity* GetEntityById(I32 id) { return m_IdToEntity[id]; }
+		bool IsAlive(Entity entityId);
 
-	private:
-		EntityVector m_Entities;
-		EntityMap m_EntityMap;
-		// Later this will go, as entity will become id.
-		IdToEntityMap m_IdToEntity;
+		U32 GetNullEntityFlag() const { return m_EntitiesSparseSet.GetNullFlag(); }
 		
-		EntityVector m_ToAdd;
+	private:
+		struct EntityIdTag
+		{
+			Entity Entity;
+			std::string Tag;
+		};
+		SparseSet<U32, Entity, EntityIdDecomposer> m_EntitiesSparseSet;
+		std::unordered_map<std::string, SparseSet<U32, Entity, EntityIdDecomposer>> m_EntitiesMap;
+		EntityVector m_FreeEntities{};
 
-		U64 m_TotalEntities = 0;
-
+		U32 m_TotalEntities = 0;
 	};
 }

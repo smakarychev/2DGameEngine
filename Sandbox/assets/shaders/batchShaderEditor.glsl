@@ -6,7 +6,7 @@ layout (location = 1) in float a_textureIndex;
 layout (location = 2) in vec2 a_texcoord;
 layout (location = 3) in vec2 a_textureTiling;
 layout (location = 4) in vec4 a_color;
-layout (location = 5) in int a_entityId;
+layout (location = 5) in uint a_entityId;
 
 
 out vec2 vTexCoord;
@@ -14,7 +14,7 @@ out vec4 vColor;
 out float vTextureIndex;
 out vec2 vTextureTiling;
 
-layout (location = 1) out flat int v_EntityId;
+layout (location = 1) out flat uint v_EntityId;
 
 uniform mat4 u_modelViewProjection;
 
@@ -38,10 +38,10 @@ in vec4 vColor;
 in float vTextureIndex;
 in vec2 vTextureTiling;
 
-layout (location = 1) in flat int v_EntityId;
+layout (location = 1) in flat uint v_EntityId;
 
 layout(location = 0) out vec4 finalColor;
-layout(location = 1) out int entityId;
+layout(location = 1) out uint entityId;
 
 layout (binding = 0) uniform sampler2D[32] textures;
 

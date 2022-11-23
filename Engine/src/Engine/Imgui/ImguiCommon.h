@@ -12,7 +12,8 @@ namespace Engine
 {
 	namespace ImguiState
 	{
-		static bool BlockEventPropagation = false;
+		inline bool BlockEventPropagation = false;
+		inline glm::vec2 MainViewportSize = {1600.0f, 900.0f};
 	}
 	
 	inline glm::vec2 ImguiMainViewport(const FrameBuffer& frameBuffer, const std::string& windowName = "Viewport")

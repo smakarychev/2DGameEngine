@@ -103,7 +103,7 @@ namespace Engine
                           const VerticesContainer& referenceVertices,
                           const IndicesContainer& indices);
         template <typename Transform, typename VerticesContainer, typename IndicesContainer>
-        void PushVertices(I32 entityId,
+        void PushVertices(U32 entityId,
                           const Transform& transform,
                           F32 depth,
                           const ShadingInfo<VerticesContainer>& shadingInfo,
@@ -115,7 +115,7 @@ namespace Engine
                           const VerticesContainer& transformedVertices,
                           const IndicesContainer& indices);
         template <typename VerticesContainer, typename IndicesContainer>
-        void PushVertices(I32 entityId,
+        void PushVertices(U32 entityId,
                           F32 depth,
                           const ShadingInfo<VerticesContainer>& shadingInfo,
                           const VerticesContainer& transformedVertices,
@@ -154,6 +154,7 @@ namespace Engine
                                         const glm::vec2& textureTiling = glm::vec2{1.0f});
     private:
         Data m_Data;
+        bool m_IsInitialized = false;
     };
 
     template <typename Vertex>
@@ -172,11 +173,13 @@ namespace Engine
         m_Data.IndicesMemory = NewArr<U8>(m_Data.MaxIndices * sizeof(U32));
         m_Data.CurrentVertexPointer = reinterpret_cast<Vertex*>(m_Data.VerticesMemory);
         m_Data.CurrentIndexPointer = reinterpret_cast<U32*>(m_Data.IndicesMemory);
+        m_IsInitialized = true;
     }
 
     template <typename Vertex>
     void BatchRenderer2D<Vertex>::Shutdown()
     {
+        if (!m_IsInitialized) return;
         m_Data.Shader.reset();
         m_Data.Vao.reset();
         DeleteArr<Vertex>(reinterpret_cast<Vertex*>(m_Data.VerticesMemory), m_Data.MaxVertices);
@@ -234,7 +237,7 @@ namespace Engine
 
     template <typename Vertex>
     template <typename Transform, typename VerticesContainer, typename IndicesContainer>
-    void BatchRenderer2D<Vertex>::PushVertices(I32 entityId,
+    void BatchRenderer2D<Vertex>::PushVertices(U32 entityId,
                                                const Transform& transform,
                                                F32 depth,
                                                const ShadingInfo<VerticesContainer>& shadingInfo,
@@ -275,7 +278,7 @@ namespace Engine
 
     template <typename Vertex>
     template <typename VerticesContainer, typename IndicesContainer>
-    void BatchRenderer2D<Vertex>::PushVertices(I32 entityId, F32 depth,
+    void BatchRenderer2D<Vertex>::PushVertices(U32 entityId, F32 depth,
                                                const ShadingInfo<VerticesContainer>& shadingInfo,
                                                const VerticesContainer& transformedVertices,
                                                const IndicesContainer& indices)
@@ -446,7 +449,7 @@ namespace Engine
             glm::vec2 UV = glm::vec2{0.0f};
             glm::vec2 TextureTiling = glm::vec2{1.0f};
             glm::vec4 Color = glm::vec4{1.0f};
-            I32 EntityId = -1;
+            U32 EntityId = std::numeric_limits<U32>::max();
 
             // Maybe just static member?
             static const VertexLayout& GetLayout()
@@ -458,18 +461,18 @@ namespace Engine
                         {LayoutElement::Float2, "a_uv"},
                         {LayoutElement::Float2, "a_textureTiling"},
                         {LayoutElement::Float4, "a_color"},
-                        {LayoutElement::Int,    "a_entityId"},
+                        {LayoutElement::UInt,    "a_entityId"},
                     }
                 };
                 return layout;
             }
 
-            BatchVertexEditor(I32 entityId, const glm::vec3& pos, const glm::vec2& uv, const glm::vec4 color) :
+            BatchVertexEditor(U32 entityId, const glm::vec3& pos, const glm::vec2& uv, const glm::vec4 color) :
                 Position(pos), UV(uv), Color(color), EntityId(entityId)
             {
             }
 
-            BatchVertexEditor(I32 entityId, const glm::vec3& pos, const glm::vec2& uv, const Texture& texture,
+            BatchVertexEditor(U32 entityId, const glm::vec3& pos, const glm::vec2& uv, const Texture& texture,
                               const glm::vec2& textureTiling = glm::vec2{1.0f}) :
                 Position(pos), TextureIndex(F32(texture.GetId())), UV(uv), TextureTiling(textureTiling),
                 EntityId(entityId)
@@ -505,7 +508,7 @@ namespace Engine
 
         struct BatchVertexLineEditor
         {
-            I32 EntityId = -1;
+            U32 EntityId = std::numeric_limits<U32>::max();
             glm::vec3 Position = glm::vec3{0.0f};
             glm::vec4 Color = glm::vec4{1.0f};
 
@@ -515,13 +518,13 @@ namespace Engine
                     {
                         {LayoutElement::Float3, "a_position"},
                         {LayoutElement::Float4, "a_color"},
-                        {LayoutElement::Int, "a_entityId"},
+                        {LayoutElement::UInt, "a_entityId"},
                     }
                 };
                 return layout;
             }
 
-            BatchVertexLineEditor(I32 entityId, const glm::vec3& pos, const glm::vec4 color) :
+            BatchVertexLineEditor(U32 entityId, const glm::vec3& pos, const glm::vec4 color) :
                 EntityId(entityId), Position(pos), Color(color)
             {
             }
@@ -597,20 +600,20 @@ namespace Engine
         static void DrawFontFixed(const Component::FontRenderer& fontRenderer, const std::string& text);
         static void DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4{1.0f});
 
-        static void DrawQuadEditor(I32 entityId, const Component::Transform2D& transform,
+        static void DrawQuadEditor(U32 entityId, const Component::Transform2D& transform,
                                    const Component::SpriteRenderer& spriteRenderer,
                                    RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
-        static void DrawQuadEditor(I32 entityId, const glm::mat3& transform,
+        static void DrawQuadEditor(U32 entityId, const glm::mat3& transform,
                                    const Component::SpriteRenderer& spriteRenderer,
                                    RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
-        static void DrawPolygonEditor(I32 entityId, const Component::Transform2D& transform,
+        static void DrawPolygonEditor(U32 entityId, const Component::Transform2D& transform,
                                       const Component::PolygonRenderer& polygonRenderer);
-        static void DrawPolygonEditor(I32 entityId, const glm::mat3& transform,
+        static void DrawPolygonEditor(U32 entityId, const glm::mat3& transform,
                                       const Component::PolygonRenderer& polygonRenderer);
-        static void DrawFontEditor(I32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text);
-        static void DrawFontFixedEditor(I32 entityId, const Component::FontRenderer& fontRenderer,
+        static void DrawFontEditor(U32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text);
+        static void DrawFontFixedEditor(U32 entityId, const Component::FontRenderer& fontRenderer,
                                         const std::string& text);
-        static void DrawLineEditor(I32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color);
+        static void DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color);
 
 
     private:
@@ -631,21 +634,21 @@ namespace Engine
         static void DrawFontFixedCall(const Component::FontRenderer& fontRenderer, const std::string& text);
         static void DrawLineCall(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, F32 depth = 0.0f);
 
-        static void DrawQuadEditorCall(I32 entityId, const Component::Transform2D& transform,
+        static void DrawQuadEditorCall(U32 entityId, const Component::Transform2D& transform,
                                        const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f,
                                        RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
-        static void DrawQuadEditorCall(I32 entityId, const glm::mat3& transform,
+        static void DrawQuadEditorCall(U32 entityId, const glm::mat3& transform,
                                        const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f,
                                        RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
-        static void DrawPolygonEditorCall(I32 entityId, const Component::Transform2D& transform,
+        static void DrawPolygonEditorCall(U32 entityId, const Component::Transform2D& transform,
                                           const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
-        static void DrawPolygonEditorCall(I32 entityId, const glm::mat3& transform,
+        static void DrawPolygonEditorCall(U32 entityId, const glm::mat3& transform,
                                           const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
-        static void DrawFontEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
+        static void DrawFontEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
                                        const std::string& text, F32 depth = 0.0f);
-        static void DrawFontFixedEditorCall(I32 entityId, const Component::FontRenderer& fontRenderer,
+        static void DrawFontFixedEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
                                             const std::string& text);
-        static void DrawLineEditorCall(I32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color,
+        static void DrawLineEditorCall(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color,
                                        F32 depth = 0.0f);
 
         static void DrawOutlineCall(const Component::Transform2D& transform,

@@ -6,13 +6,17 @@ namespace Engine
 {
 	using namespace Types;
 	// TODO: move to config.
-	static const U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 8192;
+	static constexpr U64 POOL_ALLOCATOR_INCREMENT_ELEMENTS = 8192;
+	static constexpr U64 POOL_ALLOCATOR_DEFAULT_COUNT = 16;
 	class PoolAllocator
 	{
 	public:
-		PoolAllocator(U64 typeSizeBytes, U64 count, U64 incrementElements = POOL_ALLOCATOR_INCREMENT_ELEMENTS);
+		PoolAllocator(U64 typeSizeBytes, U64 count = POOL_ALLOCATOR_DEFAULT_COUNT, U64 incrementElements = POOL_ALLOCATOR_INCREMENT_ELEMENTS);
 		~PoolAllocator();
 
+		// If vector-like behaviour is desired (warning : invalidation will happen).
+		void SetForceContinuous(bool enabled) { m_IsAlwaysContinuous = enabled; }
+		
 		// Get new element from the pull of free elements.
 		void* Alloc();
 
@@ -38,6 +42,8 @@ namespace Engine
 		// TODO: custom container
 		std::vector<U64> GetMemoryBounds() const;
 		void SetExpandCallback(void (*callbackFn)()) { m_CallbackFn = callbackFn; }
+		U64 GetBaseTypeSize() const { return m_TypeSizeBytes; }
+		void* GetPoolHead() const;
 	private:
 		void InitializePool(void* memory, U64 count);
 	private:
@@ -59,6 +65,8 @@ namespace Engine
 		// A pointer to the element to be taken from the pool.
 		PoolElement* m_FreePoolElement;
 
+		bool m_IsAlwaysContinuous = false;
+		
 		// TODO: have to change it to use custom memory manager.
 		std::vector<void*> m_AdditionalAllocations;
 

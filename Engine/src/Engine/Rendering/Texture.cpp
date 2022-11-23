@@ -4,7 +4,7 @@
 
 #include "Engine/Resource/ResourceManager.h"
 
-#include "Platform/OpenGL/OpenGLTexture.h"
+#include "Engine/Platform/OpenGL/OpenGLTexture.h"
 #include "Engine/Memory/MemoryManager.h"
 
 namespace Engine

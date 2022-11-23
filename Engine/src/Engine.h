@@ -34,7 +34,7 @@
 #include "Engine/Math/Random.h"
 
 /* All ECS related */
-#include "Engine/ECS/Entity.h"
+#include "Engine/ECS/EntityId.h"
 #include "Engine/ECS/Components.h"
 #include "Engine/ECS/EntityManager.h"
 

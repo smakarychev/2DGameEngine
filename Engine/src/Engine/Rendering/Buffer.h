@@ -121,7 +121,6 @@ namespace Engine
 		virtual VertexLayout& GetVertexLayout() = 0;
 		virtual void SetData(void* data, U32 size, U32 offset = 0) = 0;
 
-
 		static Ref<VertexBuffer> Create(void* data, U32 size);
 	};
 
@@ -130,9 +129,7 @@ namespace Engine
 	public:
 		virtual ~IndexBuffer() {}
 		virtual U32 GetId() const = 0;
-	
 		virtual U32 GetCount() const = 0;
-
 		virtual void SetData(U32* data, U32 count, U32 offset = 0) = 0;
 
 		static Ref<IndexBuffer> Create(U32* data, U32 count);
@@ -151,7 +148,7 @@ namespace Engine
 		virtual Ref<IndexBuffer> GetIndexBuffer() = 0;
 		virtual std::vector<Ref<VertexBuffer>>& GetVertexBuffers() = 0;
 
-		virtual void Bind() = 0;
+		virtual void Bind() const = 0;
 
 		static Ref<VertexArray> Create();
 	};
@@ -180,8 +177,8 @@ namespace Engine
 	public:
 		virtual ~FrameBuffer() {}
 		
-		virtual void Bind() = 0;
-		virtual void Unbind() = 0;
+		virtual void Bind() const = 0;
+		virtual void Unbind() const = 0;
 		virtual void Resize(U32 width, U32 height) = 0;
 		virtual const Spec& GetSpec() const = 0;
 		virtual U32 GetColorBufferId(U32 colorBufferIndex) const = 0;

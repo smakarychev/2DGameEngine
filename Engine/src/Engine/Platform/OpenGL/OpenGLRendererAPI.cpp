@@ -27,7 +27,7 @@ namespace Engine
 
 	void OpenGLRendererAPI::SetViewport(U32 width, U32 height)
 	{
-		glViewport(0, 0, width, height);
+		glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 	}
 
 	U32 OpenGLRendererAPI::GetNativeDataType(RendererAPI::DataType type)
@@ -75,13 +75,13 @@ namespace Engine
 	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray)
 	{
 		vertexArray->Bind();
-		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, (GLsizei)vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 	}
 
 	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray, U32 count)
 	{
 		vertexArray->Bind();
-		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 	}
 
 	void OpenGLRendererAPI::DrawIndexed(Ref<VertexArray> vertexArray, PrimitiveType type)
@@ -95,10 +95,10 @@ namespace Engine
 		switch (type)
 		{
 		case Engine::RendererAPI::PrimitiveType::Triangle:
-			glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+			glDrawElements(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 			break;
 		case Engine::RendererAPI::PrimitiveType::Line:
-			glDrawElements(GL_LINES, count, GL_UNSIGNED_INT, nullptr);
+			glDrawElements(GL_LINES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 			break;
 		}
 	}
@@ -111,8 +111,6 @@ namespace Engine
 		case Engine::RendererAPI::Mode::Read: glDepthMask(false);
 			break;
 		case Engine::RendererAPI::Mode::ReadWrite: glDepthMask(true);
-			break;
-		default:
 			break;
 		}
 	}
@@ -156,7 +154,7 @@ namespace Engine
 			}
 		}();
 		ENGINE_CORE_ERROR("OpenGL: {}, {}, {}, {}: {}", sourceStr, typeStr, severityStr, id, message);
-		ENGINE_ASSERT(false, "OpenGL error");
+		ENGINE_ASSERT(false, "OpenGL error")
 	}
 }
 

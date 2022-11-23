@@ -8,8 +8,26 @@ using namespace Engine::Types;
 class MoveLeftAction : public Action
 {
 public:
-    MoveLeftAction(EntityManager* manager, Status status, std::string debugName);
+    MoveLeftAction(Registry& registry, Status status = Status::Begin, std::string debugName = "MoveLeft");
     void Execute() override;
 private:
-    EntityManager* m_EntityManager = nullptr;
+    Registry* m_Registry = nullptr;
+};
+
+class MoveRightAction : public Action
+{
+public:
+    MoveRightAction(Registry& registry, Status status = Status::Begin, std::string debugName = "MoveRight");
+    void Execute() override;
+private:
+    Registry* m_Registry = nullptr;
+};
+
+class JumpAction : public Action
+{
+public:
+    JumpAction(Registry& registry, Status status = Status::Begin, std::string debugName = "Jump");
+    void Execute() override;
+private:
+    Registry* m_Registry = nullptr;
 };

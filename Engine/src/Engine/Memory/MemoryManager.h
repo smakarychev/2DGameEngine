@@ -5,9 +5,9 @@
 #include "FreelistRedBlackTreeAllocator.h"
 #include "PoolAllocator.h"
 #include "StackAllocator.h"
+#include "Engine/Core/Core.h"
 #include "Engine/Core/Log.h"
 
-#include <deque>
 #include <variant>
 
 namespace Engine
@@ -52,7 +52,7 @@ namespace Engine
 	class DeallocationSizeAwareDispatcher
 	{
 	public:
-		DeallocationSizeAwareDispatcher(void* address, U64 sizeBytes): m_Address(address), m_SizeBytes(sizeBytes), m_Dispatched(false)
+		DeallocationSizeAwareDispatcher(void* address, U64 sizeBytes): m_SizeBytes(sizeBytes), m_Address(address), m_Dispatched(false)
 		{ }
 
 		template <typename Fn>
@@ -105,8 +105,29 @@ namespace Engine
 			U64 TotalDeallocationsBytes = 0;
 			U32 TotalUnsizedDeallocations = 0;
 			bool IsIncomplete = false;
-			U64 GetLeakedMemory() { return TotalAllocationsBytes - TotalDeallocationsBytes; }
+			U64 GetLeakedMemory() const { return TotalAllocationsBytes - TotalDeallocationsBytes; }
 		};
+
+		struct ManagedPoolAllocator
+		{
+		public:
+			ManagedPoolAllocator(U64 typeSize)
+				: m_Allocator(CreateRef<PoolAllocator>(typeSize)), m_Stats(), m_BaseTypeSize(m_Allocator->GetBaseTypeSize())
+			{}
+			const MemoryManagerStats& GetStats() const { return m_Stats; }
+			PoolAllocator* GetUnderlyingAllocator() const { return m_Allocator.get(); }
+			U64 GetBaseTypeSize() const { return m_Allocator->GetBaseTypeSize(); }
+			
+			void* Alloc(U64 sizeBytes) { m_Stats.TotalAllocations++; m_Stats.TotalAllocationsBytes += m_BaseTypeSize; return m_Allocator->Alloc(sizeBytes); }
+			template <typename T> void* Alloc(U64 count = 1) { m_Stats.TotalAllocations++; m_Stats.TotalAllocationsBytes += count * m_BaseTypeSize; return m_Allocator->Alloc(count * sizeof(T)); }
+			void Dealloc(void* memory) { m_Stats.TotalDeallocations++; m_Stats.TotalDeallocationsBytes += m_BaseTypeSize; return m_Allocator->Dealloc(memory); }
+			void Dealloc(void* memory, [[maybe_unused]] U64 sizeBytes) { m_Stats.TotalDeallocations++; m_Stats.TotalDeallocationsBytes += m_BaseTypeSize; return m_Allocator->Dealloc(memory); }
+		private:
+			Ref<PoolAllocator> m_Allocator;
+			MemoryManagerStats m_Stats;
+			U64 m_BaseTypeSize = 0;
+		};
+		
 	public:
 		// Shall be called in entry point.
 		static void Init();
@@ -126,8 +147,14 @@ namespace Engine
 		// Dispatches and deallocates memory.
 		static void Dealloc(void* memory, U64 sizeBytes);
 
+		// Returns a new pool allocator to user, keeps track of alloc/dealloc stats.
+		static ManagedPoolAllocator& GetPoolAllocator(U64 typeSizeBytes);
+		template <typename T>
+		static ManagedPoolAllocator& GetPoolAllocator() { return GetPoolAllocator(sizeof(T)); }
+		
 		// Prints the current allocation/deallocation stats.
 		static void PrintStats();
+		static void PrintPoolsStats();
 
 	private:
 		static void ProbeAll();
@@ -178,6 +205,8 @@ namespace Engine
 
 		static std::vector<MarkedInterval> s_MarkedIntervals;
 
+		static std::vector<Ref<ManagedPoolAllocator>> s_ManagedPools;
+		
 		static bool s_IsPendingProbe;
 
 		static MemoryManagerStats s_Stats;
@@ -194,18 +223,18 @@ namespace Engine
 	T* New(Args&&... args)
 	{
 		void* memory = static_cast<void*>(MemoryManager::Alloc<T>(Count));
-		U8* memoryBytes = reinterpret_cast<U8*>(memory);
+		U8* memoryBytes = static_cast<U8*>(memory);
 		for (U64 i = 0; i < Count; i++) new (memoryBytes + i * sizeof(T)) T(std::forward<Args>(args)...);
-		return reinterpret_cast<T*>(memory);
+		return static_cast<T*>(memory);
 	}
 
 	template <typename T, typename ... Args>
 	T* NewArr(U64 count, Args&&... args)
 	{
 		void* memory = static_cast<void*>(MemoryManager::Alloc<T>(count));
-		U8* memoryBytes = reinterpret_cast<U8*>(memory);
+		U8* memoryBytes = static_cast<U8*>(memory);
 		for (U64 i = 0; i < count; i++) new (memoryBytes + i * sizeof(T)) T(std::forward<Args>(args)...);
-		return reinterpret_cast<T*>(memory);
+		return static_cast<T*>(memory);
 	}
 
 

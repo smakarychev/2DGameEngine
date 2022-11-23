@@ -2,6 +2,8 @@
 
 #include <Engine.h>
 
+#include "Engine/ECS/Registry.h"
+
 using namespace Engine;
 using namespace Engine::Types;
 
@@ -25,8 +27,8 @@ private:
 	void SetBounds();
 	void SetPaused(bool isPaused) { m_IsRunning = !isPaused; }
 	void SpawnPlayer();
-	void SpawnParticles(Entity& entity);
-	void SpawnBullet(Entity& entity, const glm::vec2& target);
+	void SpawnParticles(Entity entity);
+	void SpawnBullet(Entity entity, const glm::vec2& target);
 
 	void sEnemySpawner();
 	void sMovement(F32 dt);
@@ -35,9 +37,9 @@ private:
 	void sRender();
 	void sParticleUpdate();
 	void sSpecialAbility();
-	void sAddScore(Entity& entity);
+	void sAddScore(Entity entity);
 
-	bool Collide(Entity& a, Entity& b);
+	bool Collide(Entity a, Entity b);
 
 	bool OnWindowResize(WindowResizeEvent& event);
 private:
@@ -45,12 +47,13 @@ private:
 	Ref<Texture> m_Background;
 	Ref<CameraController> m_CameraController;
 
-	EntityManager m_Manager;
+	Registry m_Registry;
+	
 	U64 m_CurrentFrame = 0;
 	U64 m_LastEnemySpawnTime = 0;
 	U64 m_IsRunning = true;
 
-	Entity* m_Player = nullptr;
+	Entity m_Player;
 
 	AABB m_Bounds = {};
 

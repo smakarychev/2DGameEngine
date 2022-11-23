@@ -5,21 +5,21 @@
 
 namespace Engine
 {
-    void SceneUtils::AddDefaultPhysicalRigidBody2D(Entity& entity, Physics::RigidBodyWorld2D& world2D)
+    void SceneUtils::AddDefaultPhysicalRigidBody2D(Registry& registry, Entity entityId, Physics::RigidBodyWorld2D& world2D)
     {
-        ENGINE_CORE_ASSERT(entity.HasComponent<Component::Transform2D>(), "Transform is unset")
-        ENGINE_CORE_ASSERT(entity.HasComponent<Component::RigidBody2D>(), "RigidBody is unset")
+        ENGINE_CORE_ASSERT(registry.Has<Component::Transform2D>(entityId), "Transform is unset")
+        ENGINE_CORE_ASSERT(registry.Has<Component::RigidBody2D>(entityId), "RigidBody is unset")
         
-        auto& rb = entity.GetComponent<Component::RigidBody2D>();
+        auto& rb = registry.Get<Component::RigidBody2D>(entityId);
         Physics::RigidBodyDef2D rbDef;
-        rbDef.UserData = static_cast<void*>(&entity);
+        rbDef.UserData = (void*)(entityId.Id);
         rb.PhysicsBody = world2D.CreateBody(rbDef);
     }
 
-    void SceneUtils::AddDefaultBoxCollider2D(Entity& entity, Component::BoxCollider2D& boxCollider2D, Physics::RigidBodyWorld2D& world2D)
+    void SceneUtils::AddDefaultBoxCollider2D(Registry& registry, Entity entityId, Component::BoxCollider2D& boxCollider2D, Physics::RigidBodyWorld2D& world2D)
     {
-        ENGINE_CORE_ASSERT(entity.HasComponent<Component::RigidBody2D>(), "RigidBody is unset")
-        auto& rb = entity.GetComponent<Component::RigidBody2D>();
+        ENGINE_CORE_ASSERT(registry.Has<Component::RigidBody2D>(entityId), "RigidBody is unset")
+        auto& rb = registry.Get<Component::RigidBody2D>(entityId);
         
         Physics::ColliderDef2D colDef;
         Physics::BoxCollider2D box = Physics::BoxCollider2D(boxCollider2D.Offset, boxCollider2D.HalfSize);
@@ -27,20 +27,20 @@ namespace Engine
         boxCollider2D.PhysicsCollider = static_cast<Physics::BoxCollider2D*>(world2D.AddCollider(rb.PhysicsBody, colDef));
     }
 
-    void SceneUtils::SynchronizePhysics(Entity& entity, Physics::RigidBodyWorld2D& world2D)
+    void SceneUtils::SynchronizePhysics(Registry& registry, Entity entityId, Physics::RigidBodyWorld2D& world2D)
     {
-        ENGINE_CORE_ASSERT(entity.HasComponent<Component::Transform2D>(), "Transform is unset")
+        ENGINE_CORE_ASSERT(registry.Has<Component::Transform2D>(entityId), "Transform is unset")
         
-        if (entity.HasComponent<Component::RigidBody2D>() == false)
+        if (registry.Has<Component::RigidBody2D>(entityId) == false)
         {
             ENGINE_CORE_WARN("Rigid body component is unset, while explicitly requesting to sync physics.");
             return;
         }
-        auto& tf = entity.GetComponent<Component::Transform2D>();
-        auto& rb = entity.GetComponent<Component::RigidBody2D>();
+        auto& tf = registry.Get<Component::Transform2D>(entityId);
+        auto& rb = registry.Get<Component::RigidBody2D>(entityId);
         if (rb.PhysicsBody == nullptr)
         {
-            AddDefaultPhysicalRigidBody2D(entity, world2D);
+            AddDefaultPhysicalRigidBody2D(registry, entityId, world2D);
         }
         // Write component state to physics state.
         Physics::RigidBody2D* prb = rb.PhysicsBody;
@@ -50,20 +50,20 @@ namespace Engine
         const Physics::RigidBodyType2D prevType = prb->GetType();
         prb->SetType(rb.Type);
         
-        if (entity.HasComponent<Component::BoxCollider2D>() == false)
+        if (registry.Has<Component::BoxCollider2D>(entityId) == false)
         {
             // No warning, since it is valid to have r bodies without colliders.
             return;
         }
-        auto& col = entity.GetComponent<Component::BoxCollider2D>();
+        auto& col = registry.Get<Component::BoxCollider2D>(entityId);
         if (col.PhysicsCollider == nullptr)
         {
-            AddDefaultBoxCollider2D(entity, col, world2D);
+            AddDefaultBoxCollider2D(registry, entityId, col, world2D);
         }
         // Write component state to physics state.
         Physics::BoxCollider2D* pcol = col.PhysicsCollider;
         pcol->Center = col.Offset;
-        pcol->HalfSize = col.HalfSize;
+        pcol->HalfSize = col.HalfSize * tf.Scale;
         pcol->SetSensor(col.IsSensor);
         pcol->SetPhysicsMaterial(col.PhysicsMaterial);
         Component::BoxCollider2D* next = col.Next;
@@ -71,33 +71,33 @@ namespace Engine
         {
             if (next->PhysicsCollider == nullptr)
             {
-                AddDefaultBoxCollider2D(entity, *next, world2D);
-                // Write component state to physics state.
-                Physics::BoxCollider2D* pcol = next->PhysicsCollider;
-                pcol->Center = next->Offset;
-                pcol->HalfSize = next->HalfSize;
-                pcol->SetSensor(next->IsSensor);
-                pcol->SetPhysicsMaterial(next->PhysicsMaterial);
-                next = next->Next;
+                AddDefaultBoxCollider2D(registry, entityId, *next, world2D);
             }
+            // Write component state to physics state.
+            pcol = next->PhysicsCollider;
+            pcol->Center = next->Offset;
+            pcol->HalfSize = next->HalfSize * tf.Scale;
+            pcol->SetSensor(next->IsSensor);
+            pcol->SetPhysicsMaterial(next->PhysicsMaterial);
+            next = next->Next;
         }
 
         if (prb->GetType() == Physics::RigidBodyType2D::Dynamic && prevType != prb->GetType()) prb->RecalculateMass();
     }
 
-    void SceneUtils::SynchronizeWithPhysics(Entity& entity, Physics::RigidBodyWorld2D& world2D)
+    void SceneUtils::SynchronizeWithPhysics(Registry& registry, Entity entityId, Physics::RigidBodyWorld2D& world2D)
     {
-        ENGINE_CORE_ASSERT(entity.HasComponent<Component::Transform2D>(), "Transform is unset")
-        if (entity.HasComponent<Component::RigidBody2D>() == false)
+        ENGINE_CORE_ASSERT(registry.Has<Component::Transform2D>(entityId), "Transform is unset")
+        if (registry.Has<Component::RigidBody2D>(entityId) == false)
         {
             ENGINE_CORE_WARN("Rigid body component is unset, while explicitly requesting to sync with physics.");
             return;
         }
-        auto& tf = entity.GetComponent<Component::Transform2D>();
-        auto& rb = entity.GetComponent<Component::RigidBody2D>();
+        auto& tf = registry.Get<Component::Transform2D>(entityId);
+        auto& rb = registry.Get<Component::RigidBody2D>(entityId);
         if (rb.PhysicsBody == nullptr)
         {
-            ENGINE_CORE_WARN("Entity {} has no physical rigid body attached.", entity.Id);
+            ENGINE_CORE_WARN("Entity {} has no physical rigid body attached.", entityId.GetIndex());
         }
         tf.Position = rb.PhysicsBody->GetPosition();
         tf.Rotation = rb.PhysicsBody->GetRotation();

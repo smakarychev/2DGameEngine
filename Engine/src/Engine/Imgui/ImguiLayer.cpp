@@ -7,6 +7,8 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Input.h"
 #include "Engine/Memory/MemoryManager.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 namespace Engine
 {
@@ -62,7 +64,10 @@ namespace Engine
 		F32 offsetX = contentMin.x + ImGui::GetWindowPos().x;
 		
 		Input::SetMainViewportOffset({ -offsetX, -offsetY });
-		Input::SetMainViewportSize({contentMax.x - contentMin.x, contentMax.y - contentMin.y });
+		F32 mainViewportX = contentMax.x - contentMin.x;
+		F32 mainViewportY = contentMax.y - contentMin.y;
+		Input::SetMainViewportSize({mainViewportX, mainViewportY });
+		ImguiState::MainViewportSize = { mainViewportX, mainViewportY };
 		ImGui::End();
 
 		ImGui::Render();

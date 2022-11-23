@@ -1,57 +1,36 @@
 #include "enginepch.h"
 
 #include "Engine/ECS/EntityManager.h"
-#include "Engine/Memory/MemoryManager.h"
 
 namespace Engine
 {
-	EntityManager::EntityManager() = default;
-	
-	void EntityManager::Update()
-	{
-		// Delete all aliven't entities.
-		for (const auto& entity : m_Entities)
-		{
-			if (!entity->IsActive)	m_IdToEntity.erase(static_cast<I32>(entity->Id));
-		}
-		std::erase_if(m_Entities, [](auto ent) { return !ent->IsActive; });
-		for (auto& entityList : m_EntityMap | std::views::values)
-		{
-			std::erase_if(entityList, [](auto ent) { return !ent->IsActive; });
-		}
-		
-		// Add all new entities.
-		for (auto& e : m_ToAdd)
-		{
-			m_Entities.push_back(e);
+    Entity EntityManager::AddEntity(const std::string& tag)
+    {
+        Entity newEntity;
+        if (!m_FreeEntities.empty())
+        {
+            // Reuse entity.
+            newEntity = m_FreeEntities.back(); m_FreeEntities.pop_back();
+        }
+        else
+        {
+            // Generate new entity.
+            newEntity = Entity(static_cast<U32>(m_EntitiesSparseSet.GetDense().size()), 0);
+        }
+        m_EntitiesSparseSet.Push(newEntity);
+        m_TotalEntities++;
+        return newEntity;
+    }
 
-			if (!m_EntityMap.contains(e->Tag)) m_EntityMap.insert({ e->Tag, {e} });
-			else m_EntityMap[e->Tag].push_back(e);
-		}
+    void EntityManager::DeleteEntity(Entity entityId)
+    {
+        m_FreeEntities.push_back({entityId.GetIndex(), entityId.GetGeneration() + 1});
+        m_EntitiesSparseSet.Pop(entityId);
+        m_TotalEntities--;
+    }
 
-		m_ToAdd.clear();
-	}
-	
-	Entity& EntityManager::AddEntity(const std::string& tag)
-	{
-		const auto entity = CreateRef<Entity>(tag, m_TotalEntities++);
-		m_ToAdd.push_back(entity);
-		m_IdToEntity[static_cast<I32>(entity->Id)] = entity.get();
-		return *entity;
-	}
-	
-	EntityVector& EntityManager::GetEntities()
-	{
-		return m_Entities;
-	}
-	
-	EntityVector& EntityManager::GetEntities(const std::string& tag)
-	{
-		if (!m_EntityMap.contains(tag))
-		{
-			// Here we add empty vector for that tag to map, and return it.
-			m_EntityMap.insert({ tag, {} });
-		}
-		return m_EntityMap[tag];
-	}
+    bool EntityManager::IsAlive(Entity entityId)
+    {
+        return m_EntitiesSparseSet.Has(entityId);
+    }
 }

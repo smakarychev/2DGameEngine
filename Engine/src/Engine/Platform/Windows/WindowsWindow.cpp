@@ -12,7 +12,7 @@
 
 #include "Engine/Memory/MemoryManager.h"
 
-#include "Platform/OpenGL/OpenGLContext.h"
+#include "Engine/Platform/OpenGL/OpenGLContext.h"
 
 namespace Engine
 {
