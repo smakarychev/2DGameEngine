@@ -31,6 +31,11 @@ namespace Engine
 #			endif
 		}
 
+		constexpr bool IsPowerOf2(std::integral auto val)
+		{
+			return (val & (val - 1)) == 0;
+		}
+		
 		// Return a number which is >= `number` and is a power of 2.
 		inline U32 CeilToPower2(U32 number)
 		{
@@ -46,14 +51,14 @@ namespace Engine
 		// Returns the ceil(log2(number)).
 		inline U32 Log2(U32 number)
 		{
-			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.");
+			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.")
 			return 31 - CLZ(number);
 		}
 
 		// Returns the ceil(log2(number)).
 		inline U64 Log2(U64 number)
 		{
-			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.");
+			ENGINE_CORE_ASSERT(number != 0, "Log2 of 0 is undefined.")
 			return 63 - CLZ(number);
 		}
 
@@ -67,6 +72,13 @@ namespace Engine
 		inline bool CompareEqual(F64 a, F64 b)
 		{
 			return std::abs(a - b) <= std::numeric_limits<F64>::epsilon() * std::max(1.0, std::max(std::abs(a), std::abs(b)));
+		}
+
+		// Returns `value mod base` when base is the power of 2.
+		inline constexpr std::integral auto FastMod(std::integral auto value, std::integral auto base)
+		{
+			ENGINE_CORE_ASSERT(IsPowerOf2(base), "Base have to be a power of 2.")
+			return value & (base - 1);
 		}
 
 		// Clamps `val` between `min` and `max`.
@@ -110,5 +122,11 @@ namespace Engine
 		{
 			return static_cast<T>(3.14159265358979323846);
 		}
+
+		constexpr U64 I32PairKey(std::pair<I32, I32> pair)
+		{
+			return static_cast<U64>(pair.first) << 32 | static_cast<U32>(pair.second);
+		}
+		
 	}
 }

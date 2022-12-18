@@ -2,8 +2,6 @@
 
 #include "Engine/Core/Types.h"
 
-#include "Components.h"
-
 namespace Engine
 {
 	using namespace Types;
@@ -17,10 +15,11 @@ namespace Engine
 		U32 GetGeneration() const { return (Id & GENERATION_MASK) >> GENERATION_SHIFT; }
 		U32 GetIndex() const { return Id & INDEX_MASK; }
 
-		EntityId(U32 index = 0, U32 generation = 0)
+		constexpr EntityId(U32 index = 0, U32 generation = 0)
 		{
 			Id = ((generation << GENERATION_SHIFT) & GENERATION_MASK) | index;
 		}
+
 		operator U32() const { return Id; }
 
 		bool operator==(const EntityId& other) const
@@ -36,7 +35,8 @@ namespace Engine
 
 	using Entity = EntityId;
 
-	constexpr U32 NULL_ENTITY = std::numeric_limits<U32>::max() & EntityId::INDEX_MASK;
+	constexpr Entity NULL_ENTITY = std::numeric_limits<U32>::max() & Entity::INDEX_MASK;
+	
 	
 	struct EntityIdDecomposer
 	{
@@ -46,5 +46,18 @@ namespace Engine
 	struct EntityIdComposer
 	{
 		static EntityId Compose(U32 generation, U32 index) { return EntityId(index, generation); }
+	};
+}
+
+namespace std
+{
+	template <typename T> struct hash;
+	template<>
+	struct hash<Engine::EntityId>
+	{
+		Engine::U64 operator()(const Engine::EntityId& entity) const
+		{
+			return static_cast<Engine::U64>(entity.Id);
+		}
 	};
 }

@@ -64,12 +64,12 @@ namespace Engine::Physics
 	{
 		using ColliderList = ColliderListEntry2D;
 		friend class RigidBodyWorld2D;
-		FRIEND_MEMORY_FN;
+		FRIEND_MEMORY_FN
 	public:
 		void SetType(RigidBodyType2D type) { m_Type = type; }
 		RigidBodyType2D GetType() const { return m_Type; }
 		void SetUserData(void* userData) { m_UserData = userData; }
-		void* GetUserData() const { return m_UserData; }
+   		void* GetUserData() const { return m_UserData; }
 		void SetFlags(RigidBodyDef2D::BodyFlags flags) { m_Flags = flags; }
 		RigidBodyDef2D::BodyFlags GetFlags() const { return m_Flags; }
 
@@ -134,7 +134,7 @@ namespace Engine::Physics
 		// Apply the given force at some point (in world space).
 		void ApplyForce(const glm::vec2& force, const glm::vec2& point);
 
-		// Returns tranform, associated with rigidbody.
+		// Returns transform, associated with rigidbody.
 		Transform2D GetTransform() const;
 		glm::vec2 TransformToWorld(const glm::vec2& point) const;
 		glm::vec2 TransformDirectionToWorld(const glm::vec2& dir) const;
@@ -144,6 +144,7 @@ namespace Engine::Physics
 		RigidBody2D(const RigidBodyDef2D& rbDef);
 		~RigidBody2D();
 		Collider2D* AddCollider(const ColliderDef2D& colDef);
+		void RemoveCollider(Collider2D* collider);
 	private:
 		RigidBodyType2D m_Type;
 		RigidBodyListEntry2D* m_BodyListEntry;
@@ -151,7 +152,7 @@ namespace Engine::Physics
 		RigidBodyDef2D::BodyFlags m_Flags;
 		void* m_UserData = nullptr;
 
-		//? Change to Transfrom2D component?
+		//? Change to Transform2D component?
 		glm::vec2 m_Position;
 		glm::vec2 m_Rotation;
 

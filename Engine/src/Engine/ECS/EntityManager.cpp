@@ -15,7 +15,7 @@ namespace Engine
         else
         {
             // Generate new entity.
-            newEntity = Entity(static_cast<U32>(m_EntitiesSparseSet.GetDense().size()), 0);
+            newEntity = Entity(m_TotalEntities, 0);
         }
         m_EntitiesSparseSet.Push(newEntity);
         m_TotalEntities++;

@@ -2,6 +2,7 @@
 
 #include "Components.h"
 #include "EntityId.h"
+#include "Engine/Common/SparseSetPaged.h"
 
 #include "Engine/Memory/MemoryUtils.h"
 
@@ -19,74 +20,56 @@ namespace Engine
     
 	class ComponentPool
     {
-    public:
-        ComponentPool(U64 typeSizeBytes)
-            : m_Allocator(MemoryManager::GetPoolAllocator(typeSizeBytes))
-        {
-            m_Allocator.GetUnderlyingAllocator()->SetForceContinuous(true);
-            m_BaseTypeSizeBytes = m_Allocator.GetBaseTypeSize(); 
-        }
+	public:
+        ComponentPool(U32 typeSizeBytes);
+        
+        virtual ~ComponentPool();
 
         template <typename T, typename ... Args>
         T& Add(Entity entityId, Args&&... args);
 
         bool Has(Entity entityId) const;
-
-	    template <typename T>
+        
+        template <typename T>
         const T& Get(Entity entityId) const;
         template <typename T>
         T& Get(Entity entityId);
 
         template <typename T>
         void Pop(Entity entityId);
-
-        template <typename T>
-        void TryPop(Entity entityId);
-        void TryPop(Entity entityId);
+	    virtual void Pop(Entity entityId) = 0;
 
         template <typename T>
         const T& GetComponent(U32 componentIndex) const;
         template <typename T>
         T& GetComponent(U32 componentIndex);
-        void* GetComponentAddress(U32 componentIndex) const;
 
         U32 GetComponentCount() const { return static_cast<U32>(m_SparseSet.GetDense().size()); }
-
-        const std::vector<U32>& GetSparseEntities() const { return m_SparseSet.GetSparse(); }
-        const std::vector<Entity>& GetDenseEntities() const { return m_SparseSet.GetDense(); }
-        MemoryManager::ManagedPoolAllocator& GetAllocator() const { return m_Allocator; }
-
-	    void SetDebugName(const std::string& name) { m_DebugName = name; }
-	private:
-	    void PopWithComponent(Entity entityId);
-    public:
-        static constexpr U32 NULL_INDEX = std::numeric_limits<U32>::max();
+        const std::vector<Entity> GetDenseEntities() const { return m_SparseSet.GetDense(); }
     private:
-	    SparseSet<U32, Entity, EntityIdDecomposer> m_SparseSet;
-	    U64 m_BaseTypeSizeBytes;
-        MemoryManager::ManagedPoolAllocator& m_Allocator;
-
-	    std::string m_DebugName = "Cmp pool";
+        U8* GetOrCreate(U32 index);
+        const U8* TryGet(U32 index) const;
+        U8* TryGet(U32 index);
+	    template <typename T>
+        void PopWithComponent(Entity entityId);
+        void* GetComponentAddress(U32 componentIndex) const;
+    private:
+        std::vector<U8*> m_ComponentsPaged;
+        U32 m_TypeSizeBytes{};
+        SparseSetPaged<U32, Entity, EntityIdDecomposer> m_SparseSet;
     };
 
-    inline bool ComponentPool::Has(Entity entityId) const
+    inline ComponentPool::ComponentPool(U32 typeSizeBytes)
+        : m_TypeSizeBytes(typeSizeBytes)
     {
-        return m_SparseSet.Has(entityId);
     }
 
     template <typename T, typename ... Args>
     T& ComponentPool::Add(Entity entityId, Args&&... args)
     {
-        // Here we could check if entityId is within the bounds,
-        // but it is more convenient to assume that provided entityId
-        // is correct, and instead enlarge the sparse vector if it is out of bounds.
-        void* componentAddress = nullptr;
-        m_SparseSet.Push(entityId, [&componentAddress, this](U32 index)
-        {
-            m_Allocator.Alloc<T>();
-            PoolAllocator* underlying = m_Allocator.GetUnderlyingAllocator();
-            componentAddress = static_cast<U8*>(underlying->GetPoolHead()) + underlying->GetBaseTypeSize() * index;
-        });
+        U32 componentIndex = m_SparseSet.Push(entityId);
+        U8* componentPage = GetOrCreate(componentIndex);
+        void* componentAddress = componentPage + static_cast<U64>(m_TypeSizeBytes * Math::FastMod(componentIndex, SPARSE_SET_PAGE_SIZE));
         new(componentAddress) T(std::forward<Args>(args)...);
         return *static_cast<T*>(componentAddress);
     }
@@ -94,8 +77,8 @@ namespace Engine
     template <typename T>
     const T& ComponentPool::Get(Entity entityId) const
     {
-        ENGINE_CORE_ASSERT(m_SparseSet.Has(entityId), "Entity has no such component")
-        return GetComponent<T>(m_SparseSet.GetSparse()[entityId.GetIndex()]);
+        U32 componentIndex = m_SparseSet.GetIndexOf(entityId);
+        return GetComponent<T>(componentIndex);
     }
 
     template <typename T>
@@ -105,63 +88,9 @@ namespace Engine
     }
 
     template <typename T>
-    void ComponentPool::Pop(Entity entityId)
-    {
-        ENGINE_CORE_ASSERT(m_SparseSet.Has(entityId), "Entity has no such component")
-        PopWithComponent(entityId);
-    }
-
-    template <typename T>
-    void ComponentPool::TryPop(Entity entityId)
-    {
-        if (!m_SparseSet.Has(entityId)) return;
-        PopWithComponent(entityId);
-    }
-
-    inline void ComponentPool::TryPop(Entity entityId)
-    {
-        if (!m_SparseSet.Has(entityId)) return;
-        PopWithComponent(entityId);
-    }
-
-    inline void* ComponentPool::GetComponentAddress(U32 componentIndex) const
-    {
-        PoolAllocator* underlying = m_Allocator.GetUnderlyingAllocator();
-        return static_cast<U8*>(underlying->GetPoolHead()) + underlying->GetBaseTypeSize() * componentIndex;
-    }
-
-    inline void ComponentPool::PopWithComponent(Entity entityId)
-    {
-        auto popCallback = [this](U32 index)
-        {
-            PoolAllocator* underlying = m_Allocator.GetUnderlyingAllocator();
-            void* componentAddress = GetComponentAddress(index);
-            m_Allocator.Dealloc(componentAddress);
-        };
-        auto swapCallback = [this](U32 a, U32 b)
-        {
-            PoolAllocator* underlying = m_Allocator.GetUnderlyingAllocator();
-            // This is temp (not the name :) ).
-            void* aAddress = GetComponentAddress(a);
-            void* bAddress = GetComponentAddress(b);
-            U32 typeSizeBytes = static_cast<U32>(underlying->GetBaseTypeSize());
-            U8* temp = NewArr<U8>(typeSizeBytes);
-            MemoryUtils::Copy(temp, aAddress, typeSizeBytes);
-            MemoryUtils::Copy(aAddress, bAddress, typeSizeBytes);
-            MemoryUtils::Copy(bAddress, temp, typeSizeBytes);
-            DeleteArr<U8>(temp, typeSizeBytes);
-        };
-        m_SparseSet.Pop(entityId, popCallback, swapCallback);
-    }
-
-    template <typename T>
     const T& ComponentPool::GetComponent(U32 componentIndex) const
     {
-        ENGINE_CORE_ASSERT(componentIndex < m_SparseSet.GetDense().size(), "Invalid component index.")
-        PoolAllocator* underlying = m_Allocator.GetUnderlyingAllocator();
-        void* componentAddress = static_cast<U8*>(underlying->GetPoolHead()) +
-            underlying->GetBaseTypeSize() * componentIndex;
-        return *static_cast<T*>(componentAddress);
+        return *static_cast<T*>(GetComponentAddress(componentIndex));
     }
 
     template <typename T>
@@ -170,6 +99,103 @@ namespace Engine
         return const_cast<T&>(const_cast<const ComponentPool*>(this)->GetComponent<T>(componentIndex));
     }
 
+    template <typename T>
+    void ComponentPool::Pop(Entity entityId)
+    {
+        ENGINE_CORE_ASSERT(m_SparseSet.Has(entityId), "Entity has no such component")
+        PopWithComponent<T>(entityId);
+    }
+
+
+    template <typename T>
+    void ComponentPool::PopWithComponent(Entity entityId)
+    {
+        auto popCallback = [this](U32 index)
+        {
+            void* address = GetComponentAddress(index);
+            static_cast<T*>(address)->~T();
+        };
+        auto swapCallback = [this](U32 a, U32 b)
+        {
+            void* aAddress = GetComponentAddress(a);
+            void* bAddress = GetComponentAddress(b);
+            std::swap(*static_cast<T*>(aAddress), *static_cast<T*>(bAddress));
+        };
+        m_SparseSet.Pop(entityId, popCallback, swapCallback);
+    }
+    
+    inline void* ComponentPool::GetComponentAddress(U32 componentIndex) const
+    {
+        const U8* componentPage = TryGet(componentIndex);
+        const void* componentAddress = componentPage + static_cast<U64>(m_TypeSizeBytes * Math::FastMod(componentIndex, SPARSE_SET_PAGE_SIZE));
+        return const_cast<void*>(componentAddress);
+    }
+
+    inline ComponentPool::~ComponentPool()
+    {
+        for (auto* page : m_ComponentsPaged)
+        {
+            if (page)
+            {
+                DeleteArr(page, static_cast<U32>(SPARSE_SET_PAGE_SIZE * m_TypeSizeBytes));
+            }
+        }
+    }
+
+    inline bool ComponentPool::Has(Entity entityId) const
+    {
+        return m_SparseSet.Has(entityId);
+    }
+
+    inline U8* ComponentPool::GetOrCreate(U32 index)
+    {
+        U32 pageNum = index >> SPARSE_SET_PAGE_SIZE_LOG;
+        if (pageNum >= m_ComponentsPaged.size())
+        {
+            m_ComponentsPaged.resize(pageNum + 1);
+        }
+        if (!m_ComponentsPaged[pageNum])
+        {
+            m_ComponentsPaged[pageNum] = NewArr<U8>(static_cast<U32>(SPARSE_SET_PAGE_SIZE * m_TypeSizeBytes));
+        }
+        return m_ComponentsPaged[pageNum];
+    }
+
+    inline const U8* ComponentPool::TryGet(U32 index) const
+    {
+        U32 pageNum = index >> SPARSE_SET_PAGE_SIZE_LOG;
+        if (pageNum >= m_ComponentsPaged.size())
+        {
+            return nullptr;
+        }
+        return m_ComponentsPaged[pageNum];
+    }
+    
+    inline U8* ComponentPool::TryGet(U32 index)
+    {
+        return const_cast<U8*>(const_cast<const ComponentPool*>(this)->TryGet(index));
+    }
+
+    template <typename T>
+    class TComponentPool : public ComponentPool
+    {
+    public:
+        TComponentPool(U32 typeSizeBytes);
+        void Pop(Entity entityId) override;
+    };
+
+    template <typename T>
+    TComponentPool<T>::TComponentPool(U32 typeSizeBytes)
+        : ComponentPool(typeSizeBytes)
+    {
+    }
+
+    template <typename T>
+    void TComponentPool<T>::Pop(Entity entityId)
+    {
+        static_cast<ComponentPool*>(this)->Pop<T>(entityId);
+    }
+    
     class ComponentManager
     {
         friend class Registry;
@@ -179,9 +205,6 @@ namespace Engine
 
         template <typename T>
         void Remove(Entity entityId);
-
-        template <typename T>
-        void TryRemove(Entity entityId);
 
         template <typename T>
         bool Has(Entity entityId);
@@ -204,7 +227,7 @@ namespace Engine
 
     inline const ComponentPool& ComponentManager::GetComponentPool(U64 componentId) const
     {
-        ENGINE_CORE_ASSERT(componentId < m_Pools.size(), "No pool for that component exists")
+        ENGINE_CORE_ASSERT(componentId < m_Pools.size() && m_Pools[componentId], "No pool for that component exists")
         return *m_Pools[componentId];
     }
 
@@ -220,9 +243,7 @@ namespace Engine
         if (!m_Pools[componentId])
         {
             // No pool for that component exists yet.
-            const Ref<ComponentPool> newPool = CreateRef<ComponentPool>(sizeof(T));
-            newPool->SetDebugName(typeid(T).name());
-            newPool->GetAllocator().GetUnderlyingAllocator()->SetDebugName(typeid(T).name());
+            const Ref<ComponentPool> newPool = CreateRef<TComponentPool<T>>(sizeof(T));
             m_Pools[componentId] = newPool;
         }
 
@@ -237,15 +258,6 @@ namespace Engine
         ENGINE_CORE_ASSERT(componentId < m_Pools.size(), "No pool for that component exists")
         ComponentPool& pool = *m_Pools[componentId];
         pool.Pop<T>(entityId);
-    }
-
-    template <typename T>
-    void ComponentManager::TryRemove(Entity entityId)
-    {
-        const U64 componentId = ComponentFamily::TYPE<T>;
-        if (componentId >= m_Pools.size()) return;
-        ComponentPool& pool = *m_Pools[componentId];
-        pool.TryPop<T>(entityId);
     }
 
     template <typename T>
@@ -279,3 +291,4 @@ namespace Engine
         return GetComponentPool(componentId);
     }
 }
+

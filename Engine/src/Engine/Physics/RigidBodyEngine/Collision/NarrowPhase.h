@@ -23,7 +23,8 @@ namespace Engine::Physics
 		~NarrowPhase2D();
 
 		void Collide();
-		void Callback(const PotentialContact2D& potentialContact);
+		void* OnPotentialContactCreate(const PotentialContact2D& potentialContact);
+		void OnPotentialContactDestroy(ContactInfoEntry2D* contactInfoEntry);
 		ContactInfoEntry2D* GetContactInfoList() const { return m_ContactInfos; }
 		U32 GetContactsCount() const { return m_ContactInfosCount; }
 

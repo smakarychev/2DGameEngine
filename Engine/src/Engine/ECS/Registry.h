@@ -11,10 +11,15 @@ namespace Engine
         ~Registry();
         Entity CreateEntity(const std::string& tag = "Default");
         Entity GetEntity(Entity entityId) const;
-        const std::vector<Entity>& GetEntities(const std::string& tag) const;
+        EntityContainer& GetEntities(const std::string& tag) const;
         void DeleteEntity(Entity entityId);
         U32 TotalEntities() const { return m_EntityManager.m_TotalEntities; }
 
+        /* TODO: TEMP */
+        void PopFromMap(Entity entityId, const std::string& tag);
+        void PushToMap(Entity entityId, const std::string& tag);
+        /* TODO: TEMP */
+        
         // Add specified component to entity.
         template <typename T, typename ... Args>
         T& Add(Entity entityId, Args&&... args);

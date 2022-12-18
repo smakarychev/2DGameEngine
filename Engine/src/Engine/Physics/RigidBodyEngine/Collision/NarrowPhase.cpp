@@ -84,11 +84,8 @@ namespace Engine::Physics
 		}
 	}
 
-	void NarrowPhase2D::Callback(const PotentialContact2D& potentialContact)
+	void* NarrowPhase2D::OnPotentialContactCreate(const PotentialContact2D& potentialContact)
 	{
-		Collider2D* colliderA = potentialContact.Colliders[0];
-		Collider2D* colliderB = potentialContact.Colliders[1];
-
 		ContactInfo2D info{};
 		info.Manifold = nullptr;
 		info.Colliders = potentialContact.Colliders;
@@ -96,9 +93,15 @@ namespace Engine::Physics
 		info.AccumulatedNormalImpulses = info.AccumulatedTangentImpulses = { 0.0f };
 		// Check if any of colliders are sensors, and set flag if so.
 		info.SetSensors();
-		AddContactInfo(info);
+		return AddContactInfo(info);
 	}
-	
+
+	void NarrowPhase2D::OnPotentialContactDestroy(ContactInfoEntry2D* contactInfoEntry)
+	{
+		m_ContactListener->OnContactEnd(contactInfoEntry->Info);
+		RemoveContactInfo(*contactInfoEntry);
+	}
+
 	ContactInfoEntry2D* NarrowPhase2D::AddContactInfo(const ContactInfo2D& info)
 	{
 		// Allocate new node.

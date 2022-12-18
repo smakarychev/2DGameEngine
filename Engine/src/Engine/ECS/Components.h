@@ -12,6 +12,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <tuple>
 
+#include "EntityId.h"
+#include "Engine/Memory/Handle/Handle.h"
 
 namespace Engine::Component
 {
@@ -75,6 +77,38 @@ namespace Engine::Component
         }
 
         Transform2D() = default;
+
+        // Very common functions, so it makes sense to just put it here.
+        glm::vec2 Transform(const glm::vec2& point) const
+        {
+            return glm::vec2 {
+                point.x * Rotation.RotationVec.x - point.y * Rotation.RotationVec.y + Position.x,
+                point.x * Rotation.RotationVec.y + point.y * Rotation.RotationVec.x + Position.y
+                };
+        }
+        glm::vec2 TransformDirection(const glm::vec2& dir) const
+        {
+            return glm::vec2 {
+                dir.x * Rotation.RotationVec.x - dir.y * Rotation.RotationVec.y,
+                dir.x * Rotation.RotationVec.y + dir.y * Rotation.RotationVec.x
+                };
+        }
+        glm::vec2 InverseTransform(const glm::vec2& point) const
+        {
+            glm::vec2 translated = point - Position;
+            return glm::vec2 {
+                translated.x * Rotation.RotationVec.x + translated.y * Rotation.RotationVec.y,
+               -translated.x * Rotation.RotationVec.y + translated.y * Rotation.RotationVec.x
+           };
+        }
+        glm::vec2 InverseTransformDirection(const glm::vec2& dir) const
+        {
+            return glm::vec2 {
+                dir.x * Rotation.RotationVec.x + dir.y * Rotation.RotationVec.y,
+               -dir.x * Rotation.RotationVec.y + dir.y * Rotation.RotationVec.x
+               };
+        }
+        
     };
 
     using PhysicsMaterial = Physics::PhysicsMaterial;
@@ -83,8 +117,9 @@ namespace Engine::Component
     // Simplifies creation process.
     struct RigidBody2D
     {
+        using RBHandle = RefCountHandle<Physics::RigidBody2D>;
         // Pointer to real (physics engine's) body.
-        Physics::RigidBody2D* PhysicsBody = nullptr;
+        RBHandle PhysicsBody = nullptr;
         Physics::RigidBodyType2D Type = Physics::RigidBodyType2D::Static;
         Physics::RigidBodyDef2D::BodyFlags Flags = Physics::RigidBodyDef2D::BodyFlags::None;
         RigidBody2D() = default;
@@ -96,12 +131,9 @@ namespace Engine::Component
     // Simplifies creation process.
     struct BoxCollider2D
     {
-        // TODO: only first collider is registered (maybe implement composite collider as a list?)
+        using ColHandle = RefCountHandle<Physics::BoxCollider2D>;
         // Pointer to real (physics engine's) collider.
-        Physics::BoxCollider2D* PhysicsCollider = nullptr;
-        // TODO: change pointer to index (handle?) when proper ecs is implemented.
-        // WARNING: currently it leaks.
-        BoxCollider2D* Next = nullptr;
+        ColHandle PhysicsCollider = nullptr;
         PhysicsMaterial PhysicsMaterial{};
         glm::vec2 Offset = glm::vec2{0.0f};
         glm::vec2 HalfSize = glm::vec2{0.5f};
@@ -187,15 +219,6 @@ namespace Engine::Component
         Engine::SpriteAnimation* SpriteAnimation = nullptr;
     };
 
-    // Static checks that components are pod.
-    static_assert(std::is_trivially_copyable_v<Component::Transform2D>);
-    static_assert(std::is_trivially_copyable_v<Component::RigidBody2D>);
-    static_assert(std::is_trivially_copyable_v<Component::BoxCollider2D>);
-    static_assert(std::is_trivially_copyable_v<Component::SpriteRenderer>);
-    static_assert(std::is_trivially_copyable_v<Component::PolygonRenderer>);
-    static_assert(std::is_trivially_copyable_v<Component::FontRenderer>);
-    static_assert(std::is_trivially_copyable_v<Component::Animation>);
-
     struct GemWarsMesh2D
     {
         RegularPolygon Shape;
@@ -225,21 +248,41 @@ namespace Engine::Component
     // it is merely showing that it is a part of the Mario game.
     struct MarioInput
     {
-        bool CanJump = false;
-        bool Jump = false;
-        bool Left = false;
-        bool Right = false;
-        bool None = false;
+        bool CanJump{false};
+        bool Jump{false};
+        bool Left{false};
+        bool Right{false};
+        bool None{false};
     };
 
     struct MarioState
     {
-        bool IsInMidAir = false;
-        bool IsInFreeFall = false;
-        bool IsMovingLeft = false;
-        bool IsMovingRight = false;
+        bool IsInMidAir{false};
+        bool IsInFreeFall{false};
+        bool IsMovingLeft{false};
+        bool IsMovingRight{false};
     };
 
+    struct Sensors
+    {
+        Entity Bottom{NULL_ENTITY};
+        Entity Left{NULL_ENTITY};
+        Entity Right{NULL_ENTITY};
+    };
+
+    struct ChildRel
+    {
+        U32 ChildrenCount{0};
+        Entity First{NULL_ENTITY};
+    };
+
+    struct ParentRel
+    {
+        Entity Parent{NULL_ENTITY};
+        Entity Next{NULL_ENTITY};
+        Entity Prev{NULL_ENTITY};
+    };
+    
     /************** MarioGame *************************************/
 
     struct GemWarsTransform2D

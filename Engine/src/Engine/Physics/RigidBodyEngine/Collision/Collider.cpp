@@ -145,7 +145,7 @@ namespace Engine::Physics
 
 	MassInfo2D EdgeCollider2D::CalculateMass() const
 	{
-		ENGINE_CORE_ASSERT(false, "Not yet implemented");
+		ENGINE_CORE_ASSERT(false, "Not yet implemented")
 		F32 mass = 0.0f;
 		F32 inertia = 0.0f;
 		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = glm::vec2{0.0f} };
@@ -170,6 +170,8 @@ namespace Engine::Physics
 			Delete<EdgeCollider2D>(reinterpret_cast<EdgeCollider2D*>(collider));
 			break;
 		}
+		case Type::TypesCount: 
+		ENGINE_CORE_FATAL("Fatal error."); break;
 		}
 	}
 }

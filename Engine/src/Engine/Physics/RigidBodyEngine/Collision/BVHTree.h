@@ -11,13 +11,6 @@ namespace Engine
 	class BVHTreeDrawer;
 }
 
-/**
-* Heavily inspired by box2d (very heavily).
-* Use callback in query (instead of returning a vector of elements / indices)
-* Use enlarged aabbs for less replace operations
-*
-*
-*/
 namespace Engine::Physics
 {
 	template <typename Bounds>
@@ -72,6 +65,7 @@ namespace Engine::Physics
 
 		bool IsMoved(I32 nodeId) const { return m_Nodes[nodeId].Moved; }
 		void ResetMoved(I32 nodeId) { m_Nodes[nodeId].Moved = false; }
+		void SetMoved(I32 nodeId) { m_Nodes[nodeId].Moved = true; }
 		void* GetPayload(I32 nodeId) const { return m_Nodes[nodeId].Payload; }
 		const Bounds& GetBounds(I32 nodeId) const { return m_Nodes[nodeId].Bounds; }
 
@@ -97,7 +91,7 @@ namespace Engine::Physics
 	};
 
 	template<typename Bounds>
-	inline BVHTree2D<Bounds>::BVHTree2D()
+	BVHTree2D<Bounds>::BVHTree2D()
 	{
 		// Allocate initial buffer for nodes.
 		static U32 initialNodesAmount = 16;
@@ -108,7 +102,7 @@ namespace Engine::Physics
 
 	template<typename Bounds>
 	template<typename Callback>
-	inline void BVHTree2D<Bounds>::Query(const Callback& callback, const Bounds& bounds)
+	void BVHTree2D<Bounds>::Query(const Callback& callback, const Bounds& bounds)
 	{
 		std::stack<I32> toProcess;
 		toProcess.push(m_TreeRoot);
@@ -127,7 +121,7 @@ namespace Engine::Physics
 				{
 					callback(currentNode);
 				}
-				// If it's not a leaf, process childen.
+				// If it's not a leaf, process children.
 				else
 				{
 					toProcess.push(m_Nodes[currentNode].LeftChild);
@@ -139,7 +133,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree2D<Bounds>::Insert(void* payload, const Bounds& bounds)
+	I32 BVHTree2D<Bounds>::Insert(void* payload, const Bounds& bounds)
 	{
 		// Allocate a new leaf.
 		I32 leafIndex = AllocateNode();
@@ -155,14 +149,14 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::Remove(I32 nodeId)
+	void BVHTree2D<Bounds>::Remove(I32 nodeId)
 	{
 		RemoveLeaf(nodeId);
 		FreeNode(nodeId);
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::InsertLeaf(I32 leafId)
+	void BVHTree2D<Bounds>::InsertLeaf(I32 leafId)
 	{
 		// If this is the first insertion (tree is empty).
 		if (m_TreeRoot == BVHNode<Bounds>::NULL_NODE)
@@ -213,7 +207,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::RemoveLeaf(I32 leafId)
+	void BVHTree2D<Bounds>::RemoveLeaf(I32 leafId)
 	{
 		// If leaf is root, the become empty.
 		if (leafId == m_TreeRoot)
@@ -248,6 +242,7 @@ namespace Engine::Physics
 				m_Nodes[grandparent].RightChild = neighbour;
 			}
 			m_Nodes[neighbour].Parent = grandparent;
+			FreeNode(parent);
 			// Reshape the tree.
 			ReshapeTree(grandparent);
 		}
@@ -256,12 +251,12 @@ namespace Engine::Physics
 		{
 			m_TreeRoot = neighbour;
 			m_Nodes[neighbour].Parent = BVHNode<Bounds>::NULL_NODE;
+			FreeNode(parent);
 		}
-		FreeNode(parent);
 	}
 
 	template<typename Bounds>
-	inline bool BVHTree2D<Bounds>::Move(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
+	bool BVHTree2D<Bounds>::Move(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
 	{
 		// The bounds currently stored in the tree
 		// might be larger than expanded version of object's bounds
@@ -299,7 +294,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree2D<Bounds>::FindBestNeighbour(I32 leafId)
+	I32 BVHTree2D<Bounds>::FindBestNeighbour(I32 leafId)
 	{
 		const Bounds& leafBounds = m_Nodes[leafId].Bounds;
 		// Find the best neighbour.
@@ -354,7 +349,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::ReshapeTree(I32 nodeId)
+	void BVHTree2D<Bounds>::ReshapeTree(I32 nodeId)
 	{
 		I32 currentId = nodeId;
 		while (currentId != BVHNode<Bounds>::NULL_NODE)
@@ -373,7 +368,7 @@ namespace Engine::Physics
 	// Straight from box2d.
 	// TODO: balance based on sah not on height.
 	template<typename Bounds>
-	inline I32 BVHTree2D<Bounds>::RebalanceTree(I32 nodeId)
+	I32 BVHTree2D<Bounds>::RebalanceTree(I32 nodeId)
 	{
 		I32 AId = nodeId;
 		BVHNode<Bounds>& A = m_Nodes[AId];
@@ -499,7 +494,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::Resize(U32 startIndex, U32 endIndex)
+	void BVHTree2D<Bounds>::Resize(U32 startIndex, U32 endIndex)
 	{
 		m_Nodes.resize(m_Nodes.size() + (endIndex - startIndex));
 		// Create a linked list of free nodes.
@@ -513,7 +508,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline I32 BVHTree2D<Bounds>::AllocateNode()
+	I32 BVHTree2D<Bounds>::AllocateNode()
 	{
 		// If no more free nodes.
 		if (m_FreeList == BVHNode<Bounds>::NULL_NODE)
@@ -533,7 +528,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void BVHTree2D<Bounds>::FreeNode(I32 nodeId)
+	void BVHTree2D<Bounds>::FreeNode(I32 nodeId)
 	{
 		m_Nodes[nodeId].Next = m_FreeList;
 		m_Nodes[nodeId].Height = -1;
@@ -542,7 +537,7 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline F32 BVHTree2D<Bounds>::ComputeTotalCost() const
+	F32 BVHTree2D<Bounds>::ComputeTotalCost() const
 	{
 		F32 cost = 0.0f;
 		for (auto& node : m_Nodes)

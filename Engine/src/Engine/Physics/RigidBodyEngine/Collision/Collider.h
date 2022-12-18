@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Engine/Core/Core.h"
 #include "Engine/Common/Geometry2D.h"
 #include "Engine/Math/MathUtils.h"
 #include "Engine/Memory/MemoryManager.h"
@@ -9,12 +8,19 @@
 
 #include "Intersections.h"
 
-#include <vector>
 #include <glm/glm.hpp>
 
 /*
 TODO: abandon box for general polygon?
 */
+
+namespace Engine
+{
+	namespace Component
+	{
+		struct Transform2D;
+	}
+}
 
 namespace Engine::Physics
 {
@@ -39,8 +45,8 @@ namespace Engine::Physics
 
 	struct AABB2D : public Bounds2D<AABB2D>
 	{
-		glm::vec2 Center;
-		glm::vec2 HalfSize;
+		glm::vec2 Center{};
+		glm::vec2 HalfSize{};
 		AABB2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f })
 			: Center(center), HalfSize(halfSize)
 		{}
@@ -80,8 +86,8 @@ namespace Engine::Physics
 
 	struct CircleBounds2D : public Bounds2D<CircleBounds2D>
 	{
-		glm::vec2 Center;
-		F32 Radius;
+		glm::vec2 Center{};
+		F32 Radius{};
 		CircleBounds2D(const glm::vec2& center = glm::vec2{0.0f}, F32 radius = 1.0f)
 			: Center(center), Radius(radius)
 		{}
@@ -134,7 +140,7 @@ namespace Engine::Physics
 		// Which categories to collide with.
 		U16 MaskBits = 0xFFFF;
 		/* 
-		Altrenative to category + mask, if for a pair of colliders group is:
+		Alternative to category + mask, if for a pair of colliders group is:
 			* 0 / different - use category + mask.
 			* same and negative - never collide.
 			* same and positive - always collide.
@@ -163,6 +169,8 @@ namespace Engine::Physics
 
 	class Collider2D
 	{
+		friend class RigidBodyWorld;
+		friend class RigidBody2D;
 	public:
 		enum class Type
 		{
@@ -179,6 +187,9 @@ namespace Engine::Physics
 		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
 		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
 
+		void SetAttachedTransform(Component::Transform2D* transform) { m_AttachedTransform = transform; }
+		const Component::Transform2D* GetAttachedTransform() const { return m_AttachedTransform; }
+		
 		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
 		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
 
@@ -202,6 +213,8 @@ namespace Engine::Physics
 		PhysicsMaterial m_PhysicsMaterial;
 		bool m_IsSensor = false;
 		RigidBody2D* m_AttachedRigidBody = nullptr;
+		Component::Transform2D* m_AttachedTransform = nullptr;
+		ColliderListEntry2D* m_ColliderListEntry2D = nullptr;
 	};
 
 	class BoxCollider2D : public Collider2D

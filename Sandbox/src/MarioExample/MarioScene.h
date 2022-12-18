@@ -14,7 +14,7 @@ public:
     void OnUpdate(F32 dt) override;
     void OnEvent(Event& event) override;
     void OnRender() override;
-    void OnImguiRender() override;
+    void OnImguiUpdate() override;
     void PerformAction(Action& action) override;
 public:
     // 'Systems'
@@ -30,12 +30,8 @@ private:
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
     void CreateLevel();
 
-    void FindActiveEntity();
     bool OnMousePressed(MouseButtonPressedEvent& event);
 private:
-    Registry m_Registry;
-    
-    Physics::RigidBodyWorld2D m_RigidBodyWorld2D{};
     MarioContactListener m_ContactListener;
     SortingLayer m_SortingLayer;
     
@@ -45,8 +41,4 @@ private:
     Ref<Font> m_Font;
     std::vector<Ref<SpriteAnimation>> m_Animations;
     std::unordered_map<std::string, SpriteAnimation*> m_AnimationsMap;
-
-    // Active entity ui things.
-    bool m_FindActiveEntity = false;
-    Entity m_ActiveEntity{};
 };

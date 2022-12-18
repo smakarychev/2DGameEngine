@@ -17,7 +17,7 @@ namespace Engine::Physics
 	//! The main problem now is the lack of ability to delete bodies.
 	class RigidBodyWorld2D
 	{
-		using RigidBodyList  = RigidBodyListEntry2D;
+		using RigidBodyList = RigidBodyListEntry2D;
 	public:
 		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
 		~RigidBodyWorld2D();
@@ -25,6 +25,7 @@ namespace Engine::Physics
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		void RemoveBody(RigidBody2D* body);
 		Collider2D* AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
+		void RemoveCollider(RigidBody2D* body, Collider2D* collider);
 		
 		void Update(F32 deltaTime, U32 velocityIters = 8, U32 positionIters = 10);
 
@@ -59,13 +60,13 @@ namespace Engine::Physics
 
 		BroadPhase2D<> m_BroadPhase;
 		// Stores the nodeIds of broad phase.
-		std::vector<I32> m_BroadPhaseNodes;
+		std::unordered_map<Collider2D*, I32> m_BroadPhaseNodesMap;
+		std::vector<Collider2D*> m_BroadPhaseNodesToDelete;
 
 		NarrowPhase2D m_NarrowPhase;
 		bool m_WarmStartEnabled;
 			
 		glm::vec2 m_Gravity;
-		
 
 	};
 }

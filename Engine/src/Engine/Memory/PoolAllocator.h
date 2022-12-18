@@ -16,6 +16,8 @@ namespace Engine
 
 		// If vector-like behaviour is desired (warning : invalidation will happen).
 		void SetForceContinuous(bool enabled) { m_IsAlwaysContinuous = enabled; }
+		// Forbid relocation (expansion).
+		void SetNonRelocatable(bool isNonRelocatable) { m_IsNonRelocatable = isNonRelocatable; }		
 		
 		// Get new element from the pull of free elements.
 		void* Alloc();
@@ -66,6 +68,7 @@ namespace Engine
 		PoolElement* m_FreePoolElement;
 
 		bool m_IsAlwaysContinuous = false;
+		bool m_IsNonRelocatable = false;
 		
 		// TODO: have to change it to use custom memory manager.
 		std::vector<void*> m_AdditionalAllocations;

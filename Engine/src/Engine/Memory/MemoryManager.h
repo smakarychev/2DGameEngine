@@ -30,7 +30,7 @@ namespace Engine
 	{
 		MemoryInterval Interval;
 		U64 Mark;
-		U64 TargetCount = 0;
+		U64 TargetCount{};
 	};
 
 	class DeallocationDispatcher
@@ -99,11 +99,11 @@ namespace Engine
 	public:
 		struct MemoryManagerStats
 		{
-			U32 TotalAllocations = 0;
-			U64 TotalAllocationsBytes = 0;
-			U32 TotalDeallocations = 0;
-			U64 TotalDeallocationsBytes = 0;
-			U32 TotalUnsizedDeallocations = 0;
+			U32 TotalAllocations{};
+			U64 TotalAllocationsBytes{};
+			U32 TotalDeallocations{};
+			U64 TotalDeallocationsBytes{};
+			U32 TotalUnsizedDeallocations{};
 			bool IsIncomplete = false;
 			U64 GetLeakedMemory() const { return TotalAllocationsBytes - TotalDeallocationsBytes; }
 		};
@@ -111,8 +111,8 @@ namespace Engine
 		struct ManagedPoolAllocator
 		{
 		public:
-			ManagedPoolAllocator(U64 typeSize)
-				: m_Allocator(CreateRef<PoolAllocator>(typeSize)), m_Stats(), m_BaseTypeSize(m_Allocator->GetBaseTypeSize())
+			ManagedPoolAllocator(U64 typeSizeBytes)
+				: m_Allocator(CreateRef<PoolAllocator>(typeSizeBytes)), m_Stats(), m_BaseTypeSize(m_Allocator->GetBaseTypeSize())
 			{}
 			const MemoryManagerStats& GetStats() const { return m_Stats; }
 			PoolAllocator* GetUnderlyingAllocator() const { return m_Allocator.get(); }
@@ -125,9 +125,9 @@ namespace Engine
 		private:
 			Ref<PoolAllocator> m_Allocator;
 			MemoryManagerStats m_Stats;
-			U64 m_BaseTypeSize = 0;
+			U64 m_BaseTypeSize{};
 		};
-		
+
 	public:
 		// Shall be called in entry point.
 		static void Init();
@@ -151,7 +151,7 @@ namespace Engine
 		static ManagedPoolAllocator& GetPoolAllocator(U64 typeSizeBytes);
 		template <typename T>
 		static ManagedPoolAllocator& GetPoolAllocator() { return GetPoolAllocator(sizeof(T)); }
-		
+
 		// Prints the current allocation/deallocation stats.
 		static void PrintStats();
 		static void PrintPoolsStats();
@@ -206,7 +206,7 @@ namespace Engine
 		static std::vector<MarkedInterval> s_MarkedIntervals;
 
 		static std::vector<Ref<ManagedPoolAllocator>> s_ManagedPools;
-		
+
 		static bool s_IsPendingProbe;
 
 		static MemoryManagerStats s_Stats;
@@ -244,7 +244,7 @@ namespace Engine
 		obj->~T();
 		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T));
 	}
-
+	
 	template <typename T, U64 Count>
 	void Delete(T* obj)
 	{

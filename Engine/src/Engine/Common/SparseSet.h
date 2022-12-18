@@ -11,7 +11,28 @@ namespace  Engine
     class SparseSet
     {
     public:
+        struct Iterator
+        {
+            using iterator_category = std::forward_iterator_tag;
+            using difference_type = I32;
+            using value_type = DT;
+            using pointer = value_type*;
+            using reference = value_type&;
+
+            Iterator(std::vector<DT>& dense, U32 index) : m_Dense(dense), m_Index(index) { }
+            
+            reference operator*() const { return m_Dense[m_Index]; }
+            pointer operator->() { return &m_Dense[m_Index]; }
+            Iterator operator++() { m_Index--; return *this; }
+            friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_Index == b.m_Index; }
+            friend bool operator!=(const Iterator& a, const Iterator& b) { return !(a == b); }
+        private:
+            U32 m_Index;
+            std::vector<DT>& m_Dense;
+        };
+    public:
         SparseSet(ST nullFlag = std::numeric_limits<ST>::max());
+        void Reserve(U32 count);
         ST Push(DT value);
         template <typename PushCallback>
         ST Push(DT value, PushCallback callback = [](ST value){});
@@ -24,6 +45,9 @@ namespace  Engine
         DT& operator[](DT value);
         const DT& operator[](DT value) const;
 
+        Iterator begin() { return Iterator(m_Dense, static_cast<U32>(m_Dense.size() - 1)); }
+        Iterator end() { return Iterator(m_Dense, -1); }
+        
         const std::vector<ST>& GetSparse() const { return m_Sparse; }
         const std::vector<DT>& GetDense() const { return m_Dense; }
         ST GetNullFlag() const { return m_NullFlag; }
@@ -40,6 +64,13 @@ namespace  Engine
         : m_NullFlag(nullFlag)
     {
         m_Sparse.resize(16, nullFlag);
+    }
+
+    template <typename ST, typename DT, typename Dec>
+    void SparseSet<ST, DT, Dec>::Reserve(U32 count)
+    {
+        m_Sparse.resize(count, m_NullFlag);
+        m_Dense.reserve(count);
     }
 
     template <typename ST, typename DT, typename Dec>
@@ -86,8 +117,8 @@ namespace  Engine
     void SparseSet<ST, DT, Dec>::Pop(DT value)
     {
         auto&& [gen, index] = Dec::Decompose(value);
-        ENGINE_CORE_ASSERT(index < m_Sparse.size(), "Index out of bounds")
-        ENGINE_CORE_ASSERT(m_Sparse[index] != m_NullFlag, "No such value")
+        ENGINE_CORE_ASSERT(index < m_Sparse.size(), "Index out of bounds.")
+        ENGINE_CORE_ASSERT(m_Sparse[index] != m_NullFlag, "No such value.")
         // We keep the continuous layout,
         // w/o need to maintain original order,
         // so instead of classic shift left (vector-like) operation,
@@ -110,8 +141,8 @@ namespace  Engine
     inline void SparseSet<ST, DT, Dec>::Pop(DT value, PopCallback popCallback, SwapCallback swapCallback)
     {
         auto&& [gen, index] = Dec::Decompose(value);
-        ENGINE_CORE_ASSERT(index < m_Sparse.size(), "Index out of bounds")
-        ENGINE_CORE_ASSERT(m_Sparse[index] != m_NullFlag, "No such value")
+        ENGINE_CORE_ASSERT(index < m_Sparse.size(), "Index out of bounds.")
+        ENGINE_CORE_ASSERT(m_Sparse[index] != m_NullFlag, "No such value.")
         if (m_Dense.size() > 1)
         {
             DT lastVal = m_Dense.back();
@@ -121,7 +152,7 @@ namespace  Engine
             std::swap(m_Dense[m_Sparse[index]], m_Dense.back());
             std::swap(m_Sparse[index], m_Sparse[lvIndex]);
         }
-        ENGINE_CORE_ASSERT(!m_Dense.empty(), "Set is empty")
+        ENGINE_CORE_ASSERT(!m_Dense.empty(), "Set is empty.")
         popCallback(m_Sparse[index]);
         m_Sparse[index] = m_NullFlag;
         m_Dense.pop_back();

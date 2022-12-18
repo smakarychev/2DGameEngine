@@ -45,7 +45,7 @@ void MarioGame::OnUpdate()
 void MarioGame::OnImguiUpdate()
 {
     m_ViewportSize = ImguiMainViewport(*m_FrameBuffer);
-    m_CurrentScene->OnImguiRender();
+    m_CurrentScene->OnImguiUpdate();
 }
 
 void MarioGame::OnEvent(Event& e)
@@ -82,7 +82,7 @@ void MarioGame::Render()
 {
     m_FrameBuffer->Bind();
     RenderCommand::ClearScreen();
-    I32 clearInteger = -1;
+    I32 clearInteger = static_cast<I32>(NULL_ENTITY);
     m_FrameBuffer->ClearAttachment(1, RendererAPI::DataType::Int, &clearInteger);
     Renderer2D::BeginScene(m_CameraController->GetCamera().get());
 

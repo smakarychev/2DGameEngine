@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Engine/Core/Core.h"
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 #include "BVHTree.h"
 
@@ -24,16 +23,19 @@ namespace Engine::Physics
 	{
 	public:
 		// Returns the undelying tree structure.
-		const BVHTree2D<Bounds> GetBVHTree() const { return m_Tree; }
+		const BVHTree2D<Bounds>& GetBVHTree() const { return m_Tree; }
+		BVHTree2D<Bounds>& GetBVHTree() { return m_Tree; }
 		
-		// Performs QueryCallback on nodes, that intersects with `bounds`.
+		// Performs Callback on nodes, that intersects with `bounds`.
 		template <typename Callback>
 		void Query(const Bounds& bounds, Callback callback);
 
 		I32 InsertCollider(Collider2D* collider, const Bounds& bounds);
 		
 		// `nodeId` is returned by InsertCollider().
-		void RemoveCollider(I32 nodeId);
+		// Performs Callback for each contact that node had.
+		template <typename Callback>
+		void RemoveCollider(I32 nodeId, Callback callback);
 		
 		// `nodeId` is returned by InsertCollider(), `velocity` here is a 
 		// mere measure of displacement, not strictly related 
@@ -56,7 +58,9 @@ namespace Engine::Physics
 
 		template <typename Callback>
 		void QueryCallback(I32 otherNode, Callback callback);
-
+	private:
+		template <typename Callback>
+		void RemoveNodeContacts(I32 nodeId, Callback callback);
 	private:
 		BVHTree2D<Bounds> m_Tree;
 
@@ -64,6 +68,8 @@ namespace Engine::Physics
 		std::vector<I32> m_MovingBodies;
 
 		std::unordered_map<I32, std::vector<I32>> m_ContactsMap;
+		std::unordered_map<U64, bool> m_PrimalityMap;
+		std::unordered_map<U64, void*> m_BroadToNarrowContactMap;
 		U32 m_NumberOfContacts = 0;
 
 		// Node that may form a pair.
@@ -73,27 +79,29 @@ namespace Engine::Physics
 
 	template<typename Bounds>
 	template <typename Callback>
-	inline void BroadPhase2D<Bounds>::Query(const Bounds& bounds, Callback callback)
+	void BroadPhase2D<Bounds>::Query(const Bounds& bounds, Callback callback)
 	{
 		m_Tree.Query([&callback, this](I32 nodeId) { return this->QueryCallback(nodeId, callback); }, bounds);
 	}
 
 	template<typename Bounds>
-	inline I32 BroadPhase2D<Bounds>::InsertCollider(Collider2D* collider, const Bounds& bounds)
+	I32 BroadPhase2D<Bounds>::InsertCollider(Collider2D* collider, const Bounds& bounds)
 	{
 		I32 nodeID = m_Tree.Insert(static_cast<void*>(collider), bounds);
 		m_MovingBodies.push_back(nodeID);
 		return nodeID;
 	}
 
-	template<typename Bounds>
-	inline void BroadPhase2D<Bounds>::RemoveCollider(I32 nodeId)
+	template <typename Bounds>
+	template <typename Callback>
+	void BroadPhase2D<Bounds>::RemoveCollider(I32 nodeId, Callback callback)
 	{
-		m_Tree.Pop(nodeId);
+		RemoveNodeContacts(nodeId, callback);
+		m_Tree.Remove(nodeId);
 	}
 
 	template<typename Bounds>
-	inline bool BroadPhase2D<Bounds>::MoveCollider(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
+	bool BroadPhase2D<Bounds>::MoveCollider(I32 nodeId, const Bounds& bounds, const glm::vec2& velocity)
 	{
 		bool hasMoved = m_Tree.Move(nodeId, bounds, velocity);
 		if (hasMoved) m_MovingBodies.push_back(nodeId);
@@ -101,14 +109,14 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline bool BroadPhase2D<Bounds>::CheckCollision(I32 firstNodeId, I32 secondNodeId)
+	bool BroadPhase2D<Bounds>::CheckCollision(I32 firstNodeId, I32 secondNodeId)
 	{
 		return m_Tree.GetBounds(firstNodeId).Intersects(m_Tree.GetBounds(secondNodeId));
 	}
 
 	template<typename Bounds>
 	template <typename Callback>
-	inline void BroadPhase2D<Bounds>::FindContacts(Callback callback)
+	void BroadPhase2D<Bounds>::FindContacts(Callback callback)
 	{
 		// Generate pairs.
 		for (auto& movingId : m_MovingBodies)
@@ -127,60 +135,78 @@ namespace Engine::Physics
 	}
 
 	template<typename Bounds>
-	inline void* BroadPhase2D<Bounds>::GetPayload(I32 nodeId) const
+	void* BroadPhase2D<Bounds>::GetPayload(I32 nodeId) const
 	{
 		return m_Tree.GetPayload(nodeId);
 	}
 
 	template<typename Bounds>
-	inline void BroadPhase2D<Bounds>::RemoveContact(const PotentialContact2D& contact)
+	void BroadPhase2D<Bounds>::RemoveContact(const PotentialContact2D& contact)
 	{
-		
-		auto it = m_ContactsMap[contact.NodeIds[0]].begin();
-		while (it != m_ContactsMap[contact.NodeIds[0]].end())
-		{
-			if (*it == contact.NodeIds[1])
-			{
-				break;
-			}
-			it++;
-		}
-		
+		auto it1 = std::ranges::find(m_ContactsMap[contact.NodeIds[0]], contact.NodeIds[1]);
+		auto it0 = std::ranges::find(m_ContactsMap[contact.NodeIds[1]], contact.NodeIds[0]);
 		// Remove from map.
-		m_ContactsMap[contact.NodeIds[0]].erase(it);
+		m_ContactsMap[contact.NodeIds[0]].erase(it1);
+		m_ContactsMap[contact.NodeIds[1]].erase(it0);
 		m_NumberOfContacts--;
 	}
 
 	template<typename Bounds>
 	template <typename Callback>
-	inline void BroadPhase2D<Bounds>::QueryCallback(I32 otherNode, Callback callback)
+	void BroadPhase2D<Bounds>::QueryCallback(I32 otherNode, Callback callback)
 	{
 		if (otherNode == m_CurrentlyTestedNode) return;
 		// `otherNode` will later become m_CurrentlyTestedNode, so we don't record it twice.
-		if (m_Tree.IsMoved(otherNode) && otherNode > m_CurrentlyTestedNode) return;
+		if (m_Tree.IsMoved(otherNode) && otherNode < m_CurrentlyTestedNode) return;
 
 		// TODO: maybe find a better way.
 		Collider2D* primaryCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(m_CurrentlyTestedNode));
 		Collider2D* otherCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(otherNode));
-		// No contact resolution between colliders of same body.
+		// No contact resolution between colliders of the same body.
 		if (primaryCollider->GetAttachedRigidBody() == otherCollider->GetAttachedRigidBody()) return;
 
-		for (auto& contactNodeId : m_ContactsMap[m_CurrentlyTestedNode])
-		{
-			if (contactNodeId == otherNode)
-			{
-				return;
-			}
-		}
-		for (auto& contactNodeId : m_ContactsMap[otherNode])
-		{
-			if (contactNodeId == m_CurrentlyTestedNode)
-			{
-				return;
-			}
-		}
+		auto& curContacts = m_ContactsMap[m_CurrentlyTestedNode];
+		auto& otherContacts = m_ContactsMap[otherNode];
+		
+		if (std::ranges::find(curContacts, otherNode) != curContacts.end()) return;
+		if (std::ranges::find(otherContacts, m_CurrentlyTestedNode) != otherContacts.end()) return;
+
 		PotentialContact2D contact{ {primaryCollider, otherCollider},{ m_CurrentlyTestedNode, otherNode } };
-		callback(contact);
+		void* contactAddress = callback(contact);
+		m_BroadToNarrowContactMap[Math::I32PairKey(std::make_pair(m_CurrentlyTestedNode, otherNode))] = contactAddress;
 		m_ContactsMap[m_CurrentlyTestedNode].push_back(otherNode);
-	}	
+		m_ContactsMap[otherNode].push_back(m_CurrentlyTestedNode);
+		m_PrimalityMap[Math::I32PairKey(std::make_pair(m_CurrentlyTestedNode, otherNode))] = true;
+		m_PrimalityMap[Math::I32PairKey(std::make_pair(otherNode, m_CurrentlyTestedNode))] = false;
+	}
+
+	template <typename Bounds>
+	template <typename Callback>
+	void BroadPhase2D<Bounds>::RemoveNodeContacts(I32 nodeId, Callback callback)
+	{
+		// Iterate over all nodes that `nodeId` has contact with,
+		// and delete those contacts first if needed.
+		for (auto& otherNode : m_ContactsMap[nodeId])
+		{
+			auto nodesPair = std::make_pair(otherNode, nodeId);
+			auto nodesPairReverse = std::make_pair(nodeId, otherNode);
+			U64 nodePairKey = Math::I32PairKey(nodesPair);
+			U64 nodePairReverseKey = Math::I32PairKey(nodesPairReverse);
+			if (m_PrimalityMap[nodePairKey])
+			{
+				callback(m_BroadToNarrowContactMap[nodePairKey]);
+				m_BroadToNarrowContactMap.erase(m_BroadToNarrowContactMap.find(nodePairKey));
+			}
+			else
+			{
+				callback(m_BroadToNarrowContactMap[nodePairReverseKey]);
+				m_BroadToNarrowContactMap.erase(m_BroadToNarrowContactMap.find(nodePairReverseKey));
+			}
+			m_ContactsMap[otherNode].erase(std::ranges::find(m_ContactsMap[otherNode], nodeId));
+			m_NumberOfContacts--;
+			m_PrimalityMap.erase(m_PrimalityMap.find(nodePairKey));
+			m_PrimalityMap.erase(m_PrimalityMap.find(nodePairReverseKey));
+		}
+		m_ContactsMap.erase(m_ContactsMap.find(nodeId));
+	}
 }

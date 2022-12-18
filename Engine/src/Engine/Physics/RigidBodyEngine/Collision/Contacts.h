@@ -49,7 +49,6 @@ namespace Engine::Physics
 			{
 				Flags &= ~SENSOR_FLAG;
 			}
-
 		}
 		bool HasSensors() const { return static_cast<bool>(Flags & SENSOR_FLAG); }
 		F32 GetRestitution() const
@@ -60,7 +59,7 @@ namespace Engine::Physics
 		}
 		F32 GetFriction() const
 		{
-			return std::max(
+			return std::min(
 				Colliders[0]->GetPhysicsMaterial().Friction,
 				Colliders[1]->GetPhysicsMaterial().Friction);
 		}

@@ -7,9 +7,7 @@ namespace Engine
     Registry::~Registry()
     {
         // Temp.
-        auto dense = m_EntityManager.m_EntitiesSparseSet.GetDense();
-        std::ranges::reverse(dense);
-        for (auto& e : dense)
+        for (const auto& e : m_EntityManager.m_EntitiesSparseSet)
         {
             DeleteEntity(e);
         }
@@ -21,7 +19,7 @@ namespace Engine
         auto& tagC = m_ComponentManager.Add<Component::Tag>(entityId, tag);
 
         // TODO: this is temp.
-        m_EntityManager.m_EntitiesMap[tagC.TagName].Push(entityId);
+        PushToMap(entityId, tagC.TagName);
         // TODO: this is temp.
         
         return entityId;
@@ -33,11 +31,11 @@ namespace Engine
         return m_EntityManager.m_EntitiesSparseSet[entityId.GetIndex()];
     }
 
-    const std::vector<Entity>& Registry::GetEntities(const std::string& tag) const
+    EntityContainer& Registry::GetEntities(const std::string& tag) const
     {
-        static std::vector<Entity> fallback;
+        static EntityContainer fallback;
         auto it = m_EntityManager.m_EntitiesMap.find(tag);
-        if (it != m_EntityManager.m_EntitiesMap.end()) return it->second.GetDense();
+        if (it != m_EntityManager.m_EntitiesMap.end()) return const_cast<EntityContainer&>(it->second);
         return fallback;
     }
 
@@ -47,13 +45,23 @@ namespace Engine
         
         // TODO: this is temp.
         auto& tag = Get<Component::Tag>(entityId);
-        m_EntityManager.m_EntitiesMap[tag.TagName].Pop(entityId);
+        PopFromMap(entityId, tag.TagName);
         // TODO: this is temp.
         
         for (auto& componentPool : m_ComponentManager.m_Pools)
         {
-            if (componentPool) componentPool->TryPop(entityId);
+            if (componentPool && componentPool->Has(entityId)) componentPool->Pop(entityId);
         }
+    }
+
+    void Registry::PopFromMap(Entity entityId, const std::string& tag)
+    {
+        m_EntityManager.m_EntitiesMap[tag].Pop(entityId);
+    }
+
+    void Registry::PushToMap(Entity entityId, const std::string& tag)
+    {
+        m_EntityManager.m_EntitiesMap[tag].Push(entityId);
     }
 
     bool Registry::IsComponentExists(U64 componentId) const

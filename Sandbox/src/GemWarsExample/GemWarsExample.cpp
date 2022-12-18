@@ -82,15 +82,11 @@ void GemWarsExample::SpawnPlayer()
     m_Registry.Add<Component::GemWarsSpecialAbility>(entity, 120);
     m_Registry.Add<Component::GemWarsScore>(entity, 0);
     m_Player = entity;
-    auto enemies = m_Registry.GetEntities("enemy");
-    std::ranges::reverse(enemies);
-    for (auto& e : enemies)
+    for (auto e : m_Registry.GetEntities("enemy"))
     {
         m_Registry.DeleteEntity(e);
     }
-    auto particles = m_Registry.GetEntities("particle");
-    std::ranges::reverse(particles);
-    for (auto& e : particles)
+    for (auto e : m_Registry.GetEntities("particle"))
     {
         m_Registry.DeleteEntity(e);
     }
@@ -138,13 +134,13 @@ void GemWarsExample::sEnemySpawner()
 void GemWarsExample::SpawnParticles(Entity entity)
 {
     U32 numberOfParticles = m_Registry.Get<Component::GemWarsMesh2D>(entity).Shape.GetNumberOfVertices();
-    auto& transform2D = m_Registry.Get<Component::GemWarsTransform2D>(entity);
-    glm::vec2 particlesSize = transform2D.Scale / 2.0f;
     F32 particleSpeed = 2.0f;
     I32 particlesLifetime = 60;
 
+    auto& transform2D = m_Registry.Get<Component::GemWarsTransform2D>(entity);
     for (U32 i = 0; i < numberOfParticles; i++)
     {
+        glm::vec2 particlesSize = transform2D.Scale / 2.0f;
         F32 phase = 2.0f * glm::pi<float>() * F32(i) / F32(numberOfParticles);
         F32 rotation = transform2D.Rotation;
         glm::vec3 particlePos = glm::vec3(glm::vec2(glm::sin(phase), glm::cos(phase)), 0.0f) * m_Registry.Get<Component::GemWarsRigidBody2D>(entity).CollisionRadius;
@@ -160,8 +156,9 @@ void GemWarsExample::SpawnParticles(Entity entity)
         m_Registry.Add<Component::GemWarsTransform2D>(particle, particlePos, particlesSize, 0.0f);
         auto& rb = m_Registry.Add<Component::GemWarsRigidBody2D>(particle, particlesSize.x, particleSpeed);
         rb.Velocity = particleVelocity;
-        m_Registry.Add<Component::GemWarsMesh2D>(particle, numberOfParticles, nullptr,
-                                                        m_Registry.Get<Component::GemWarsMesh2D>(entity).Tint);
+        auto& gwm = m_Registry.Add<Component::GemWarsMesh2D>(particle, numberOfParticles, nullptr,
+                                                        glm::vec4{1.0f});
+        gwm.Tint = m_Registry.Get<Component::GemWarsMesh2D>(entity).Tint;
         m_Registry.Add<Component::GemWarsLifeSpan>(particle, particlesLifetime);
     }
 }
@@ -236,7 +233,7 @@ void GemWarsExample::sMovement(F32 dt)
 void GemWarsExample::sCollision()
 {
     // Check for player-enemy collision.
-    for (auto& entity : m_Registry.GetEntities("enemy"))
+    for (auto entity : m_Registry.GetEntities("enemy"))
     {
         if (Collide(m_Player, entity))
         {
@@ -246,7 +243,7 @@ void GemWarsExample::sCollision()
             break;
         }
     }
-    for (auto& entity : m_Registry.GetEntities("particle"))
+    for (auto entity : m_Registry.GetEntities("particle"))
     {
         if (Collide(m_Player, entity))
         {
@@ -268,7 +265,7 @@ void GemWarsExample::sCollision()
         playerRadius;
 
     // Check for enemy-walls collision.
-    for (auto& entity : m_Registry.GetEntities("enemy"))
+    for (auto entity : m_Registry.GetEntities("enemy"))
     {
         if (m_Registry.Get<Component::GemWarsTransform2D>(entity).Position.x + m_Registry.Get<Component::GemWarsRigidBody2D>(entity).CollisionRadius > m_Bounds.TopRight.x ||
             m_Registry.Get<Component::GemWarsTransform2D>(entity).Position.x - m_Registry.Get<Component::GemWarsRigidBody2D>(entity).CollisionRadius < m_Bounds.BottomLeft.x)
@@ -283,13 +280,9 @@ void GemWarsExample::sCollision()
     }
 
     // Check bullet-enemy collision.
-    auto bullets = m_Registry.GetEntities("bullet");
-    std::ranges::reverse(bullets);
-    for (auto& bullet : bullets)
+    for (auto bullet : m_Registry.GetEntities("bullet"))
     {
-        auto enemies = m_Registry.GetEntities("enemy");
-        std::ranges::reverse(enemies);
-        for (auto& enemy : enemies)
+        for (auto enemy :  m_Registry.GetEntities("enemy"))
         {
             if (Collide(bullet, enemy))
             {
@@ -301,10 +294,8 @@ void GemWarsExample::sCollision()
             }
         }
     }
-    bullets = m_Registry.GetEntities("bullet");
-    std::ranges::reverse(bullets);
     // Check bullet-wall collision.
-    for (auto& bullet :bullets)
+    for (auto bullet :m_Registry.GetEntities("bullet"))
     {
         if (m_Registry.Get<Component::GemWarsTransform2D>(bullet).Position.x - m_Registry.Get<Component::GemWarsRigidBody2D>(bullet).CollisionRadius > m_Bounds.TopRight.x ||
             m_Registry.Get<Component::GemWarsTransform2D>(bullet).Position.x + m_Registry.Get<Component::GemWarsRigidBody2D>(bullet).CollisionRadius < m_Bounds.BottomLeft.x)
@@ -351,7 +342,7 @@ void GemWarsExample::sRender()
     sp.OrderInLayer = -1;
     Renderer2D::DrawQuad(transform, sp);
 
-    for (const auto& e: View<Component::GemWarsTransform2D, Component::GemWarsMesh2D>(m_Registry))
+    for (const auto e: View<Component::GemWarsTransform2D, Component::GemWarsMesh2D>(m_Registry))
     {
         auto& cTf = m_Registry.Get<Component::GemWarsTransform2D>(e);
         transform.Position = cTf.Position;
@@ -390,9 +381,7 @@ void GemWarsExample::sRender()
 
 void GemWarsExample::sParticleUpdate()
 {
-    auto particles = m_Registry.GetEntities("particle");
-    std::ranges::reverse(particles);
-    for (auto& particle : particles)
+    for (auto particle : m_Registry.GetEntities("particle"))
     {
         I32 lifeSpan = m_Registry.Get<Component::GemWarsLifeSpan>(particle).Remaining;
         if (lifeSpan <= 0)

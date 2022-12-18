@@ -49,6 +49,7 @@ namespace Engine::Physics
 		newCollider->SetAttachedRigidBody(this);
 		ColliderListEntry2D* newEntry = New<ColliderListEntry2D>();
 		newEntry->Collider = newCollider;
+		newCollider->m_ColliderListEntry2D = newEntry;
 		newEntry->Next = m_ColliderList;
 		if (m_ColliderList != nullptr)
 		{ 
@@ -58,15 +59,26 @@ namespace Engine::Physics
 
 		if ((m_Flags & RigidBodyDef2D::UseSyntheticMass) != 0) return newEntry->Collider;
 		if (m_Type != RigidBodyType2D::Dynamic) return newEntry->Collider;
-		// Recalculate mass, inertia, center of mass.
-		m_InverseMass = m_InverseInertiaTensor = 0.0f;
-		m_CenterOfMass = glm::vec2{ 0.0f };
-		
+
 		RecalculateMass();
 
 		// Very smart visual studio.
 		if (newEntry == nullptr) return nullptr;
 		return newEntry->Collider;
+	}
+
+	void RigidBody2D::RemoveCollider(Collider2D* collider)
+	{
+		ColliderListEntry2D* entry = collider->m_ColliderListEntry2D;
+		if (entry == m_ColliderList) m_ColliderList = entry->Next;
+		if (entry->Prev) entry->Prev->Next = entry->Next;
+		if (entry->Next) entry->Next->Prev = entry->Prev;
+		Collider2D::Destroy(collider);
+		Delete<ColliderListEntry2D>(entry);
+
+		if ((m_Flags & RigidBodyDef2D::UseSyntheticMass) != 0) return;
+		if (m_Type != RigidBodyType2D::Dynamic) return;
+		RecalculateMass();
 	}
 
 	void RigidBody2D::RecalculateMass()
@@ -90,11 +102,13 @@ namespace Engine::Physics
 			m_InverseMass = 1.0f / mass;
 			m_CenterOfMass *= m_InverseMass;
 		}
+
 		if (inertia > 0.0f && (m_Flags & RigidBodyDef2D::RestrictRotation) == 0)
 		{
 			inertia -= mass * glm::dot(m_CenterOfMass, m_CenterOfMass);
 			m_InverseInertiaTensor = 1.0f / inertia;
 		}
+
 	}
 
 	void RigidBody2D::AddForce(const glm::vec2& force, ForceMode mode)

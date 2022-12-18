@@ -58,6 +58,7 @@ namespace Engine
 
     void* PoolAllocator::ExpandPool()
     {
+        ENGINE_CORE_ASSERT(m_IsNonRelocatable == false, "Pool cannot be expanded.")
         if (m_IsAlwaysContinuous)
         {
             // Allocate twice as much memory, copy old memory to the new place.

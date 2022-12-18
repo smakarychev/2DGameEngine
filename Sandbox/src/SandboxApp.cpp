@@ -12,11 +12,11 @@ class SandboxApp : public Engine::Application
 public:
 	SandboxApp()
 	{
-		PushLayer(Engine::CreateRef<GemWarsExample>());
+		//PushLayer(Engine::CreateRef<GemWarsExample>());
 		//PushLayer(Engine::CreateRef<QuadTreeExample>());
 		//PushLayer(Engine::CreateRef<ParticlePhysicsExample>());
 		//PushLayer(Engine::CreateRef<RigidBodyPhysicsExample>());
-		//PushLayer(Engine::CreateRef<MarioGame>());
+		PushLayer(Engine::CreateRef<MarioGame>());
 	}
 	~SandboxApp()
 	{

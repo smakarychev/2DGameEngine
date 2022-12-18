@@ -7,7 +7,7 @@
 namespace Engine::Physics
 {
 	RigidBodyWorld2D::RigidBodyWorld2D(const glm::vec2& gravity)
-		: m_Gravity(gravity), m_NarrowPhase(m_BroadPhase), m_WarmStartEnabled(true)
+		: m_NarrowPhase(m_BroadPhase), m_WarmStartEnabled(true), m_Gravity(gravity)
 	{
 	}
 
@@ -43,18 +43,29 @@ namespace Engine::Physics
 		{
 			listEntry->Next->Prev = listEntry->Prev;
 		}
+		for (ColliderListEntry2D* col = body->GetColliderList(); col != nullptr; col = col->Next)
+		{
+			m_BroadPhaseNodesToDelete.push_back(col->Collider);
+		}
 		Delete<RigidBody2D>(body);
 		Delete<RigidBodyListEntry2D>(listEntry);
 	}
 
 	Collider2D* RigidBodyWorld2D::AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
 	{
-		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset");
+		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset")
 		Collider2D* newCollider = body->AddCollider(colliderDef);
 		// Add collider to broad phase and save returned nodeId for later modification of bvh tree.
 		I32 nodeId = m_BroadPhase.InsertCollider(newCollider, newCollider->GenerateBounds(body->GetTransform()));
-		m_BroadPhaseNodes.push_back(nodeId);
+		m_BroadPhaseNodesMap[newCollider] = nodeId;
 		return newCollider;
+	}
+
+	void RigidBodyWorld2D::RemoveCollider(RigidBody2D* body, Collider2D* collider)
+	{
+		auto it = m_BroadPhaseNodesMap.find(collider);
+		body->RemoveCollider(collider);
+		if (it != m_BroadPhaseNodesMap.end()) m_BroadPhaseNodesToDelete.push_back(collider);
 	}
 
 	RigidBody2D* RigidBodyWorld2D::AddBodyToList(const RigidBodyDef2D& rbDef)
@@ -109,8 +120,8 @@ namespace Engine::Physics
 			body->SetAngularVelocity(newAngVel);
 		}
 
-		// Perform warm start / pre steps. TODO
-		m_BroadPhase.FindContacts([&narrowPhase = m_NarrowPhase](const PotentialContact2D& contact) {narrowPhase.Callback(contact); });
+		// Perform warm start / pre steps.
+		m_BroadPhase.FindContacts([&narrowPhase = m_NarrowPhase](const PotentialContact2D& contact) { return narrowPhase.OnPotentialContactCreate(contact); });
 		m_NarrowPhase.Collide();
 
 		ContactResolverDef crDef{
@@ -175,12 +186,26 @@ namespace Engine::Physics
 
 	void RigidBodyWorld2D::SynchronizeBroadPhase(F32 deltaTime)
 	{
-		for (auto nodeId : m_BroadPhaseNodes)
+		for (auto* toDel : m_BroadPhaseNodesToDelete)
 		{
-			Collider2D* collider = reinterpret_cast<Collider2D*>(m_BroadPhase.GetPayload(nodeId));
+			auto it = m_BroadPhaseNodesMap.find(toDel);
+			ENGINE_CORE_ASSERT(it != m_BroadPhaseNodesMap.end(), "Unknown collider.")
+
+			m_BroadPhase.RemoveCollider(it->second,
+				[&narrowPhase = m_NarrowPhase](void* contact)
+				{
+					narrowPhase.OnPotentialContactDestroy(static_cast<ContactInfoEntry2D*>(contact));
+				}
+			);
+			m_BroadPhaseNodesMap.erase(it);
+		}
+		for (auto& nodeId : m_BroadPhaseNodesMap | std::views::values)
+		{
+			Collider2D* collider = static_cast<Collider2D*>(m_BroadPhase.GetPayload(nodeId));
 			const RigidBody2D* body = collider->GetAttachedRigidBody();
 			m_BroadPhase.MoveCollider(nodeId, collider->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
 		}
+		m_BroadPhaseNodesToDelete.clear();
 	}
 
 	void RigidBodyWorld2D::AddForce(Ref<RigidBody2DForceGenerator> forceGenerator, RigidBody2D& body)

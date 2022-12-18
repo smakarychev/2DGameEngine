@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Engine/Common/SparseSetPaged.h"
 #include "Engine/ECS/EntityId.h"
 
 namespace Engine
 {
+	using EntityContainer = SparseSetPaged<U32, Entity, EntityIdDecomposer>;
 	class EntityManager
 	{
 		friend class Registry;
@@ -25,8 +27,8 @@ namespace Engine
 			Entity Entity;
 			std::string Tag;
 		};
-		SparseSet<U32, Entity, EntityIdDecomposer> m_EntitiesSparseSet;
-		std::unordered_map<std::string, SparseSet<U32, Entity, EntityIdDecomposer>> m_EntitiesMap;
+		EntityContainer m_EntitiesSparseSet;
+		std::unordered_map<std::string, EntityContainer> m_EntitiesMap;
 		EntityVector m_FreeEntities{};
 
 		U32 m_TotalEntities = 0;

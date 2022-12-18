@@ -244,7 +244,7 @@ namespace Engine
     {
         const Texture& attachment = OpenGLFrameBuffer::GetColorBuffer(colorBufferIndex);
         glClearTexImage(attachment.GetId(), 0, OpenGLTexture::GetFormat(attachment.GetData().PixelFormat),
-                        OpenGLRendererAPI::GetNativeDataType(dataType), &value);
+                        OpenGLRendererAPI::GetNativeDataType(dataType), value);
     }
 
     Texture::TextureData OpenGLFrameBuffer::CreateTextureDataFromAttachment(
