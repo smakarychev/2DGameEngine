@@ -20,6 +20,13 @@ namespace Engine::Physics
 			Delete<RigidBodyListEntry2D>(m_BodyList);
 			m_BodyList = next;
 		}
+		while (m_ColliderList != nullptr)
+		{
+			ColliderListEntry2D* next = m_ColliderList->Next;
+			Collider2D::Destroy(m_ColliderList->Collider);
+			Delete<ColliderListEntry2D>(m_ColliderList);
+			m_ColliderList = next;
+		}
 	}
 
 	RigidBody2D* RigidBodyWorld2D::CreateBody(const RigidBodyDef2D& rbDef)
@@ -29,43 +36,38 @@ namespace Engine::Physics
 
 	void RigidBodyWorld2D::RemoveBody(RigidBody2D* body)
 	{
-		RigidBodyListEntry2D* listEntry = body->m_BodyListEntry;
-		// Delete node.
-		if (listEntry == m_BodyList)
-		{
-			m_BodyList = listEntry->Next;
-		}
-		if (listEntry->Prev != nullptr)
-		{
-			listEntry->Prev->Next = listEntry->Next;
-		}
-		if (listEntry->Next != nullptr)
-		{
-			listEntry->Next->Prev = listEntry->Prev;
-		}
-		for (ColliderListEntry2D* col = body->GetColliderList(); col != nullptr; col = col->Next)
-		{
-			m_BroadPhaseNodesToDelete.push_back(col->Collider);
-		}
-		Delete<RigidBody2D>(body);
-		Delete<RigidBodyListEntry2D>(listEntry);
+		RemoveBodyFromList(body);
 	}
 
-	Collider2D* RigidBodyWorld2D::AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
+	Collider2D* RigidBodyWorld2D::SetCollider(RigidBody2D* body, const ColliderDef2D& colliderDef)
+	{
+		Collider2D* newCollider = AddCollider(colliderDef);
+		body->SetCollider(newCollider);
+		return newCollider;
+	}
+
+	Collider2D* RigidBodyWorld2D::AddCollider(const ColliderDef2D& colliderDef)
 	{
 		ENGINE_CORE_ASSERT(colliderDef.Collider != nullptr, "Collider is unset")
-		Collider2D* newCollider = body->AddCollider(colliderDef);
-		// Add collider to broad phase and save returned nodeId for later modification of bvh tree.
-		I32 nodeId = m_BroadPhase.InsertCollider(newCollider, newCollider->GenerateBounds(body->GetTransform()));
+		Collider2D* newCollider = AddColliderToList(colliderDef);
+		I32 nodeId = m_BroadPhase.InsertCollider(newCollider, newCollider->GenerateBounds(*newCollider->GetAttachedTransform()));
 		m_BroadPhaseNodesMap[newCollider] = nodeId;
 		return newCollider;
 	}
 
 	void RigidBodyWorld2D::RemoveCollider(RigidBody2D* body, Collider2D* collider)
 	{
+		ENGINE_CORE_ASSERT(body->GetAttachedCollider() == collider, "Body has no such collider.")
+		body->OrphanCollider();
+	}
+
+	void RigidBodyWorld2D::DeleteCollider(Collider2D* collider)
+	{
+		if (collider->GetAttachedRigidBody()) RemoveCollider(collider->GetAttachedRigidBody(), collider);
 		auto it = m_BroadPhaseNodesMap.find(collider);
-		body->RemoveCollider(collider);
 		if (it != m_BroadPhaseNodesMap.end()) m_BroadPhaseNodesToDelete.push_back(collider);
+		RemoveColliderFromList(collider);
+		Collider2D::Destroy(collider);
 	}
 
 	RigidBody2D* RigidBodyWorld2D::AddBodyToList(const RigidBodyDef2D& rbDef)
@@ -82,6 +84,49 @@ namespace Engine::Physics
 		m_BodyList = newEntry;
 
 		return newBody;
+	}
+
+	void RigidBodyWorld2D::RemoveBodyFromList(RigidBody2D* body)
+	{
+		RigidBodyListEntry2D* listEntry = body->m_BodyListEntry;
+		// Delete node.
+		if (listEntry == m_BodyList)
+		{
+			m_BodyList = listEntry->Next;
+		}
+		if (listEntry->Prev != nullptr)
+		{
+			listEntry->Prev->Next = listEntry->Next;
+		}
+		if (listEntry->Next != nullptr)
+		{
+			listEntry->Next->Prev = listEntry->Prev;
+		}
+		Delete<RigidBody2D>(body);
+		Delete<RigidBodyListEntry2D>(listEntry);
+	}
+
+	Collider2D* RigidBodyWorld2D::AddColliderToList(const ColliderDef2D& colliderDef)
+	{
+		Collider2D* newCollider = colliderDef.Clone();
+		ColliderListEntry2D* newEntry = New<ColliderListEntry2D>();
+		newEntry->Collider = newCollider;
+		newCollider->m_ColliderListEntry2D = newEntry;
+		newEntry->Next = m_ColliderList;
+		if (m_ColliderList != nullptr) m_ColliderList->Prev = newEntry;
+		m_ColliderList = newEntry;
+
+		return newCollider;
+	}
+
+	void RigidBodyWorld2D::RemoveColliderFromList(Collider2D* collider)
+	{
+		ColliderListEntry2D* entry = collider->m_ColliderListEntry2D;
+		if (entry == m_ColliderList) m_ColliderList = entry->Next;
+		if (entry->Prev) entry->Prev->Next = entry->Next;
+		if (entry->Next) entry->Next->Prev = entry->Prev;
+		collider->SetAttachedRigidBody(nullptr);
+		Delete<ColliderListEntry2D>(entry);
 	}
 
 	void RigidBodyWorld2D::Update(F32 deltaTime, U32 velocityIters, U32 positionIters)
@@ -151,8 +196,6 @@ namespace Engine::Physics
 			
 			body->SetPosition(newPos);
 			body->AddRotation(deltaRot);
-			body->SetRotation(glm::normalize(body->GetRotation()));
-
 			body->ResetForce();
 			body->ResetTorque();
 		}
@@ -203,7 +246,8 @@ namespace Engine::Physics
 		{
 			Collider2D* collider = static_cast<Collider2D*>(m_BroadPhase.GetPayload(nodeId));
 			const RigidBody2D* body = collider->GetAttachedRigidBody();
-			m_BroadPhase.MoveCollider(nodeId, collider->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
+			if (body) m_BroadPhase.MoveCollider(nodeId, collider->GenerateBounds(body->GetTransform()), body->GetLinearVelocity() * deltaTime);
+			else m_BroadPhase.MoveCollider(nodeId, collider->GenerateBounds(collider->GetTransform()), {0.0f, 0.0f});
 		}
 		m_BroadPhaseNodesToDelete.clear();
 	}

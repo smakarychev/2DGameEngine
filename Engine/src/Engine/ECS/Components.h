@@ -10,13 +10,24 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <tuple>
 
 #include "EntityId.h"
 #include "Engine/Memory/Handle/Handle.h"
+#include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
+
+namespace Engine
+{
+    class CameraController;
+}
+
+namespace Engine
+{
+    class Registry;
+}
 
 namespace Engine::Component
 {
+    struct LocalToParentTransform2D;
     using namespace Types;
 
     struct Transform
@@ -25,90 +36,66 @@ namespace Engine::Component
         glm::quat Rotation;
         glm::vec3 Scale;
 
-        Transform(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& scale) :
-            Position(pos), Rotation(rot), Scale(scale)
-        {
-        }
+        Transform(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& scale);
     };
 
+    // Placeholder for real camera component which is yet to be added.
+    struct Camera
+    {
+        Ref<CameraController> CameraController{nullptr};
+        // TODO: I'm not so sure it belongs here (but they are very tied together).
+        Ref<FrameBuffer> CameraFrameBuffer{nullptr};
+    };
+    
     struct Tag
     {
-        std::string TagName = "Default";
+        std::string TagName{"Default"};
 
-        Tag(const std::string tag) : TagName(tag)
-        {
-        }
-
-        Tag() = default;
+        Tag(const std::string tag);
+        Tag();
     };
 
-    struct Transform2D
+    struct LocalToWorldTransform2D
     {
-        struct Rotation
-        {
-            glm::vec2 RotationVec;
+        glm::vec2 Position{glm::vec2{0.0f}};
+        glm::vec2 Scale{glm::vec2{1.0f}};
+        Rotation Rotation{glm::vec2{1.0f, 0.0f}};
 
-            Rotation(const glm::vec2& rotation) : RotationVec(rotation)
-            {
-            }
-
-            Rotation(F32 angleRad) : RotationVec(glm::cos(angleRad), glm::sin(angleRad))
-            {
-            }
-
-            operator const glm::vec2&() const { return RotationVec; }
-            operator glm::vec2&() { return RotationVec; }
-            F32& operator[](I32 index) { return RotationVec[index]; }
-            const F32& operator[](I32 index) const { return RotationVec[index]; }
-        };
-
-        glm::vec2 Position = glm::vec2{0.0f};
-        glm::vec2 Scale = glm::vec2{1.0f};
-        Rotation Rotation = glm::vec2{1.0f, 0.0f};
-
-        Transform2D(const glm::vec2& pos, const glm::vec2& scale, const glm::vec2& rotation) :
-            Position(pos), Scale(scale), Rotation(rotation)
-        {
-        }
-
-        Transform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation) :
-            Position(pos), Scale(scale), Rotation(rotation)
-        {
-        }
-
-        Transform2D() = default;
+        LocalToWorldTransform2D();
+        LocalToWorldTransform2D(const glm::vec2& pos, const glm::vec2& scale, const glm::vec2& rotation);
+        LocalToWorldTransform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation);
+        LocalToWorldTransform2D(const LocalToParentTransform2D& transform);
+        LocalToWorldTransform2D Concatenate(const LocalToWorldTransform2D& other);
 
         // Very common functions, so it makes sense to just put it here.
-        glm::vec2 Transform(const glm::vec2& point) const
-        {
-            return glm::vec2 {
-                point.x * Rotation.RotationVec.x - point.y * Rotation.RotationVec.y + Position.x,
-                point.x * Rotation.RotationVec.y + point.y * Rotation.RotationVec.x + Position.y
-                };
-        }
-        glm::vec2 TransformDirection(const glm::vec2& dir) const
-        {
-            return glm::vec2 {
-                dir.x * Rotation.RotationVec.x - dir.y * Rotation.RotationVec.y,
-                dir.x * Rotation.RotationVec.y + dir.y * Rotation.RotationVec.x
-                };
-        }
-        glm::vec2 InverseTransform(const glm::vec2& point) const
-        {
-            glm::vec2 translated = point - Position;
-            return glm::vec2 {
-                translated.x * Rotation.RotationVec.x + translated.y * Rotation.RotationVec.y,
-               -translated.x * Rotation.RotationVec.y + translated.y * Rotation.RotationVec.x
-           };
-        }
-        glm::vec2 InverseTransformDirection(const glm::vec2& dir) const
-        {
-            return glm::vec2 {
-                dir.x * Rotation.RotationVec.x + dir.y * Rotation.RotationVec.y,
-               -dir.x * Rotation.RotationVec.y + dir.y * Rotation.RotationVec.x
-               };
-        }
+        glm::vec2 Transform(const glm::vec2& point) const;
+        glm::vec2 TransformDirection(const glm::vec2& dir) const;
+        glm::vec2 InverseTransform(const glm::vec2& point) const;
+        glm::vec2 InverseTransformDirection(const glm::vec2& dir) const;
+    };
+
+    struct LocalToParentTransform2D
+    {
+        glm::vec2 Position{glm::vec2{0.0f}};
+        glm::vec2 Scale{glm::vec2{1.0f}};
+        Rotation Rotation{glm::vec2{1.0f, 0.0f}};
         
+        LocalToParentTransform2D();
+        LocalToParentTransform2D(const LocalToWorldTransform2D& transform);
+    };
+
+    struct ChildRel
+    {
+        U32 ChildrenCount{0};
+        Entity First{NULL_ENTITY};
+    };
+
+    struct ParentRel
+    {
+        U32 Depth{1};
+        Entity Parent{NULL_ENTITY};
+        Entity Next{NULL_ENTITY};
+        Entity Prev{NULL_ENTITY};
     };
 
     using PhysicsMaterial = Physics::PhysicsMaterial;
@@ -119,12 +106,13 @@ namespace Engine::Component
     {
         using RBHandle = RefCountHandle<Physics::RigidBody2D>;
         // Pointer to real (physics engine's) body.
-        RBHandle PhysicsBody = nullptr;
-        Physics::RigidBodyType2D Type = Physics::RigidBodyType2D::Static;
-        Physics::RigidBodyDef2D::BodyFlags Flags = Physics::RigidBodyDef2D::BodyFlags::None;
-        RigidBody2D() = default;
+        RBHandle PhysicsBody{nullptr};
+        Physics::RigidBodyType2D Type{Physics::RigidBodyType2D::Static};
+        Physics::RigidBodyDef2D::BodyFlags Flags{Physics::RigidBodyDef2D::BodyFlags::None};
+        
         // Only default constructor - creation of that component depends on rigid body world, and other things,
         // so it is handled by Scene object.
+        RigidBody2D();
     };
 
     // Stores lightweight representation of physics engine version,
@@ -133,111 +121,76 @@ namespace Engine::Component
     {
         using ColHandle = RefCountHandle<Physics::BoxCollider2D>;
         // Pointer to real (physics engine's) collider.
-        ColHandle PhysicsCollider = nullptr;
+        ColHandle PhysicsCollider{nullptr};
         PhysicsMaterial PhysicsMaterial{};
-        glm::vec2 Offset = glm::vec2{0.0f};
-        glm::vec2 HalfSize = glm::vec2{0.5f};
-        bool IsSensor = false;
-        BoxCollider2D() = default;
+        glm::vec2 Offset{glm::vec2{0.0f}};
+        glm::vec2 HalfSize{glm::vec2{0.5f}};
+        bool IsSensor{false};
+        
         // Only default constructor - creation of that component depends on rigid body world, and other things,
         // so it is handled by Scene object.
+        BoxCollider2D();
     };
 
     struct SpriteRenderer
     {
-        Texture* Texture = nullptr;
-        std::array<glm::vec2, 4> UV = {
+        Texture* Texture{nullptr};
+        std::array<glm::vec2, 4> UV {
             glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f}, glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
         };
-        glm::vec4 Tint = glm::vec4{1.0f};
-        glm::vec2 Tiling = glm::vec2{1.0f};
-        SortingLayer::Layer SortingLayer = DefaultSortingLayer.GetDefaultLayer();
-        I16 OrderInLayer = 0;
-        bool FlipX = false;
-        bool FlipY = false;
+        glm::vec4 Tint{glm::vec4{1.0f}};
+        glm::vec2 Tiling{glm::vec2{1.0f}};
+        SortingLayer::Layer SortingLayer{DefaultSortingLayer.GetDefaultLayer()};
+        I16 OrderInLayer{0};
+        bool FlipX{false};
+        bool FlipY{false};
 
         SpriteRenderer(Engine::Texture* texture, const std::array<glm::vec2, 4> uv, const glm::vec4& tint,
                        const glm::vec2& tiling,
-                       SortingLayer::Layer layer, I16 orderInLayer)
-            : Texture(texture), UV(uv), Tint(tint), Tiling(tiling), SortingLayer(std::move(layer)),
-              OrderInLayer(orderInLayer)
-        {
-        }
-
-        SpriteRenderer() = default;
+                       SortingLayer::Layer layer, I16 orderInLayer);
+        SpriteRenderer();
     };
 
     struct PolygonRenderer
     {
-        RegularPolygon* Polygon = nullptr;
-        Texture* Texture = nullptr;
-        glm::vec4 Tint = glm::vec4{1.0f};
-        glm::vec2 Tiling = glm::vec2{1.0f};
-        SortingLayer::Layer SortingLayer = DefaultSortingLayer.GetDefaultLayer();
-        I16 OrderInLayer = 0;
-        bool FlipX = false;
-        bool FlipY = false;
+        RegularPolygon* Polygon{nullptr};
+        Texture* Texture{nullptr};
+        glm::vec4 Tint{glm::vec4{1.0f}};
+        glm::vec2 Tiling{glm::vec2{1.0f}};
+        SortingLayer::Layer SortingLayer{DefaultSortingLayer.GetDefaultLayer()};
+        I16 OrderInLayer{0};
+        bool FlipX{false};
+        bool FlipY{false};
 
         PolygonRenderer(RegularPolygon* polygon, Engine::Texture* texture, const glm::vec4& tint,
                         const glm::vec2& tiling,
-                        SortingLayer::Layer layer, I16 orderInLayer)
-            : Polygon(polygon), Texture(texture), Tint(tint), Tiling(tiling), SortingLayer(std::move(layer)),
-              OrderInLayer(orderInLayer)
-        {
-        }
-
-        PolygonRenderer() = default;
+                        SortingLayer::Layer layer, I16 orderInLayer);
+        PolygonRenderer();
     };
 
     struct FontRenderer
     {
         struct Rect
         {
-            glm::vec2 Min = glm::vec2{0.0f};
-            glm::vec2 Max = glm::vec2{1.0f};
+            glm::vec2 Min{glm::vec2{0.0f}};
+            glm::vec2 Max{glm::vec2{1.0f}};
         };
 
-        Font* Font = nullptr;
-        F32 FontSize = 32;
+        Font* Font{nullptr};
+        F32 FontSize{32};
         Rect FontRect{};
-        glm::vec4 Tint = glm::vec4{1.0f};
-        SortingLayer::Layer SortingLayer = DefaultSortingLayer.GetDefaultLayer();
-        I16 OrderInLayer = 0;
+        glm::vec4 Tint{glm::vec4{1.0f}};
+        SortingLayer::Layer SortingLayer{DefaultSortingLayer.GetDefaultLayer()};
+        I16 OrderInLayer{0};
 
         FontRenderer(Engine::Font* font, F32 fontSize, const Rect& fontRect, const glm::vec4& tint,
-                     SortingLayer::Layer layer, I16 orderInLayer)
-            : Font(font), FontSize(fontSize), FontRect(fontRect), Tint(tint), SortingLayer(std::move(layer)),
-              OrderInLayer(orderInLayer)
-        {
-        }
-
-        FontRenderer() = default;
+                     SortingLayer::Layer layer, I16 orderInLayer);
+        FontRenderer();
     };
 
     struct Animation
     {
-        Engine::SpriteAnimation* SpriteAnimation = nullptr;
-    };
-
-    struct GemWarsMesh2D
-    {
-        RegularPolygon Shape;
-        glm::vec4 Tint{};
-        glm::vec2 Tiling{};
-        std::vector<glm::vec2> UV;
-        Texture* Texture{};
-        //TODO: Most of the parameters one day shall become a part of `Material`.
-        GemWarsMesh2D(U32 angles, Engine::Texture* texture, const glm::vec4& tint) :
-            Shape(angles), Tint(tint), Tiling(glm::vec2{1.0f}), UV(Shape.GetUVs()), Texture(texture)
-        {
-        }
-
-        GemWarsMesh2D(U32 angles) :
-            Shape(angles), Tint(glm::vec4{1.0f}), Tiling(glm::vec2{1.0f}), UV(Shape.GetUVs()), Texture(nullptr)
-        {
-        }
-
-        GemWarsMesh2D() = default;
+        Engine::SpriteAnimation* SpriteAnimation{nullptr};
     };
 
 
@@ -270,66 +223,51 @@ namespace Engine::Component
         Entity Right{NULL_ENTITY};
     };
 
-    struct ChildRel
+    struct CollisionCallback
     {
-        U32 ChildrenCount{0};
-        Entity First{NULL_ENTITY};
+        struct CollisionData
+        {
+            Entity Primary{NULL_ENTITY};
+            Entity Secondary{NULL_ENTITY};
+            Physics::ContactListener::ContactState ContactState{Physics::ContactListener::ContactState::Begin};
+        };
+        using SensorCallback = void (*)(Registry* registry, const CollisionData& collisionData,
+                                        [[maybe_unused]] const Physics::ContactInfo2D& contact);
+        SensorCallback Callback{nullptr};
     };
 
-    struct ParentRel
-    {
-        Entity Parent{NULL_ENTITY};
-        Entity Next{NULL_ENTITY};
-        Entity Prev{NULL_ENTITY};
-    };
-    
+
     /************** MarioGame *************************************/
 
     struct GemWarsTransform2D
     {
-        glm::vec3 Position;
-        glm::vec2 Scale;
-        F32 Rotation;
+        glm::vec3 Position{};
+        glm::vec2 Scale{};
+        F32 Rotation{};
 
-        GemWarsTransform2D(const glm::vec3& pos, const glm::vec2& scale, F32 rotation) :
-            Position(pos), Scale(scale), Rotation(rotation)
-        {
-        }
-
-        GemWarsTransform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation) :
-            Position(glm::vec3(pos, 0.0f)), Scale(scale), Rotation(rotation)
-        {
-        }
-
-        GemWarsTransform2D() = default;
+        GemWarsTransform2D(const glm::vec3& pos, const glm::vec2& scale, F32 rotation);
+        GemWarsTransform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation);
+        GemWarsTransform2D();
     };
 
     struct GemWarsRigidBody2D
     {
-        F32 CollisionRadius;
-        F32 Speed;
-        F32 RotationSpeed;
-        glm::vec2 Velocity;
+        F32 CollisionRadius{};
+        F32 Speed{};
+        F32 RotationSpeed{};
+        glm::vec2 Velocity{};
 
-        GemWarsRigidBody2D(F32 colRadius, F32 speed, F32 rotationSpeed = 0.0f) :
-            CollisionRadius(colRadius), Speed(speed), RotationSpeed(rotationSpeed), Velocity(glm::vec2(0.0f))
-        {
-        }
-
-        GemWarsRigidBody2D() = default;
+        GemWarsRigidBody2D(F32 colRadius, F32 speed, F32 rotationSpeed = 0.0f);
+        GemWarsRigidBody2D();
     };
 
     struct GemWarsLifeSpan
     {
-        I32 Remaining;
-        I32 Total;
+        I32 Remaining{};
+        I32 Total{};
 
-        GemWarsLifeSpan(I32 total) :
-            Remaining(total), Total(total)
-        {
-        }
-
-        GemWarsLifeSpan() = default;
+        GemWarsLifeSpan(I32 total);
+        GemWarsLifeSpan();
     };
 
     struct GemWarsInput
@@ -337,33 +275,38 @@ namespace Engine::Component
         bool Up, Down, Left, Right;
         bool Shoot, SpecialAbility;
 
-        GemWarsInput() :
-            Up(false), Down(false), Left(false), Right(false), Shoot(false), SpecialAbility(false)
-        {
-        }
+        GemWarsInput();
     };
 
     struct GemWarsSpecialAbility
     {
-        I32 RemainingCoolDown;
-        I32 CoolDown;
+        I32 RemainingCoolDown{};
+        I32 CoolDown{};
 
-        GemWarsSpecialAbility(I32 coolDown) :
-            RemainingCoolDown(0), CoolDown(coolDown)
-        {
-        }
-
-        GemWarsSpecialAbility() = default;
+        GemWarsSpecialAbility(I32 coolDown);
+        GemWarsSpecialAbility();
     };
 
     struct GemWarsScore
     {
-        U32 TotalScore;
+        U32 TotalScore{};
 
-        GemWarsScore(U32 score) : TotalScore(score)
-        {
-        }
+        GemWarsScore(U32 score);
+        GemWarsScore();
+    };
 
-        GemWarsScore() = default;
+    struct GemWarsMesh2D
+    {
+        RegularPolygon Shape{};
+        glm::vec4 Tint{};
+        glm::vec2 Tiling{};
+        std::vector<glm::vec2> UV;
+        Texture* Texture{};
+        //TODO: Most of the parameters one day shall become a part of `Material`.
+        GemWarsMesh2D(U32 angles, Engine::Texture* texture, const glm::vec4& tint);
+
+        GemWarsMesh2D(U32 angles);
+
+        GemWarsMesh2D();
     };
 }

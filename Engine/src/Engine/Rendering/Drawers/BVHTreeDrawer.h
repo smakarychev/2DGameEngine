@@ -19,7 +19,7 @@ namespace Engine
 		{
 			if (node.IsLeaf())
 			{
-				Component::Transform2D transform;
+				Component::LocalToWorldTransform2D transform;
 				transform.Position = node.Bounds.Center;
 				transform.Scale = node.Bounds.HalfSize * 2.0f;
 				Component::SpriteRenderer sp;
@@ -31,7 +31,7 @@ namespace Engine
 		{
 			if (node.Height > 0)
 			{
-				Component::Transform2D transform;
+				Component::LocalToWorldTransform2D transform;
 				transform.Position = node.Bounds.Center;
 				transform.Scale = node.Bounds.HalfSize * 2.0f * 1.01f;
 				Component::SpriteRenderer sp;

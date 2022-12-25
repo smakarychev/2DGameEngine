@@ -3,6 +3,7 @@
 #include <utility>
 
 #include  "Action.h"
+#include "SceneGraph.h"
 
 #include "Engine/Core/Camera.h"
 #include "Engine/ECS/Registry.h"
@@ -17,7 +18,7 @@ namespace Engine
 		// KeyCode and MouseCode are of the same type, and are not intersecting.
 		using InputCode = KeyCode;	
 	public:
-		Scene() : m_ScenePanels(*this) {}
+		Scene() : m_ScenePanels(*this), m_SceneGraph(m_Registry) {}
 		virtual ~Scene() = default;
 		virtual void OnInit() = 0;
 		virtual void OnUpdate(F32 dt) = 0;
@@ -44,6 +45,7 @@ namespace Engine
 
 		Physics::RigidBodyWorld2D m_RigidBodyWorld2D{};
 		Registry m_Registry{};
+		SceneGraph m_SceneGraph;
 		ScenePanels m_ScenePanels;
 	};
 }

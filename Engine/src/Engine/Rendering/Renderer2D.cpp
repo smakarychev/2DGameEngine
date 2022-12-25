@@ -90,7 +90,7 @@ namespace Engine
         s_BatchData.DrawCalls = 0;
     }
 
-    void Renderer2D::DrawQuad(const Component::Transform2D& transform, const Component::SpriteRenderer& spriteRenderer,
+    void Renderer2D::DrawQuad(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer,
                               RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
@@ -106,7 +106,7 @@ namespace Engine
         DrawQuadCall(transform, spriteRenderer, depth, primitiveType);
     }
 
-    void Renderer2D::DrawPolygon(const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygon(const Component::LocalToWorldTransform2D& transform,
                                  const Component::PolygonRenderer& polygonRenderer)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
@@ -138,7 +138,7 @@ namespace Engine
         DrawLineCall(from, to, color, 0.0f);
     }
 
-    void Renderer2D::DrawQuadEditor(U32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawQuadEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
                                     const Component::SpriteRenderer& spriteRenderer,
                                     RendererAPI::PrimitiveType primitiveType)
     {
@@ -156,7 +156,7 @@ namespace Engine
         DrawQuadEditorCall(entityId, transform, spriteRenderer, depth, primitiveType);
     }
 
-    void Renderer2D::DrawPolygonEditor(U32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygonEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
                                        const Component::PolygonRenderer& polygonRenderer)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
@@ -190,7 +190,7 @@ namespace Engine
         DrawLineEditorCall(entityId, from, to, color, 0.0f);
     }
 
-    void Renderer2D::DrawQuadCall(const Component::Transform2D& transform,
+    void Renderer2D::DrawQuadCall(const Component::LocalToWorldTransform2D& transform,
                                   const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                   RendererAPI::PrimitiveType primitiveType)
     {
@@ -215,7 +215,7 @@ namespace Engine
                                                s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
-    void Renderer2D::DrawPolygonCall(const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygonCall(const Component::LocalToWorldTransform2D& transform,
                                      const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
         s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(polygonRenderer),
@@ -252,7 +252,7 @@ namespace Engine
                 y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
                 x = fontRenderer.FontRect.Min.x;
             }
-            Component::Transform2D transform{
+            Component::LocalToWorldTransform2D transform{
                 glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff,
                 glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
                 glm::vec2{1.0f, 0.0f}
@@ -293,7 +293,7 @@ namespace Engine
                 y -= font.GetLineHeight() * fontSizeCoeff;
                 x = xminPx;
             }
-            Component::Transform2D transform{
+            Component::LocalToWorldTransform2D transform{
                 glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff + glm::vec2{
                     s_BatchData.Camera->GetPosition()
                 },
@@ -313,7 +313,7 @@ namespace Engine
         s_BatchData.LineBatch.PushVertices(depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
     }
 
-    void Renderer2D::DrawQuadEditorCall(U32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawQuadEditorCall(U32 entityId, const Component::LocalToWorldTransform2D& transform,
                                         const Component::SpriteRenderer& spriteRenderer, F32 depth,
                                         RendererAPI::PrimitiveType primitiveType)
     {
@@ -339,7 +339,7 @@ namespace Engine
                                                s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
     }
 
-    void Renderer2D::DrawPolygonEditorCall(U32 entityId, const Component::Transform2D& transform,
+    void Renderer2D::DrawPolygonEditorCall(U32 entityId, const Component::LocalToWorldTransform2D& transform,
                                            const Component::PolygonRenderer& polygonRenderer, F32 depth)
     {
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
@@ -377,7 +377,7 @@ namespace Engine
                 y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
                 x = fontRenderer.FontRect.Min.x;
             }
-            Component::Transform2D transform{
+            Component::LocalToWorldTransform2D transform{
                 glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff,
                 glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
                 glm::vec2{1.0f, 0.0f}
@@ -419,7 +419,7 @@ namespace Engine
                 y -= font.GetLineHeight() * fontSizeCoeff;
                 x = xminPx;
             }
-            Component::Transform2D transform{
+            Component::LocalToWorldTransform2D transform{
                 glm::vec2{x, y} + font.GetCharacters()[ch].Bearing * fontSizeCoeff + glm::vec2{
                     s_BatchData.Camera->GetPosition()
                 },
@@ -440,7 +440,7 @@ namespace Engine
         s_BatchData.LineBatchEditor.PushVertices(entityId, depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
     }
 
-    void Renderer2D::DrawOutlineCall(const Component::Transform2D& transform,
+    void Renderer2D::DrawOutlineCall(const Component::LocalToWorldTransform2D& transform,
                                      const Component::SpriteRenderer& spriteRenderer, F32 depth)
     {
         const auto& referenceQuad = s_BatchData.ReferenceQuad;

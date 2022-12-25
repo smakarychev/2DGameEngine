@@ -1,3 +1,4 @@
+require "export-compile-commands/export-compile-commands"
 include "dependencies.lua"
 
 

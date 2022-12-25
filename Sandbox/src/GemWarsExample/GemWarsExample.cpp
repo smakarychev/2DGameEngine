@@ -334,7 +334,7 @@ void GemWarsExample::sRender()
     RenderCommand::ClearScreen();
     Renderer2D::BeginScene(m_CameraController->GetCamera().get());
 
-    Component::Transform2D transform;
+    Component::LocalToWorldTransform2D transform;
     transform.Scale = {40.0f, 40.0f};
     Component::SpriteRenderer sp;
     sp.Texture = m_Background.get();

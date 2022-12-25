@@ -79,7 +79,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\imgui\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\imgui\examples\libs\glfw\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\builds\amiga\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\subprojects\dlg\include;..\Engine\vendor\glm;..\Engine\vendor\msdf-atlas-gen;..\Engine\vendor\msdf-atlas-gen\msdfgen;..\Engine\vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -97,7 +97,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\imgui\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\imgui\examples\libs\glfw\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\builds\amiga\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\subprojects\dlg\include;..\Engine\vendor\glm;..\Engine\vendor\msdf-atlas-gen;..\Engine\vendor\msdf-atlas-gen\msdfgen;..\Engine\vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -118,7 +118,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Engine\src;..\Engine\vendor\glad\include;..\Engine\vendor\GLFW\include;..\Engine\vendor\imgui\include;..\Engine\vendor\spdlog\include;..\Engine\vendor\stb\include;..\Engine\vendor\imgui\examples\libs\glfw\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\builds\amiga\include;..\Engine\vendor\msdf-atlas-gen\msdfgen\freetype\subprojects\dlg\include;..\Engine\vendor\glm;..\Engine\vendor\msdf-atlas-gen;..\Engine\vendor\msdf-atlas-gen\msdfgen;..\Engine\vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -135,10 +135,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\GameLayer.h" />
+    <ClInclude Include="src\GemWarsExample\GemWarsExample.h" />
+    <ClInclude Include="src\MarioExample\MarioActions.h" />
+    <ClInclude Include="src\MarioExample\MarioContactListener.h" />
+    <ClInclude Include="src\MarioExample\MarioGame.h" />
+    <ClInclude Include="src\MarioExample\MarioScene.h" />
+    <ClInclude Include="src\ParticlePhysicsExample\ParticlePhysicsExample.h" />
+    <ClInclude Include="src\QuadTreeExample\QuadTreeExample.h" />
+    <ClInclude Include="src\RigidBodyPhysicsExample\RigidBodyPhysicsExample.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\GameLayer.cpp" />
+    <ClCompile Include="src\GemWarsExample\GemWarsExample.cpp" />
+    <ClCompile Include="src\MarioExample\MarioActions.cpp" />
+    <ClCompile Include="src\MarioExample\MarioContactListener.cpp" />
+    <ClCompile Include="src\MarioExample\MarioGame.cpp" />
+    <ClCompile Include="src\MarioExample\MarioScene.cpp" />
+    <ClCompile Include="src\ParticlePhysicsExample\ParticlePhysicsExample.cpp" />
+    <ClCompile Include="src\QuadTreeExample\QuadTreeExample.cpp" />
+    <ClCompile Include="src\RigidBodyPhysicsExample\RigidBodyPhysicsExample.cpp" />
     <ClCompile Include="src\SandboxApp.cpp" />
   </ItemGroup>
   <ItemGroup>

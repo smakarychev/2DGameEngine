@@ -68,7 +68,7 @@ void QuadTreeExample::Render()
     for (auto& quad : quadsToRender)
     {
         //Renderer2D::DrawQuad(quad.pos, quad.size, quad.color);
-        Component::Transform2D transform;
+        Component::LocalToWorldTransform2D transform;
         transform.Position = quad->Item.pos;
         transform.Scale = quad->Item.size;
         Component::SpriteRenderer sp;
@@ -125,7 +125,7 @@ CRect QuadTreeExample::GetCameraBounds()
     bounds.Center = { (max.x + min.x) / 2.0f, (max.y + min.y) / 2.0f };
     bounds.HalfSize = { (max.x - min.x) / 2.0f, (max.y - min.y) / 2.0f };
     bounds.HalfSize *= 0.9f;
-    Component::Transform2D transform;
+    Component::LocalToWorldTransform2D transform;
     transform.Position = bounds.Center;
     transform.Scale = bounds.HalfSize * 2.0f;
     Component::SpriteRenderer sp;

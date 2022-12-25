@@ -2,6 +2,7 @@
 
 #include "SparseSet.h"
 #include "Engine/Math/MathUtils.h"
+#include "Engine/Memory/MemoryManager.h"
 
 namespace Engine
 {
@@ -148,12 +149,12 @@ namespace Engine
             auto* lvSparseSet = TryGet(lvIndex);
             auto mappedLvIndex = Math::FastMod(lvIndex, SPARSE_SET_PAGE_SIZE);
             ENGINE_CORE_ASSERT((*lvSparseSet)[mappedLvIndex] != m_NullFlag, "Catastrophic failure.")
+            popCallback((*sparseSet)[mappedIndex]);
             swapCallback((*sparseSet)[mappedIndex], static_cast<ST>(m_Dense.size() - 1));
             std::swap(m_Dense[(*sparseSet)[mappedIndex]], m_Dense.back());
             std::swap((*sparseSet)[mappedIndex], (*lvSparseSet)[mappedLvIndex]);
         }
         ENGINE_CORE_ASSERT(!m_Dense.empty(), "Set is empty")
-        popCallback((*sparseSet)[mappedIndex]);
         (*sparseSet)[mappedIndex] = m_NullFlag;
         m_Dense.pop_back();
     }

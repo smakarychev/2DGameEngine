@@ -52,6 +52,7 @@ namespace Engine
 		virtual std::string ToString() const { return GetName(); }
 
 		bool IsInCategory(EventCategory::Category category) { return GetCategoryFlags() & category; }
+		bool IsOfType(EventType::Type type) { return GetType() == type; }
 	};
 
 	class EventDispatcher

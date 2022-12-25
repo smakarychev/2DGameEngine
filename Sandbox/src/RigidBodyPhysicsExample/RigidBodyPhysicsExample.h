@@ -42,4 +42,5 @@ private:
 	Scope<CustomContactListener> m_ContactListener;
 	Physics::RigidBodyWorld2D m_World;
 	Physics::RigidBody2D* m_Mover = nullptr;
+	std::vector<Ref<Component::LocalToWorldTransform2D>> m_Transforms;
 };

@@ -26,6 +26,7 @@ public:
     void SAnimation(F32 dt);
     void SState();
 private:
+    void CreateCamera();
     void AddPlayer();
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
     void CreateLevel();

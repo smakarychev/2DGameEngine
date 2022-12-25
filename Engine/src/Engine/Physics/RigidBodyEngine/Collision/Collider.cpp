@@ -2,6 +2,7 @@
 
 #include "Collider.h"
 
+#include "Engine/ECS/Components.h"
 #include "Engine/Physics/RigidBodyEngine/RigidBody.h"
 
 namespace Engine::Physics
@@ -32,6 +33,7 @@ namespace Engine::Physics
 		clone->SetFilter(Filter);
 		clone->SetSensor(IsSensor);
 		clone->SetUserData(UserData);
+		clone->SetAttachedTransform(AttachedTransform);
 		return clone;
 	}
 
@@ -58,17 +60,17 @@ namespace Engine::Physics
 			glm::vec2{  1.0f,  0.0f },
 			glm::vec2{  0.0f,  1.0f }
 		};
-		return m_AttachedRigidBody->GetTransform().TransformDirection(localDirs[vertexId]);
+		return GetAttachedTransform()->TransformDirection(localDirs[vertexId]);
 	}
 
 	glm::vec2 BoxCollider2D::GetVertex(I32 vertexId) const
 	{
 		switch (vertexId)
 		{
-		case 0: return m_AttachedRigidBody->GetTransform().Transform({ Center.x - HalfSize.x, Center.y - HalfSize.y });
-		case 1: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y - HalfSize.y });
-		case 2: return m_AttachedRigidBody->GetTransform().Transform({ Center.x + HalfSize.x, Center.y + HalfSize.y });
-		case 3: return m_AttachedRigidBody->GetTransform().Transform({ Center.x - HalfSize.x, Center.y + HalfSize.y });
+		case 0: return GetAttachedTransform()->Transform({ Center.x - HalfSize.x, Center.y - HalfSize.y });
+		case 1: return GetAttachedTransform()->Transform({ Center.x + HalfSize.x, Center.y - HalfSize.y });
+		case 2: return GetAttachedTransform()->Transform({ Center.x + HalfSize.x, Center.y + HalfSize.y });
+		case 3: return GetAttachedTransform()->Transform({ Center.x - HalfSize.x, Center.y + HalfSize.y });
 		default: ENGINE_CORE_FATAL("Impossible vertex index!"); return { 0.0f, 0.0f };
 		}
 	}
@@ -78,7 +80,7 @@ namespace Engine::Physics
 		return New<BoxCollider2D>(Center, HalfSize);
 	}
 	
-	DefaultBounds2D BoxCollider2D::GenerateBounds(const Transform2D& transform) const
+	DefaultBounds2D BoxCollider2D::GenerateBounds(const Component::LocalToWorldTransform2D& transform) const
 	{
 		glm::vec2 vertices[4]{
 			{Center.x - HalfSize.x, Center.y - HalfSize.y},
@@ -110,7 +112,7 @@ namespace Engine::Physics
 		return New<CircleCollider2D>(Center, Radius);
 	}
 
-	DefaultBounds2D CircleCollider2D::GenerateBounds(const Transform2D& transform) const
+	DefaultBounds2D CircleCollider2D::GenerateBounds(const Component::LocalToWorldTransform2D& transform) const
 	{
 		return AABB2D{ transform.Transform(Center), {Radius, Radius} };
 	}
@@ -128,7 +130,7 @@ namespace Engine::Physics
 		return New<EdgeCollider2D>(Start, End);
 	}
 
-	DefaultBounds2D EdgeCollider2D::GenerateBounds(const Transform2D& transform) const
+	DefaultBounds2D EdgeCollider2D::GenerateBounds(const Component::LocalToWorldTransform2D& transform) const
 	{
 		glm::vec2 worldStart = transform.Transform(Start);
 		glm::vec2 worldEnd = transform.Transform(End);

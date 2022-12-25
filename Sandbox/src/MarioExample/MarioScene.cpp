@@ -6,13 +6,16 @@
 
 void MarioScene::OnInit()
 {
+    // Create camera entity.
+    CreateCamera();
+    
     // Create sorting layer for correct render order.
     // The structure is Background->Middleground->Default.
     m_SortingLayer.CreateLayer("Background");
     m_SortingLayer.CreateLayer("Middleground");
     m_SortingLayer.PlaceBefore(m_SortingLayer.GetLayer("Middleground"), m_SortingLayer.GetLayer("Default"));
     m_SortingLayer.PlaceBefore(m_SortingLayer.GetLayer("Background"), m_SortingLayer.GetLayer("Middleground"));
-    
+
     // Set actions.
     RegisterAction(Key::A, CreateRef<MoveLeftAction>(m_Registry));
     RegisterAction(Key::D, CreateRef<MoveRightAction>(m_Registry));
@@ -73,6 +76,7 @@ void MarioScene::OnUpdate(F32 dt)
     SAnimation(dt);
 
     m_ScenePanels.OnUpdate();
+    m_SceneGraph.UpdateTransforms();
 }
 
 void MarioScene::OnEvent(Event& event)
@@ -115,10 +119,13 @@ void MarioScene::SPhysics(F32 dt)
 
 void MarioScene::SRender()
 {
+    for (auto camera : View<Component::Camera>(m_Registry))
+    {
+    }
     for (auto e : View<Component::SpriteRenderer>(m_Registry))
     {
         const U32 entityId = e.Id;
-        auto& tf = m_Registry.Get<Component::Transform2D>(e);
+        auto& tf = m_Registry.Get<Component::LocalToWorldTransform2D>(e);
         auto& sr = m_Registry.Get<Component::SpriteRenderer>(e);
         Renderer2D::DrawQuadEditor(entityId, tf, sr);
     }
@@ -127,7 +134,7 @@ void MarioScene::SRender()
 void MarioScene::SMove()
 {
     static constexpr auto MAX_HORIZONTAL_SPEED = 6.0f;
-    for (auto e : View<Component::MarioInput>(m_Registry))
+    for (auto e : View<Component::MarioInput, Component::RigidBody2D>(m_Registry))
     {
         // Update player position.
         auto& input = m_Registry.Get<Component::MarioInput>(e);
@@ -228,65 +235,75 @@ void MarioScene::SState()
     }
 }
 
+void MarioScene::CreateCamera()
+{
+    auto&& [camera, tf] = SceneUtils::AddDefaultEntity(*this, "camera");
+    SceneUtils::AddDefault2DCamera(*this, camera);
+}
+
 void MarioScene::AddPlayer()
 {
-    Entity player = m_Registry.CreateEntity("player");
-    auto& tf = m_Registry.Add<Component::Transform2D>(player);
+    auto&& [player, tf] = SceneUtils::AddDefaultEntity(*this, "player");
+
+    Physics::Filter playerFilter{ .GroupIndex = -1 };
     auto& rb = m_Registry.Add<Component::RigidBody2D>(player);
     auto& col = m_Registry.Add<Component::BoxCollider2D>(player);
     m_Registry.Add<Component::MarioInput>(player);
     m_Registry.Add<Component::MarioState>(player);
 
-    tf.Scale = glm::vec2{1.0f, 1.75f};
-    tf.Position = glm::vec2{0.0f, 0.0f};
     rb.Type = Physics::RigidBodyType2D::Dynamic;
     rb.Flags = Physics::RigidBodyDef2D::BodyFlags::RestrictRotation;
     SceneUtils::SynchronizePhysics(*this, player);
-    
+    col.PhysicsCollider->SetFilter(playerFilter);
+
     auto& sensors = m_Registry.Add<Component::Sensors>(player);
-    auto footSensor = sensors.Bottom = m_Registry.CreateEntity("pBottom");
-    auto& footTf = m_Registry.Add<Component::Transform2D>(footSensor);
-    auto& footRb = m_Registry.Add<Component::RigidBody2D>(footSensor);
+    auto&& [footSensor, footTf] = SceneUtils::AddDefaultEntity(*this, "foot sensor");
+    sensors.Bottom = footSensor; 
     auto& footCol = m_Registry.Add<Component::BoxCollider2D>(footSensor);
     footTf.Scale = tf.Scale * glm::vec2{0.85f, 0.15f};
-    footRb = rb;
     footCol.Offset.y = -tf.Scale.y * 0.5f;
     footCol.IsSensor = true;
     SceneUtils::SynchronizePhysics(*this, footSensor, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
+    footCol.PhysicsCollider->SetFilter(playerFilter);
 
     // ************* Relations ***************
     auto& childRel = m_Registry.Add<Component::ChildRel>(player);
     SceneUtils::AddChild(*this, player, footSensor);
     // ************* Relations ***************
 
-    static MarioGameSensorCallback jumpCallback = [](Registry* registry, void* entity, Physics::ContactListener::ContactState contactState,
-                                                         [[maybe_unused]] const Physics::ContactInfo2D& contact)
+
+    static Component::CollisionCallback::SensorCallback jumpCallback = [](
+        Registry* registry, const Component::CollisionCallback::CollisionData& collisionData,
+        [[maybe_unused]] const Physics::ContactInfo2D& contact)
     {
+        
         static U32 collisionsCount = 0;
-        Entity e = U32(entity);
-        switch (contactState)
+        Entity parent = registry->Get<Component::ParentRel>(collisionData.Primary).Parent;
+        switch (collisionData.ContactState)
         {
         case Physics::ContactListener::ContactState::Begin:
             collisionsCount++;
-            registry->Get<Component::MarioInput>(e).CanJump = true;
+            registry->Get<Component::MarioInput>(parent).CanJump = true;
             break;
         case Physics::ContactListener::ContactState::End:
             collisionsCount--;
             if (collisionsCount == 0)
-                registry->Get<Component::MarioInput>(e).CanJump = false;
+                registry->Get<Component::MarioInput>(parent).CanJump = false;
             break;
         }
     };
-    footCol.PhysicsCollider->SetUserData(jumpCallback);
+
+    auto& collisionCallback = m_Registry.Add<Component::CollisionCallback>(footSensor);
+    collisionCallback.Callback = jumpCallback;
     
     m_Registry.Add<Component::SpriteRenderer>(player, Component::SpriteRenderer(
-        m_MarioSprites.get(),
-        m_MarioSprites->GetSubTexturePixelsUV({216, 410}, {15, 28}),
-        glm::vec4{1.0f},
-        glm::vec2{1.0f, 1.0f},
-        m_SortingLayer.GetLayer("Middleground"),
-        1
-    ));
+                                                  m_MarioSprites.get(),
+                                                  m_MarioSprites->GetSubTexturePixelsUV({216, 410}, {15, 28}),
+                                                  glm::vec4{1.0f},
+                                                  glm::vec2{1.0f, 1.0f},
+                                                  m_SortingLayer.GetLayer("Middleground"),
+                                                  1
+                                              ));
 
     auto& anim = m_Registry.Add<Component::Animation>(player);
     anim.SpriteAnimation = m_Animations.front().get();
@@ -296,8 +313,7 @@ void MarioScene::CreateLevel()
 {
     // Add background
     {
-        Entity background = m_Registry.CreateEntity("background");
-        auto& tf = m_Registry.Add<Component::Transform2D>(background);
+        auto&& [background, tf] = SceneUtils::AddDefaultEntity(*this, "background");
         tf.Scale = {80.0f, 15.0f};
         auto& sr = m_Registry.Add<Component::SpriteRenderer>(background);
         sr.Tint = {0.52f, 0.80f, 0.92f, 1.0f};
@@ -305,63 +321,63 @@ void MarioScene::CreateLevel()
         sr.OrderInLayer = -1;
     }
     {
-        Entity floor = m_Registry.CreateEntity("level");
-        auto& tf = m_Registry.Add<Component::Transform2D>(floor);
+        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
         auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
         auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
         tf.Position = glm::vec2{0.0f, -6.0f};
         tf.Scale = glm::vec2{20.0f, 1.0f};
         SceneUtils::SynchronizePhysics(*this, floor);
         m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-            m_BrickTexture.get(),
-            std::array<glm::vec2, 4>{
-                glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f}, glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-            },
-            glm::vec4{1.0f},
-            glm::vec2{20.0f, 1.0f},
-            m_SortingLayer.GetLayer("Middleground"),
-            0
-        ));
+                                                      m_BrickTexture.get(),
+                                                      std::array<glm::vec2, 4>{
+                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
+                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
+                                                      },
+                                                      glm::vec4{1.0f},
+                                                      glm::vec2{20.0f, 1.0f},
+                                                      m_SortingLayer.GetLayer("Middleground"),
+                                                      0
+                                                  ));
     }
 
     // Smaller platforms.
     {
-        Entity floor = m_Registry.CreateEntity("level");
-        auto& tf = m_Registry.Add<Component::Transform2D>(floor);
+        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
         auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
         auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
         tf.Position = glm::vec2{2.0f, -2.0f};
         tf.Scale = glm::vec2{2.0f, 1.0f};
         SceneUtils::SynchronizePhysics(*this, floor);
         m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-            m_BrickTexture.get(),
-            std::array<glm::vec2, 4>{
-                glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f}, glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-            },
-            glm::vec4{1.0f},
-            glm::vec2{2.0f, 1.0f},
-            m_SortingLayer.GetLayer("Middleground"),
-            0
-        ));
+                                                      m_BrickTexture.get(),
+                                                      std::array<glm::vec2, 4>{
+                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
+                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
+                                                      },
+                                                      glm::vec4{1.0f},
+                                                      glm::vec2{2.0f, 1.0f},
+                                                      m_SortingLayer.GetLayer("Middleground"),
+                                                      0
+                                                  ));
     }
     {
-        Entity floor = m_Registry.CreateEntity("level");
-        auto& tf = m_Registry.Add<Component::Transform2D>(floor);
+        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
         auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
         auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
         tf.Position = glm::vec2{3.0f, -3.0f};
         tf.Scale = glm::vec2{2.0f, 1.0f};
         SceneUtils::SynchronizePhysics(*this, floor);
         m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-            m_BrickTexture.get(),
-            std::array<glm::vec2, 4>{
-                glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f}, glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-            },
-            glm::vec4{1.0f},
-            glm::vec2{2.0f, 1.0f},
-            m_SortingLayer.GetLayer("Middleground"),
-            0
-        ));
+                                                      m_BrickTexture.get(),
+                                                      std::array<glm::vec2, 4>{
+                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
+                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
+                                                      },
+                                                      glm::vec4{1.0f},
+                                                      glm::vec2{2.0f, 1.0f},
+                                                      m_SortingLayer.GetLayer("Middleground"),
+                                                      0
+                                                  ));
     }
 }
 

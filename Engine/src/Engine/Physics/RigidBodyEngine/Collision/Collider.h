@@ -18,7 +18,7 @@ namespace Engine
 {
 	namespace Component
 	{
-		struct Transform2D;
+		struct LocalToWorldTransform2D;
 	}
 }
 
@@ -152,29 +152,30 @@ namespace Engine::Physics
 	struct ColliderDef2D
 	{
 		// This collider will be copied.
-		Collider2D* Collider = nullptr;
+		Collider2D* Collider{nullptr};
+		Component::LocalToWorldTransform2D* AttachedTransform{nullptr};
 		PhysicsMaterial PhysicsMaterial{};
 		Filter Filter{};
-		bool IsSensor = false;
-		void* UserData = nullptr;
+		bool IsSensor{false};
+		void* UserData{nullptr};
 		Collider2D* Clone() const;
 	};
 
 	struct ColliderListEntry2D
 	{
-		Collider2D* Collider = nullptr;
-		ColliderListEntry2D* Next = nullptr;
-		ColliderListEntry2D* Prev = nullptr;
+		Collider2D* Collider{nullptr};
+		ColliderListEntry2D* Next{nullptr};
+		ColliderListEntry2D* Prev{nullptr};
 	};
 
 	class Collider2D
 	{
-		friend class RigidBodyWorld;
+		friend class RigidBodyWorld2D;
 		friend class RigidBody2D;
 	public:
 		enum class Type
 		{
-			Box = 0, Circle = 1, Edge, TypesCount
+			Box = 0, Circle = 1, Edge = 3, TypesCount
 		};
 		Collider2D(Type type) : m_Type(type) {}
 		virtual ~Collider2D() = default;
@@ -186,9 +187,13 @@ namespace Engine::Physics
 
 		void SetAttachedRigidBody(RigidBody2D* rbody) { m_AttachedRigidBody = rbody; }
 		const RigidBody2D* GetAttachedRigidBody() const { return m_AttachedRigidBody; }
+		RigidBody2D* GetAttachedRigidBody() { return m_AttachedRigidBody; }
 
-		void SetAttachedTransform(Component::Transform2D* transform) { m_AttachedTransform = transform; }
-		const Component::Transform2D* GetAttachedTransform() const { return m_AttachedTransform; }
+		void SetAttachedTransform(Component::LocalToWorldTransform2D* transform) { m_AttachedTransform = transform; }
+		const Component::LocalToWorldTransform2D* GetAttachedTransform() const { return m_AttachedTransform; }
+		Component::LocalToWorldTransform2D* GetAttachedTransform() { return m_AttachedTransform; }
+		const Component::LocalToWorldTransform2D& GetTransform() const { return *m_AttachedTransform; }
+		Component::LocalToWorldTransform2D& GetTransform() { return *m_AttachedTransform; }
 		
 		void SetPhysicsMaterial(const PhysicsMaterial& material) { m_PhysicsMaterial = material; }
 		const PhysicsMaterial& GetPhysicsMaterial() const { return m_PhysicsMaterial; }
@@ -203,7 +208,7 @@ namespace Engine::Physics
 
 		virtual Collider2D* Clone() = 0;
 		
-		virtual DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const = 0;
+		virtual DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const = 0;
 		virtual MassInfo2D CalculateMass() const = 0;
 
 	protected:
@@ -213,7 +218,7 @@ namespace Engine::Physics
 		PhysicsMaterial m_PhysicsMaterial;
 		bool m_IsSensor = false;
 		RigidBody2D* m_AttachedRigidBody = nullptr;
-		Component::Transform2D* m_AttachedTransform = nullptr;
+		Component::LocalToWorldTransform2D* m_AttachedTransform = nullptr;
 		ColliderListEntry2D* m_ColliderListEntry2D = nullptr;
 	};
 
@@ -222,7 +227,7 @@ namespace Engine::Physics
 	public:
 		BoxCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, const glm::vec2& halfSize = glm::vec2{ 1.0f });
 		Collider2D* Clone() override;
-		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const override;
 		MassInfo2D CalculateMass() const override;
 
 		glm::vec2 GetFaceDirection(I32 vertexId) const;
@@ -240,7 +245,7 @@ namespace Engine::Physics
 	public:
 		CircleCollider2D(const glm::vec2& center = glm::vec2{ 0.0f }, F32 radius = 1.0f);
 		Collider2D* Clone() override;
-		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const override;
 		MassInfo2D CalculateMass() const override;
 
 		F32 Radius;
@@ -254,7 +259,7 @@ namespace Engine::Physics
 	public:
 		EdgeCollider2D(const glm::vec2& start = glm::vec2{ -1.0f, 0.0f }, const glm::vec2& end = glm::vec2{ 1.0f, 0.0f });
 		Collider2D* Clone() override;
-		DefaultBounds2D GenerateBounds(const Transform2D& transform = Transform2D()) const override;
+		DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const override;
 		MassInfo2D CalculateMass() const override;
 
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.

@@ -14,6 +14,7 @@ namespace Engine
     public:
         struct Iterator
         {
+            friend class View;
         public:
             using iterator_category = std::forward_iterator_tag;
             using difference_type = I32;
@@ -70,6 +71,10 @@ namespace Engine
                 }
                 return true;
             }
+            bool IsValid()
+            {
+                return IsInAllComponents(ReferencePool->GetDenseEntities()[ReferencePoolCurrentEntityIndex]);
+            }
 
         public:
             const Registry& Registry;
@@ -114,7 +119,9 @@ namespace Engine
 
         Iterator begin() const
         {
-            return Iterator(m_Registry, m_ComponentIds, m_ReferencePool, static_cast<U32>(m_ReferencePool->GetDenseEntities().size()) - 1, m_AllEntities);
+            auto begin = Iterator(m_Registry, m_ComponentIds, m_ReferencePool, static_cast<U32>(m_ReferencePool->GetDenseEntities().size()) - 1, m_AllEntities);
+            while (begin != end() && !begin.IsValid()) ++begin;
+            return begin;
         }
 
         Iterator end() const

@@ -76,11 +76,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>enginepch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;ENGINE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;STB_IMAGE_IMPLEMENTATION;ENGINE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;vendor\glm;vendor\stb\include;vendor\msdf-atlas-gen;vendor\msdf-atlas-gen\msdfgen;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -93,14 +95,15 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>enginepch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;STB_IMAGE_IMPLEMENTATION;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;vendor\glm;vendor\stb\include;vendor\msdf-atlas-gen;vendor\msdf-atlas-gen\msdfgen;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -114,14 +117,15 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>enginepch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;ENGINE_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;STB_IMAGE_IMPLEMENTATION;ENGINE_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\glad\include;vendor\glm;vendor\stb\include;vendor\msdf-atlas-gen;vendor\msdf-atlas-gen\msdfgen;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -132,23 +136,161 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Engine\Application.h" />
-    <ClInclude Include="src\Engine\Core.h" />
-    <ClInclude Include="src\Engine\EntryPoint.h" />
-    <ClInclude Include="src\Engine\Log.h" />
+    <ClInclude Include="src\Engine\Common\FreeList.h" />
+    <ClInclude Include="src\Engine\Common\Geometry2D.h" />
+    <ClInclude Include="src\Engine\Common\QuadTree.h" />
+    <ClInclude Include="src\Engine\Common\SparseSet.h" />
+    <ClInclude Include="src\Engine\Common\SparseSetPaged.h" />
+    <ClInclude Include="src\Engine\Core\Application.h" />
+    <ClInclude Include="src\Engine\Core\Camera.h" />
+    <ClInclude Include="src\Engine\Core\Core.h" />
+    <ClInclude Include="src\Engine\Core\EntryPoint.h" />
+    <ClInclude Include="src\Engine\Core\Input.h" />
+    <ClInclude Include="src\Engine\Core\KeyCodes.h" />
+    <ClInclude Include="src\Engine\Core\Layer.h" />
+    <ClInclude Include="src\Engine\Core\LayerStack.h" />
+    <ClInclude Include="src\Engine\Core\Log.h" />
+    <ClInclude Include="src\Engine\Core\MouseCodes.h" />
+    <ClInclude Include="src\Engine\Core\Time.h" />
+    <ClInclude Include="src\Engine\Core\Types.h" />
+    <ClInclude Include="src\Engine\Core\Window.h" />
+    <ClInclude Include="src\Engine\ECS\Components.h" />
+    <ClInclude Include="src\Engine\ECS\ComponentsManager.h" />
+    <ClInclude Include="src\Engine\ECS\EntityId.h" />
+    <ClInclude Include="src\Engine\ECS\EntityManager.h" />
+    <ClInclude Include="src\Engine\ECS\Registry.h" />
+    <ClInclude Include="src\Engine\ECS\View.h" />
+    <ClInclude Include="src\Engine\Events\Event.h" />
+    <ClInclude Include="src\Engine\Events\KeyboardEvents.h" />
+    <ClInclude Include="src\Engine\Events\MouseEvents.h" />
+    <ClInclude Include="src\Engine\Events\WindowEvents.h" />
+    <ClInclude Include="src\Engine\Imgui\ImguiCommon.h" />
+    <ClInclude Include="src\Engine\Imgui\ImguiLayer.h" />
+    <ClInclude Include="src\Engine\Math\LinearAlgebra.h" />
+    <ClInclude Include="src\Engine\Math\MathUtils.h" />
+    <ClInclude Include="src\Engine\Math\Random.h" />
+    <ClInclude Include="src\Engine\Memory\BuddyAllocator.h" />
+    <ClInclude Include="src\Engine\Memory\DequeAllocator.h" />
+    <ClInclude Include="src\Engine\Memory\FreelistRedBlackTreeAllocator.h" />
+    <ClInclude Include="src\Engine\Memory\Handle\Handle.h" />
+    <ClInclude Include="src\Engine\Memory\MemoryManager.h" />
+    <ClInclude Include="src\Engine\Memory\MemoryUtils.h" />
+    <ClInclude Include="src\Engine\Memory\PoolAllocator.h" />
+    <ClInclude Include="src\Engine\Memory\StackAllocator.h" />
+    <ClInclude Include="src\Engine\Physics\ParticleEngine\Particle.h" />
+    <ClInclude Include="src\Engine\Physics\ParticleEngine\ParticleContact.h" />
+    <ClInclude Include="src\Engine\Physics\ParticleEngine\ParticleForceGenerator.h" />
+    <ClInclude Include="src\Engine\Physics\ParticleEngine\ParticleLinks.h" />
+    <ClInclude Include="src\Engine\Physics\ParticleEngine\ParticleWorld.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\BVHTree.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\BroadPhase.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\Collider.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\Contacts.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\Intersections.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\Collision\NarrowPhase.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\PhysicsMaterial.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\RigidBody.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\RigidBodyForceGenerator.h" />
+    <ClInclude Include="src\Engine\Physics\RigidBodyEngine\RigidBodyWorld.h" />
+    <ClInclude Include="src\Engine\Physics\World.h" />
+    <ClInclude Include="src\Engine\Platform\OpenGL\OpenGLBuffer.h" />
+    <ClInclude Include="src\Engine\Platform\OpenGL\OpenGLContext.h" />
+    <ClInclude Include="src\Engine\Platform\OpenGL\OpenGLRendererAPI.h" />
+    <ClInclude Include="src\Engine\Platform\OpenGL\OpenGLShader.h" />
+    <ClInclude Include="src\Engine\Platform\OpenGL\OpenGLTexture.h" />
+    <ClInclude Include="src\Engine\Platform\Windows\WindowsInput.h" />
+    <ClInclude Include="src\Engine\Platform\Windows\WindowsWindow.h" />
+    <ClInclude Include="src\Engine\Primitives\2D\RegularPolygon.h" />
+    <ClInclude Include="src\Engine\Primitives\Shape.h" />
+    <ClInclude Include="src\Engine\Rendering\Animation.h" />
+    <ClInclude Include="src\Engine\Rendering\Buffer.h" />
+    <ClInclude Include="src\Engine\Rendering\Drawers\BVHTreeDrawer.h" />
+    <ClInclude Include="src\Engine\Rendering\Drawers\RigidBodyWorldDrawer.h" />
+    <ClInclude Include="src\Engine\Rendering\Font.h" />
+    <ClInclude Include="src\Engine\Rendering\GraphicsContext.h" />
+    <ClInclude Include="src\Engine\Rendering\Light.h" />
+    <ClInclude Include="src\Engine\Rendering\RenderCommand.h" />
+    <ClInclude Include="src\Engine\Rendering\RenderQueue.h" />
+    <ClInclude Include="src\Engine\Rendering\Renderer.h" />
+    <ClInclude Include="src\Engine\Rendering\Renderer2D.h" />
+    <ClInclude Include="src\Engine\Rendering\RendererAPI.h" />
+    <ClInclude Include="src\Engine\Rendering\Shader.h" />
+    <ClInclude Include="src\Engine\Rendering\SortingKey.h" />
+    <ClInclude Include="src\Engine\Rendering\SortingLayer.h" />
+    <ClInclude Include="src\Engine\Rendering\Texture.h" />
+    <ClInclude Include="src\Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="src\Engine\Scene\Action.h" />
+    <ClInclude Include="src\Engine\Scene\ComponentUI.h" />
+    <ClInclude Include="src\Engine\Scene\Scene.h" />
+    <ClInclude Include="src\Engine\Scene\SceneGraph.h" />
+    <ClInclude Include="src\Engine\Scene\ScenePanels.h" />
+    <ClInclude Include="src\Engine\Scene\SceneUtils.h" />
     <ClInclude Include="src\enginepch.h" />
-    <ClInclude Include="src\Engine\Types.h" />
-    <ClInclude Include="src\Engine\Window.h" />
-    <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
+    <ClInclude Include="src\Engine\Scene\Serialization\SceneSerializer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Engine\Application.cpp" />
-    <ClCompile Include="src\Engine\Log.cpp" />
+    <ClCompile Include="src\Engine\Core\Application.cpp" />
+    <ClCompile Include="src\Engine\Core\Camera.cpp" />
+    <ClCompile Include="src\Engine\Core\Input.cpp" />
+    <ClCompile Include="src\Engine\Core\LayerStack.cpp" />
+    <ClCompile Include="src\Engine\Core\Log.cpp" />
+    <ClCompile Include="src\Engine\Core\Time.cpp" />
+    <ClCompile Include="src\Engine\Core\Window.cpp" />
+    <ClCompile Include="src\Engine\ECS\Components.cpp" />
+    <ClCompile Include="src\Engine\ECS\EntityManager.cpp" />
+    <ClCompile Include="src\Engine\ECS\Registry.cpp" />
+    <ClCompile Include="src\Engine\Imgui\ImguiBuild.cpp" />
+    <ClCompile Include="src\Engine\Imgui\ImguiLayer.cpp" />
+    <ClCompile Include="src\Engine\Math\Random.cpp" />
+    <ClCompile Include="src\Engine\Memory\BuddyAllocator.cpp" />
+    <ClCompile Include="src\Engine\Memory\DequeAllocator.cpp" />
+    <ClCompile Include="src\Engine\Memory\FreelistRedBlackTreeAllocator.cpp" />
+    <ClCompile Include="src\Engine\Memory\MemoryManager.cpp" />
+    <ClCompile Include="src\Engine\Memory\MemoryUtils.cpp" />
+    <ClCompile Include="src\Engine\Memory\PoolAllocator.cpp" />
+    <ClCompile Include="src\Engine\Memory\StackAllocator.cpp" />
+    <ClCompile Include="src\Engine\Physics\ParticleEngine\Particle.cpp" />
+    <ClCompile Include="src\Engine\Physics\ParticleEngine\ParticleContact.cpp" />
+    <ClCompile Include="src\Engine\Physics\ParticleEngine\ParticleForceGenerator.cpp" />
+    <ClCompile Include="src\Engine\Physics\ParticleEngine\ParticleLinks.cpp" />
+    <ClCompile Include="src\Engine\Physics\ParticleEngine\ParticleWorld.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\Collision\Collider.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\Collision\Contacts.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\Collision\Intersections.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\Collision\NarrowPhase.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\RigidBody.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\RigidBodyForceGenerator.cpp" />
+    <ClCompile Include="src\Engine\Physics\RigidBodyEngine\RigidBodyWorld.cpp" />
+    <ClCompile Include="src\Engine\Physics\World.cpp" />
+    <ClCompile Include="src\Engine\Platform\OpenGL\OpenGLBuffer.cpp" />
+    <ClCompile Include="src\Engine\Platform\OpenGL\OpenGLContext.cpp" />
+    <ClCompile Include="src\Engine\Platform\OpenGL\OpenGLRendererAPI.cpp" />
+    <ClCompile Include="src\Engine\Platform\OpenGL\OpenGLShader.cpp" />
+    <ClCompile Include="src\Engine\Platform\OpenGL\OpenGLTexture.cpp" />
+    <ClCompile Include="src\Engine\Platform\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="src\Engine\Primitives\2D\RegularPolygon.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Animation.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Buffer.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Font.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Light.cpp" />
+    <ClCompile Include="src\Engine\Rendering\RenderCommand.cpp" />
+    <ClCompile Include="src\Engine\Rendering\RenderQueue.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Renderer.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Renderer2D.cpp" />
+    <ClCompile Include="src\Engine\Rendering\RendererAPI.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Shader.cpp" />
+    <ClCompile Include="src\Engine\Rendering\SortingKey.cpp" />
+    <ClCompile Include="src\Engine\Rendering\SortingLayer.cpp" />
+    <ClCompile Include="src\Engine\Rendering\Texture.cpp" />
+    <ClCompile Include="src\Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="src\Engine\Scene\ComponentUI.cpp" />
+    <ClCompile Include="src\Engine\Scene\SceneGraph.cpp" />
+    <ClCompile Include="src\Engine\Scene\ScenePanels.cpp" />
+    <ClCompile Include="src\Engine\Scene\SceneUtils.cpp" />
     <ClCompile Include="src\enginepch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Engine\Window.cpp" />
-    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="src\Engine\Scene\Serialization\SceneSerializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">
@@ -157,10 +299,15 @@
     <ProjectReference Include="vendor\glad\glad.vcxproj">
       <Project>{DD62977C-C999-980D-7286-7E105E9C140F}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="premake5.lua" />
-    <None Include="roadmap.md" />
+    <ProjectReference Include="vendor\msdf-atlas-gen\msdfgen\msdfgen.vcxproj">
+      <Project>{8900D8DD-F5DF-5679-FEF7-E14F6A56BDDA}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\msdf-atlas-gen\msdf-atlas-gen.vcxproj">
+      <Project>{38BD587B-248B-4C81-0D1F-BDA7F98B28E6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\imgui\imgui.vcxproj">
+      <Project>{0098A80F-6CAC-D0C0-352E-7420A101CDF1}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

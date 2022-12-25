@@ -18,14 +18,20 @@ namespace Engine::Physics
 	class RigidBodyWorld2D
 	{
 		using RigidBodyList = RigidBodyListEntry2D;
+		using ColliderList = ColliderListEntry2D;
 	public:
 		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
 		~RigidBodyWorld2D();
 		// All rigid bodies shall be created by this method.
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		void RemoveBody(RigidBody2D* body);
-		Collider2D* AddCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
+		// Adds new collider to given rigidbody.
+		Collider2D* SetCollider(RigidBody2D* body, const ColliderDef2D& colliderDef);
+		Collider2D* AddCollider(const ColliderDef2D& colliderDef);
+		// Removes collider from rigidbody. NOTE: this does not delete collider,
+		// to delete collider completely, use `DeleteCollider`.
 		void RemoveCollider(RigidBody2D* body, Collider2D* collider);
+		void DeleteCollider(Collider2D* collider);
 		
 		void Update(F32 deltaTime, U32 velocityIters = 8, U32 positionIters = 10);
 
@@ -38,6 +44,7 @@ namespace Engine::Physics
 		void SetGravity(const glm::vec2& gravity) { m_Gravity = gravity; }
 		
 		const RigidBodyList* GetBodyList() const { return m_BodyList; }
+		const ColliderList* GetColliderList() const { return m_ColliderList; }
 
 		const BroadPhase2D<>& GetBroadPhase() const { return m_BroadPhase; }
 
@@ -46,11 +53,17 @@ namespace Engine::Physics
 		void SetContactListener(ContactListener* contactListener) { m_NarrowPhase.SetContactListener(contactListener); }
 	private:
 		RigidBody2D* AddBodyToList(const RigidBodyDef2D& rbDef);
+		void RemoveBodyFromList(RigidBody2D* body);
+		Collider2D* AddColliderToList(const ColliderDef2D& colliderDef);
+		void RemoveColliderFromList(Collider2D* collider);
 		void ApplyGlobalForces();
 		void SynchronizeBroadPhase(F32 deltaTime);
 	private:
-		// Stores all the bodies (smart pointers to them).
-		RigidBodyList* m_BodyList = nullptr;
+		// Stores all the bodies.
+		RigidBodyList* m_BodyList{nullptr};
+
+		// Stores all the colliders.
+		ColliderList* m_ColliderList{nullptr};
 
 		// Stores all global forces.
 		std::vector<Ref<RigidBody2DForceGenerator>> m_GlobalForces;

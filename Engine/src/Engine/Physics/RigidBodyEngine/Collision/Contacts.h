@@ -76,13 +76,15 @@ namespace Engine::Physics
 		std::array<F32, 2> TangentMasses{};
 		std::array<glm::vec2, 2> DistVecA{};
 		std::array<glm::vec2, 2> DistVecB{};
-
+		// We have to calculate bias from restitution only once.
+		F32 VelocityBias{0.0f};
 	};
 
 	class Contact2D
 	{
 		friend class ContactManager;
 	public:
+		virtual ~Contact2D() {}
 		// Populates vector of contacts, returns the amount of added contacts.
 		virtual U32 GenerateContacts(ContactInfo2D& info) = 0;
 		virtual std::array<Collider2D*, 2> GetColliders() = 0;
@@ -175,7 +177,7 @@ namespace Engine::Physics
 		BoxCollider2D* m_Box;
 	};
 
-	struct ContactRegistation
+	struct ContactRegistration
 	{
 		using OnCreateFn = Contact2D* (*)(Collider2D*, Collider2D*);
 		using OnDestroyFn = void (*)(Contact2D*);
@@ -190,15 +192,15 @@ namespace Engine::Physics
 	public:
 		static void Init();
 		static void AddRegistration(
-			ContactRegistation::OnCreateFn createFn,
-			ContactRegistation::OnDestroyFn destroyFn,
+			ContactRegistration::OnCreateFn createFn,
+			ContactRegistration::OnDestroyFn destroyFn,
 			Collider2D::Type typeA,
 			Collider2D::Type typeB
 		);
 		static Contact2D* Create(Collider2D* a, Collider2D* b);
 		static void Destroy(Contact2D* contact);
 
-		static ContactRegistation s_Registry
+		static ContactRegistration s_Registry
 			[static_cast<U32>(Collider2D::Type::TypesCount)]
 			[static_cast<U32>(Collider2D::Type::TypesCount)];
 
@@ -214,6 +216,11 @@ namespace Engine::Physics
 		bool WarmStartEnabled = false;
 	};
 
+	/*
+	 * TODO (possible optimization):
+	 **** Store positions and velocities in constraint itself, and then reassign it to the body.
+	 **** Different functions for colliders with body, and when only one of them has a collider. 
+	 */
 	class ContactResolver
 	{
 	public:
@@ -245,7 +252,7 @@ namespace Engine::Physics
 	public:
 		enum class ContactState { Begin, End };
 	public:
-		virtual ~ContactListener() {};
+		virtual ~ContactListener() {}
 		virtual void OnContactBegin([[maybe_unused]] const ContactInfo2D& contact) {}
 		virtual void OnContactEnd([[maybe_unused]] const ContactInfo2D& contact) {}
 	};

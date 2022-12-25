@@ -12,6 +12,13 @@ namespace Engine
         : m_Scene(scene)
     {
         m_ActiveEntity = NULL_ENTITY;
+        auto& registry = m_Scene.GetRegistry();
+        m_ComponentUIDescriptions.push_back(CreateRef<TagUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<LocalToWorldTransformUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<LocalToParentTransformUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<BoxCollider2DUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<RigidBody2DUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<SpriteRendererUIDesc>(registry));
     }
 
     void ScenePanels::OnEvent(Event& event)
@@ -97,7 +104,7 @@ namespace Engine
             if (ImGui::MenuItem("Create Empty Entity"))
             {
                 Entity e = registry.CreateEntity("Empty Entity");
-                registry.Add<Component::Transform2D>(e);
+                registry.Add<Component::LocalToWorldTransform2D>(e);
             }
             ImGui::EndPopup();
         }
@@ -172,45 +179,6 @@ namespace Engine
         return result;
     }
 
-    template <typename T, typename RenderFN>
-    static void DrawComponent(const ScenePanels::ComponentUIDescription<T, RenderFN> desc, Scene& scene, Entity entity)
-    {
-        const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-        auto& registry = scene.GetRegistry();
-        if (registry.Has<T>(entity))
-        {
-            auto& comp = registry.Get<T>(entity);
-            ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
-            ImGui::Separator();
-            bool open = ImGui::TreeNodeEx((void*)ComponentFamily::TYPE<T>, flags, desc.Name.c_str());
-            ImGui::PopStyleVar();
-            ImGui::SameLine(contentRegionAvailable.x);
-            if (ImGui::Button("+"))
-            {
-                if (desc.IsRemovable) ImGui::OpenPopup("ComponentSettings");
-            }
-
-            bool removeComponent = false;
-            if (ImGui::BeginPopup("ComponentSettings"))
-            {
-                if (ImGui::MenuItem("Remove component"))
-                    removeComponent = true;
-                ImGui::EndPopup();
-            }
-
-            if (open)
-            {
-                desc.RenderFn(comp);
-                ImGui::TreePop();
-            }
-
-            if (removeComponent) registry.Remove<T>(entity);
-        }
-    }
-
-   
     void ScenePanels::DrawInspectorPanel()
     {
         auto& registry = m_Scene.GetRegistry();
@@ -218,67 +186,87 @@ namespace Engine
         if (m_ActiveEntity.Id != registry.GetEntityManager().GetNullEntityFlag())
         {
             ImGui::PushID(static_cast<I32>(m_ActiveEntity));
+            SaveState();
+            for (auto& uiDesc : m_ComponentUIDescriptions)
+            {
+                if (uiDesc->ShouldDraw(m_ActiveEntity)) DrawUIOfComponent(*uiDesc);
+            }
 
-            auto transformCompUI = CreateComponentUIDescription<Component::Transform2D>(
-                "Transform2D",
-                false,
-                [](Component::Transform2D& transform)
-                {
-                    F32 rotationDegrees = glm::degrees(std::acos(transform.Rotation[0]));
-                    if (transform.Rotation[1] < 0.0f) rotationDegrees *= -1.0f;
-                    ImGui::DragFloat2("Position", &transform.Position[0], 0.05f, -10.0f, 10.0f);
-                    ImGui::DragFloat("Rotation", &rotationDegrees, 0.05f, -360.0f, 360.0f);
-                    ImGui::DragFloat2("Scale", &transform.Scale[0], 0.05f, -10.0f, 10.0f);
-                    const F32 rotationRadians = glm::radians(rotationDegrees);
-                    transform.Rotation = glm::vec2{glm::cos(rotationRadians), glm::sin(rotationRadians)};
-                }
-            );
-            auto tagCompUI = CreateComponentUIDescription<Component::Tag>(
-                "Tag",
-                false,
-                [&](Component::Tag& tag)
-                {
-                    char newTagName[512];
-                    strcpy(newTagName, tag.TagName.c_str());
-                    ImGui::InputText("Tag", newTagName, 512);
-                    std::string oldName = tag.TagName;
-                    tag.TagName = std::string(newTagName);
-                    if (oldName != tag.TagName)
-                    {
-                        registry.PopFromMap(m_ActiveEntity, oldName);
-                        registry.PushToMap(m_ActiveEntity, tag.TagName);    
-                    }
-                }
-            );
-            auto boxCollider2DCompUI = CreateComponentUIDescription<Component::BoxCollider2D>(
-                "BoxCollider2D",
-                true,
-                [](Component::BoxCollider2D& boxCollider2D)
-                {
-                    ImGui::DragFloat2("Position", &boxCollider2D.Offset[0], 0.05f, -10.0f, 10.0f);
-                    ImGui::DragFloat2("Scale", &boxCollider2D.HalfSize[0], 0.05f, 0.0f, 10.0f);
-                }
-            );
-            auto rigidBody2DCompUI = CreateComponentUIDescription<Component::RigidBody2D>(
-                "RigidBody2D",
-                true,
-                [](Component::RigidBody2D& rigidBody)
-                {
-                }
-            );
-            
-            DrawComponent<Component::Transform2D>(transformCompUI, m_Scene, m_ActiveEntity);
-            DrawComponent<Component::Tag>(tagCompUI, m_Scene, m_ActiveEntity);
-            DrawComponent<Component::BoxCollider2D>(boxCollider2DCompUI, m_Scene, m_ActiveEntity);
-            DrawComponent<Component::RigidBody2D>(rigidBody2DCompUI, m_Scene, m_ActiveEntity);
-
+            if (registry.Has<Component::BoxCollider2D>(m_ActiveEntity))
+            {
+                SceneUtils::SynchronizePhysics(m_Scene, m_ActiveEntity, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
+            }
             if (registry.Has<Component::RigidBody2D>(m_ActiveEntity))
             {
-                SceneUtils::SynchronizePhysics(m_Scene, m_ActiveEntity);
+                SceneUtils::SynchronizePhysics(m_Scene, m_ActiveEntity, SceneUtils::PhysicsSynchroSetting::RBOnly);
             }
-            
+            CheckState();
             ImGui::PopID();
         }
         ImGui::End();
     }
+
+    void ScenePanels::DrawUIOfComponent(ComponentUIDescBase& uiDesc)
+    {
+        const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
+        auto& registry = uiDesc.GetAttachedRegistry();
+    
+        ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+        ImGui::Separator();
+        bool open = ImGui::TreeNodeEx((void*)uiDesc.GetComponentID(), flags, uiDesc.GetComponentName().c_str());
+        ImGui::PopStyleVar();
+        ImGui::SameLine(contentRegionAvailable.x);
+        if (ImGui::Button("+"))
+        {
+            if (uiDesc.IsComponentRemovable()) ImGui::OpenPopup("ComponentSettings");
+        }
+
+        bool removeComponent = false;
+        if (ImGui::BeginPopup("ComponentSettings"))
+        {
+            if (ImGui::MenuItem("Remove component"))
+                removeComponent = true;
+            ImGui::EndPopup();
+        }
+
+        if (open)
+        {
+            uiDesc.OnUIDraw(m_ActiveEntity);
+            ImGui::TreePop();
+        }
+
+        if (removeComponent) uiDesc.RemoveComponent(m_ActiveEntity);
+    }
+
+    void ScenePanels::SaveState()
+    {
+        auto& registy = m_Scene.GetRegistry();
+        Component::LocalToWorldTransform2D tf = registy.Has<Component::LocalToParentTransform2D>(m_ActiveEntity) ?
+            Component::LocalToWorldTransform2D(registy.Get<Component::LocalToParentTransform2D>(m_ActiveEntity)) :
+            registy.Get<Component::LocalToWorldTransform2D>(m_ActiveEntity);
+        m_SavedState.Position = tf.Position;
+    }
+
+    void ScenePanels::CheckState()
+    {
+        auto& registy = m_Scene.GetRegistry();
+        Component::LocalToWorldTransform2D tf = registy.Has<Component::LocalToParentTransform2D>(m_ActiveEntity) ?
+            Component::LocalToWorldTransform2D(registy.Get<Component::LocalToParentTransform2D>(m_ActiveEntity)) :
+            registy.Get<Component::LocalToWorldTransform2D>(m_ActiveEntity);
+        if (tf.Position != m_SavedState.Position)
+        {
+            if (registy.Has<Component::RigidBody2D>(m_ActiveEntity))
+            {
+                auto& rb = registy.Get<Component::RigidBody2D>(m_ActiveEntity);
+                auto& prb = rb.PhysicsBody;
+                prb->SetAngularVelocity(0.0f);
+                prb->SetLinearVelocity(glm::vec2{0.0f});
+                prb->ResetForce();
+                prb->ResetTorque();
+            }
+        }
+    }
+    
 }

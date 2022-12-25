@@ -16,6 +16,8 @@ namespace Engine
 		void EndFrame();
 		void OnEvent(Event& e) override;
 	private:
+		void SetUpStyle();
+	private:
 		bool m_DockSpaceOpen;
 		ImGuiDockNodeFlags m_DockSpaceFlags;
 		ImGuiWindowFlags m_MainDockNodeFlags;

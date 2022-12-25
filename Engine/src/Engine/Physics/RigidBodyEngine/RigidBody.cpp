@@ -2,16 +2,20 @@
 
 #include "RigidBody.h"
 
+#include "Engine/ECS/Components.h"
+#include "Engine/Math/LinearAlgebra.h"
+
 namespace Engine::Physics
 {
-	RigidBody2D::RigidBody2D(const RigidBodyDef2D& rbDef) :
-		m_Position(rbDef.Position), m_Rotation(rbDef.Rotation.RotationVec),
+	RigidBody2D::RigidBody2D(const RigidBodyDef2D& rbDef)
+		:
+		m_Type(rbDef.Type),
+		m_BodyListEntry(nullptr), m_Flags(rbDef.Flags),
+		m_UserData(rbDef.UserData), m_AttachedTransform(rbDef.AttachedTransform),
 		m_LinearVelocity(rbDef.LinearVelocity), m_LinearDamping(rbDef.LinearDamping),
-		m_AngularVelocity(rbDef.AngularVelocty), m_AngularDamping(rbDef.AngularDamping),
+		m_AngularVelocity(rbDef.AngularVelocity), m_AngularDamping(rbDef.AngularDamping),
 		m_Force(0.0f), m_Torque(0.0f),
-		m_InverseMass(1.0f / rbDef.Mass), m_InverseInertiaTensor(1.0f / rbDef.Inertia),
-		m_Type(rbDef.Type), m_Flags(rbDef.Flags),
-		m_BodyListEntry(nullptr), m_UserData(rbDef.UserData)
+		m_InverseMass(1.0f / rbDef.Mass), m_InverseInertiaTensor(1.0f / rbDef.Inertia)
 	{
 		m_CenterOfMass = glm::vec2{ 0.0f };
 		if (rbDef.Flags & RigidBodyDef2D::RestrictRotation)
@@ -29,74 +33,49 @@ namespace Engine::Physics
 			m_InverseInertiaTensor = 0.0f;
 			break;
 		}
-		m_ColliderList = nullptr;
+		m_AttachedCollider = nullptr;
 	}
 
 	RigidBody2D::~RigidBody2D()
 	{
-		while (m_ColliderList != nullptr)
-		{
-			ColliderListEntry2D* next = m_ColliderList->Next;
-			Collider2D::Destroy(m_ColliderList->Collider);
-			Delete<ColliderListEntry2D>(m_ColliderList);
-			m_ColliderList = next;
-		}
+		OrphanCollider();
 	}
 
-	Collider2D* RigidBody2D::AddCollider(const ColliderDef2D& colDef)
+	void RigidBody2D::SetCollider(Collider2D* collider)
 	{
-		Collider2D* newCollider = colDef.Clone();
-		newCollider->SetAttachedRigidBody(this);
-		ColliderListEntry2D* newEntry = New<ColliderListEntry2D>();
-		newEntry->Collider = newCollider;
-		newCollider->m_ColliderListEntry2D = newEntry;
-		newEntry->Next = m_ColliderList;
-		if (m_ColliderList != nullptr)
-		{ 
-			m_ColliderList->Prev = newEntry;
-		}
-		m_ColliderList = newEntry;
-
-		if ((m_Flags & RigidBodyDef2D::UseSyntheticMass) != 0) return newEntry->Collider;
-		if (m_Type != RigidBodyType2D::Dynamic) return newEntry->Collider;
-
-		RecalculateMass();
-
-		// Very smart visual studio.
-		if (newEntry == nullptr) return nullptr;
-		return newEntry->Collider;
-	}
-
-	void RigidBody2D::RemoveCollider(Collider2D* collider)
-	{
-		ColliderListEntry2D* entry = collider->m_ColliderListEntry2D;
-		if (entry == m_ColliderList) m_ColliderList = entry->Next;
-		if (entry->Prev) entry->Prev->Next = entry->Next;
-		if (entry->Next) entry->Next->Prev = entry->Prev;
-		Collider2D::Destroy(collider);
-		Delete<ColliderListEntry2D>(entry);
-
+		if (m_AttachedCollider) OrphanCollider();
+		collider->SetAttachedRigidBody(this);
+		m_AttachedCollider = collider;
 		if ((m_Flags & RigidBodyDef2D::UseSyntheticMass) != 0) return;
 		if (m_Type != RigidBodyType2D::Dynamic) return;
+
 		RecalculateMass();
 	}
+
+	void RigidBody2D::OrphanCollider()
+	{
+		m_AttachedCollider->SetAttachedRigidBody(nullptr);
+	}
+
+	void RigidBody2D::SetPosition(const glm::vec2& pos)	{ m_AttachedTransform->Position = pos; }
+
+	const glm::vec2& RigidBody2D::GetPosition() const { return m_AttachedTransform->Position; }
 
 	void RigidBody2D::RecalculateMass()
 	{
 		m_InverseMass = m_InverseInertiaTensor = 0.0f;
 		m_CenterOfMass = glm::vec2{ 0.0f };
-
+		if (m_Type != RigidBodyType2D::Dynamic) return;;
+		
 		F32 mass = 0.0f;
 		F32 inertia = 0.0f;
-		for (ColliderListEntry2D* colliderEntry = m_ColliderList; colliderEntry != nullptr; colliderEntry = colliderEntry->Next)
-		{
-			// Sensors do not contribute to mass.
-			if (colliderEntry->Collider->IsSensor()) continue;
-			MassInfo2D massInfo = colliderEntry->Collider->CalculateMass();
-			mass += massInfo.Mass;
-			inertia += massInfo.Inertia;
-			m_CenterOfMass += massInfo.CenterOfMass * massInfo.Mass;
-		}
+		
+		// Sensors do not contribute to mass.
+		if (m_AttachedCollider->IsSensor()) return;
+		MassInfo2D massInfo = m_AttachedCollider->CalculateMass();
+		mass += massInfo.Mass;
+		inertia += massInfo.Inertia;
+		m_CenterOfMass += massInfo.CenterOfMass * massInfo.Mass;
 		if (mass > 0.0f)
 		{
 			m_InverseMass = 1.0f / mass;
@@ -124,19 +103,22 @@ namespace Engine::Physics
 		}
 	}
 
+	void RigidBody2D::SetRotation(const glm::vec2& rotVec) { m_AttachedTransform->Rotation = rotVec; }
+
+	void RigidBody2D::SetRotation(F32 angleRad)	{ m_AttachedTransform->Rotation = glm::vec2{ glm::cos(angleRad), glm::sin(angleRad) }; }
+
 	void RigidBody2D::AddRotation(F32 angleRad)
 	{
 		glm::vec2 delta = glm::vec2{ glm::cos(angleRad), glm::sin(angleRad) };
-		m_Rotation = {
-			m_Rotation.x * delta.x - m_Rotation.y * delta.y,
-			m_Rotation.x * delta.y + m_Rotation.y * delta.x
-		};
+		m_AttachedTransform->Rotation = Math::CombineRotation(m_AttachedTransform->Rotation, delta);
 	}
+
+	const glm::vec2& RigidBody2D::GetRotation() const { return m_AttachedTransform->Rotation; }
 
 	void RigidBody2D::ApplyForceLocal(const glm::vec2& force, const glm::vec2& point)
 	{
 		// Transform local space to world space.
-		glm::vec2 transformedPoint = { point.x * m_Rotation.x - point.y * m_Rotation.y, point.x * m_Rotation.y + point.y * m_Rotation.x };
+		glm::vec2 transformedPoint = TransformToWorld(point);
 		AddForce(force);
 		AddTorque(transformedPoint.x * force.y - transformedPoint.y * force.x);
 	}
@@ -147,9 +129,9 @@ namespace Engine::Physics
 		AddTorque((point.x - m_CenterOfMass.x) * force.y - (point.y - m_CenterOfMass.y) * force.x);
 	}
 	
-	Transform2D RigidBody2D::GetTransform() const
+	Component::LocalToWorldTransform2D& RigidBody2D::GetTransform() const
 	{
-		return { .Translation {m_Position.x, m_Position.y}, .Rotation{m_Rotation.x, m_Rotation.y} };
+		return *m_AttachedTransform;
 	}
 
 	glm::vec2 RigidBody2D::TransformToWorld(const glm::vec2& point) const

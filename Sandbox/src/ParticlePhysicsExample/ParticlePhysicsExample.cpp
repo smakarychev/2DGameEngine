@@ -69,7 +69,7 @@ void ParticlePhysicsExample::Render()
     // Render particles.
     for (auto& particle : m_World.GetParticles())
     {
-        Component::Transform2D transform;
+        Component::LocalToWorldTransform2D transform;
         transform.Position = particle->GetPosition();
         transform.Scale = {0.2f, 0.2f};
         Component::SpriteRenderer sp;

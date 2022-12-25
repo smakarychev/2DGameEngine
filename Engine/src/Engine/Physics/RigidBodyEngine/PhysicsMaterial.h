@@ -13,8 +13,8 @@ namespace Engine::Physics
 		F32 Friction;
 		F32 Restitution;
 		F32 Density;
-		PhysicsMaterial(F32 friction = 0.1f, F32 restituion = 0.0f, F32 density = 1.0f)
-			: Friction(friction), Restitution(restituion), Density(density)
+		PhysicsMaterial(F32 friction = 0.1f, F32 restitution = 0.0f, F32 density = 1.0f)
+			: Friction(friction), Restitution(restitution), Density(density)
 		{}
 	};
 }
