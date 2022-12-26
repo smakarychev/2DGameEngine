@@ -10,37 +10,40 @@ namespace Engine
     public:
         ~Registry();
         Entity CreateEntity(const std::string& tag = "Default");
-        Entity GetEntity(Entity entityId) const;
+        Entity GetEntity(Entity entity) const;
         EntityContainer& GetEntities(const std::string& tag) const;
-        void DeleteEntity(Entity entityId);
+        void DeleteEntity(Entity entity);
         U32 TotalEntities() const { return m_EntityManager.m_TotalEntities; }
 
         /* TODO: TEMP */
-        void PopFromMap(Entity entityId, const std::string& tag);
-        void PushToMap(Entity entityId, const std::string& tag);
+        void PopFromMap(Entity entity, const std::string& tag);
+        void PushToMap(Entity entity, const std::string& tag);
         /* TODO: TEMP */
         
         // Add specified component to entity.
         template <typename T, typename ... Args>
-        T& Add(Entity entityId, Args&&... args);
+        T& Add(Entity entity, Args&&... args);
 
         // Remove specified component from entity.
         template <typename T>
-        void Remove(Entity entityId);
+        void Remove(Entity entity);
 
         // Check if entity has specified component.
         template <typename T>
-        bool Has(Entity entityId) const;
-        bool Has(U64 componentId, Entity entityId) const;
+        bool Has(Entity entity) const;
+        bool Has(U64 componentId, Entity entity) const;
 
         // Check if registry has such component.
         bool IsComponentExists(U64 componentId) const;
 
         // Returns the entities component.
         template<typename T>
-        const T& Get(Entity entityId) const;
+        const T& Get(Entity entity) const;
         template<typename T>
-        T& Get(Entity entityId);
+        T& Get(Entity entity);
+
+        template<typename T>
+        T& AddOrGet(Entity entity);
         
         template <typename T>
         const ComponentPool& GetComponentPool() const;
@@ -54,41 +57,48 @@ namespace Engine
     };
 
     template <typename T, typename ... Args>
-    T& Registry::Add(Entity entityId, Args&&... args)
+    T& Registry::Add(Entity entity, Args&&... args)
     {
-        ENGINE_CORE_ASSERT(m_EntityManager.IsAlive(entityId), "Entity no longer exists, or haven't existed at all.")
-        return m_ComponentManager.Add<T, Args...>(entityId, std::forward<Args>(args)...);
+        ENGINE_CORE_ASSERT(m_EntityManager.IsAlive(entity), "Entity no longer exists, or haven't existed at all.")
+        return m_ComponentManager.Add<T, Args...>(entity, std::forward<Args>(args)...);
     }
 
     template <typename T>
-    void Registry::Remove(Entity entityId)
+    void Registry::Remove(Entity entity)
     {
-        m_ComponentManager.Remove<T>(entityId);
+        m_ComponentManager.Remove<T>(entity);
     }
 
     template <typename T>
-    bool Registry::Has(Entity entityId) const
+    bool Registry::Has(Entity entity) const
     {
         U64 componentId = ComponentFamily::TYPE<T>;
-        return Has(componentId, entityId);
+        return Has(componentId, entity);
     }
 
     template <typename T>
-    const T& Registry::Get(Entity entityId) const
+    const T& Registry::Get(Entity entity) const
     {
-        return m_ComponentManager.GetComponentPool<T>().Get<T>(entityId);
+        return m_ComponentManager.GetComponentPool<T>().Get<T>(entity);
     }
 
     template <typename T>
-    T& Registry::Get(Entity entityId)
+    T& Registry::Get(Entity entity)
     {
-        return const_cast<T&>(const_cast<const Registry*>(this)->Get<T>(entityId));
+        return const_cast<T&>(const_cast<const Registry*>(this)->Get<T>(entity));
     }
 
-    inline bool Registry::Has(U64 componentId, Entity entityId) const
+    template <typename T>
+    T& Registry::AddOrGet(Entity entity)
     {
-        ENGINE_CORE_ASSERT(m_ComponentManager.GetPoolCount() > componentId, "No such component exists.")
-        return m_ComponentManager.GetComponentPool(componentId).Has(entityId);
+        if (Has<T>(entity)) return Get<T>(entity);
+        return Add<T>(entity);
+    }
+
+    inline bool Registry::Has(U64 componentId, Entity entity) const
+    {
+        if (!m_ComponentManager.DoesPoolExist(componentId)) return false;
+        return m_ComponentManager.GetComponentPool(componentId).Has(entity);
     }
 
     template <typename T>

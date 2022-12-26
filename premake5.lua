@@ -19,8 +19,8 @@ group "Dependencies"
 	include "Engine/vendor/glad"
 	include "Engine/vendor/imgui"	
 	include "Engine/vendor/msdf-atlas-gen"
+	include "Engine/vendor/yaml-cpp"
 	
 group""
-
 	include "Engine"
 	include "Sandbox"

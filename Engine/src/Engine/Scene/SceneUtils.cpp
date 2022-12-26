@@ -39,10 +39,11 @@ namespace Engine
         );
     }
 
-    void SceneUtils::AddDefaultBoxCollider2D(Scene& scene, Entity entity, Component::BoxCollider2D& boxCollider2D)
+    void SceneUtils::AddDefaultBoxCollider2D(Scene& scene, Entity entity)
     {
         auto& registry = scene.GetRegistry();
         auto& world2D = scene.GetRigidBodyWorld2D();
+        auto& boxCollider2D = registry.Get<Component::BoxCollider2D>(entity);
         
         Physics::ColliderDef2D colDef;
         Physics::BoxCollider2D box = Physics::BoxCollider2D(boxCollider2D.Offset, boxCollider2D.HalfSize);
@@ -67,7 +68,7 @@ namespace Engine
         
     }
 
-    void SceneUtils::AddDefault2DCamera(Scene& scene, Entity entity)
+    Component::Camera& SceneUtils::AddDefault2DCamera(Scene& scene, Entity entity)
     {
         auto camera = Camera::Create(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f, 16.0f / 9.0f);
         glm::vec2 viewportSize = { Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight() };
@@ -90,6 +91,7 @@ namespace Engine
         auto& cameraComp = registry.Add<Component::Camera>(entity);
         cameraComp.CameraController = cameraController;
         cameraComp.CameraFrameBuffer = frameBuffer;
+        return cameraComp;
     }
 
     void SceneUtils::SynchronizePhysics(Scene& scene, Entity entity, PhysicsSynchroSetting synchroSetting)
@@ -117,7 +119,7 @@ namespace Engine
         {
             ENGINE_CORE_ASSERT(registry.Has<Component::BoxCollider2D>(entity), "Entity has no box collider.")
             auto& col = registry.Get<Component::BoxCollider2D>(entity);
-            if (col.PhysicsCollider.Get() == nullptr) AddDefaultBoxCollider2D(scene, entity, col);
+            if (col.PhysicsCollider.Get() == nullptr) AddDefaultBoxCollider2D(scene, entity);
             // Write component state to physics state.
             Physics::BoxCollider2D* pcol = col.PhysicsCollider.Get();
             pcol->Center = col.Offset;

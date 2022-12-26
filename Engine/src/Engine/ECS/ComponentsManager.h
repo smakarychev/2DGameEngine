@@ -214,6 +214,8 @@ namespace Engine
         template <typename T>
         T& Get(Entity entityId);
 
+        bool DoesPoolExist(U64 componentId) const;
+        
         template <typename T>
         const ComponentPool& GetComponentPool() const;
         const ComponentPool& GetComponentPool(U64 componentId) const;
@@ -224,6 +226,11 @@ namespace Engine
     private:
         std::vector<Ref<ComponentPool>> m_Pools;
     };
+
+    inline bool ComponentManager::DoesPoolExist(U64 componentId) const
+    {
+        return componentId < m_Pools.size() && m_Pools[componentId] != nullptr;
+    }
 
     inline const ComponentPool& ComponentManager::GetComponentPool(U64 componentId) const
     {

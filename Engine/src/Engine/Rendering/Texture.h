@@ -53,7 +53,7 @@ namespace Engine
 
 		struct TextureData
 		{
-			std::string  Name = "Default";
+			std::string Name = "Default";
 			U8* Data = nullptr;
 			U32 Width = 0, Height = 0;
 			PixelFormat PixelFormat = PixelFormat::RGBA;

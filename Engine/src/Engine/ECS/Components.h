@@ -45,6 +45,7 @@ namespace Engine::Component
         Ref<CameraController> CameraController{nullptr};
         // TODO: I'm not so sure it belongs here (but they are very tied together).
         Ref<FrameBuffer> CameraFrameBuffer{nullptr};
+        bool IsPrimary{false};
     };
     
     struct Tag

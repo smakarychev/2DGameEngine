@@ -36,7 +36,7 @@ namespace Engine
         void OnUIDraw(Entity e) override;
         U64 GetComponentID() const override;
         void RemoveComponent(Entity e) override;
-        virtual bool ShouldDraw(Entity e) override;
+        bool ShouldDraw(Entity e) override;
     protected:
         virtual void OnUIDraw([[maybe_unused]] Entity e, T& component) = 0;
 

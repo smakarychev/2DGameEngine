@@ -16,13 +16,13 @@ namespace Engine
 	public:
 		struct Layer
 		{
-			std::string_view Name;
+			std::string Name;
 			U32 Id;
 			U8 Priority;
 		};
 	public:
 		SortingLayer();
-		Layer CreateLayer(std::string_view name);
+		Layer CreateLayer(const std::string& name);
 		void PlaceBefore(const Layer& first, const Layer& second);
 
 		const std::vector<Layer>& GetLayers() const { return m_Layers; }

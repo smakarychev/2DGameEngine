@@ -12,7 +12,7 @@ namespace Engine
 		m_Layers.push_back(defaultLayer);
 	}
 	
-	SortingLayer::Layer SortingLayer::CreateLayer(std::string_view name)
+	SortingLayer::Layer SortingLayer::CreateLayer(const std::string& name)
 	{
 		Layer newLayer{ .Name = name, .Id = m_LastId++, .Priority = U8(m_Layers.back().Priority + 1) };
 		m_Layers.push_back(newLayer);

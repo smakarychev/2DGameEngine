@@ -48,7 +48,7 @@ namespace Engine
     {
         if (!m_FindActiveEntity) return;
         m_FindActiveEntity = false;
-        FrameBuffer* frameBuffer = m_Scene.GetFrameBuffer();
+        FrameBuffer* frameBuffer = m_Scene.GetMainFrameBuffer();
         ENGINE_ASSERT(frameBuffer != nullptr, "Framebuffer is unset")
 
         // Read id from framebuffer texture (should only be executed in "Editor" mode.
@@ -88,7 +88,7 @@ namespace Engine
             auto& tag = registry.Get<Component::Tag>(e);
             ImGuiTreeNodeFlags flags = ((m_ActiveEntity == e) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
             flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-            bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)e, flags, tag.TagName.c_str());
+            bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)e, flags, (tag.TagName + " (" + std::to_string(e.Id) + ")").c_str());
             if (ImGui::IsItemClicked())
             {
                 m_ActiveEntity = e;
@@ -120,7 +120,7 @@ namespace Engine
         auto& tag = registry.Get<Component::Tag>(entity);
         ImGuiTreeNodeFlags flags = ((m_ActiveEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth | (hasChildren ? ImGuiTreeNodeFlags_DefaultOpen : 0);
-        bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags, tag.TagName.c_str());
+        bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags, (tag.TagName + " (" + std::to_string(entity.Id) + ")").c_str());
         if (ImGui::IsItemClicked())
         {
             m_ActiveEntity = entity;

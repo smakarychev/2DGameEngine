@@ -22,7 +22,7 @@ namespace Engine
     void LocalToWorldTransformUIDesc::OnUIDraw(Entity e, Component::LocalToWorldTransform2D& component)
     {
         if (m_Registry.Has<Component::LocalToParentTransform2D>(e)) return;
-        F32 rotationDegrees = glm::degrees(std::acos(Math::Min(component.Rotation[0], 1.0f)));
+        F32 rotationDegrees = glm::degrees(std::acos(Math::Clamp(component.Rotation[0], -1.0f, 1.0f)));
         if (component.Rotation[1] < 0.0f) rotationDegrees *= -1.0f;
         ImGuiCommon::DrawFloat2("Position", component.Position, 0.05f, -IMGUI_LIMITLESS, IMGUI_LIMITLESS);
         ImGuiCommon::DrawFloat("Rotation", rotationDegrees, 0.05f, -360.0f, 360.0f);
@@ -44,7 +44,7 @@ namespace Engine
 
     void LocalToParentTransformUIDesc::OnUIDraw(Entity e, Component::LocalToParentTransform2D& component)
     {
-        F32 rotationDegrees = glm::degrees(std::acos(component.Rotation[0]));
+        F32 rotationDegrees = glm::degrees(std::acos(Math::Clamp(component.Rotation[0], -1.0f, 1.0f)));
         if (component.Rotation[1] < 0.0f) rotationDegrees *= -1.0f;
         ImGuiCommon::DrawFloat2("Position", component.Position, 0.05f, -IMGUI_LIMITLESS, IMGUI_LIMITLESS);
         ImGuiCommon::DrawFloat("Rotation", rotationDegrees, 0.05f, -360.0f, 360.0f);

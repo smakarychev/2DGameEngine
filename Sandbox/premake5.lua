@@ -21,6 +21,7 @@ project "Sandbox"
 		"%{IncludeDir.msdf_atlas}",
 		"%{IncludeDir.msdfgen}",	
 		"%{IncludeDir.imgui}",	
+		"%{IncludeDir.yaml_cpp}",	
 	}
 
 	links

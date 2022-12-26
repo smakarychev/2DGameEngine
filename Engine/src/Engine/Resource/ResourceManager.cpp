@@ -62,7 +62,7 @@ namespace Engine
 		auto it = s_LoadedTextures.find(pathString);
 		if (it != s_LoadedTextures.end()) return it->second;
 
-		std::string textureName = path.filename().string();
+		std::string textureName = path.string();
 
 		Texture::TextureData textureData;
 		I32 width, height, channels;

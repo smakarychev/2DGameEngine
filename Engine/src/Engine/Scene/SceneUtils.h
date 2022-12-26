@@ -21,8 +21,8 @@ namespace  Engine
     public:
         static EntityTransformPair AddDefaultEntity(Scene& scene, const std::string& tag);
         static void AddDefaultPhysicalRigidBody2D(Scene& scene, Entity entity);
-        static void AddDefaultBoxCollider2D(Scene& scene, Entity entity, Component::BoxCollider2D& boxCollider2D);
-        static void AddDefault2DCamera(Scene& scene, Entity entity);
+        static void AddDefaultBoxCollider2D(Scene& scene, Entity entity);
+        static Component::Camera& AddDefault2DCamera(Scene& scene, Entity entity);
 
         // Reflects component state to physics state.
         static void SynchronizePhysics(Scene& scene, Entity entity, PhysicsSynchroSetting synchroSetting = PhysicsSynchroSetting::Full);

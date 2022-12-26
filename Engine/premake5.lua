@@ -27,6 +27,7 @@ project "Engine"
 		"%{IncludeDir.msdf_atlas}",
 		"%{IncludeDir.msdfgen}",	
 		"%{IncludeDir.imgui}",	
+		"%{IncludeDir.yaml_cpp}",	
 	}
 
 	links
@@ -36,6 +37,7 @@ project "Engine"
 		"msdfgen",
 		"msdf-atlas-gen",
 		"imgui",
+		"yaml_cpp",
 	}
 
 	defines

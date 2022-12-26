@@ -19,14 +19,9 @@ private:
 	bool OnKeyboardPressed(KeyPressedEvent& event);
 	bool OnKeyboardReleased(KeyReleasedEvent& event);
 	
-	void ValidateViewport();
 	void Render();
-	CRect GetCameraBounds();
-
 private:
 	std::vector<Ref<Scene>> m_Scenes;
-	Ref<Scene> m_CurrentScene = 0;
-	Ref<CameraController> m_CameraController;
-	Ref<FrameBuffer> m_FrameBuffer;
+	Ref<Scene> m_CurrentScene{nullptr};
 	glm::vec2 m_ViewportSize = glm::vec2{ 0.0f };
 };

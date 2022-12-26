@@ -16,6 +16,7 @@ public:
     void OnRender() override;
     void OnImguiUpdate() override;
     void PerformAction(Action& action) override;
+    FrameBuffer* GetMainFrameBuffer() override;
 public:
     // 'Systems'
     void SPhysics(F32 dt);
@@ -25,12 +26,16 @@ public:
     void SMove();
     void SAnimation(F32 dt);
     void SState();
+    void SCamera();
 private:
     void CreateCamera();
     void AddPlayer();
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
     void CreateLevel();
+    void ValidateViewport();
 
+    Component::Camera& GetMainCamera();
+    
     bool OnMousePressed(MouseButtonPressedEvent& event);
 private:
     MarioContactListener m_ContactListener;

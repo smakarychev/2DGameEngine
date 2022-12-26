@@ -563,7 +563,7 @@ namespace Engine
             BatchRenderer2D<BatchVertexLineEditor> LineBatchEditor;
             BatchRenderer2D<BatchVertexEditor> TextBatchEditor;
 
-            SortingLayer* SortingLayer = nullptr;
+            SortingLayer* SortingLayer = &DefaultSortingLayer;
             RenderQueue RenderQueue;
             ~BatchRendererData() = default;
         };
