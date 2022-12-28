@@ -160,7 +160,7 @@ namespace Engine
         glDeleteFramebuffers(1, &m_Id);
         for (auto& texAttachment : m_TextureAttachments) texAttachment.reset();
         for (auto& rbAttachment : m_RenderBufferAttachments)
-            glDeleteBuffers(1, &rbAttachment);
+            glDeleteRenderbuffers(1, &rbAttachment);
         m_TextureAttachments.clear();
         m_RenderBufferAttachments.clear();
     }
