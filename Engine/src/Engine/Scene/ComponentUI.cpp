@@ -22,8 +22,7 @@ namespace Engine
     void LocalToWorldTransformUIDesc::OnUIDraw(Entity e, Component::LocalToWorldTransform2D& component)
     {
         if (m_Registry.Has<Component::LocalToParentTransform2D>(e)) return;
-        F32 rotationDegrees = glm::degrees(std::acos(Math::Clamp(component.Rotation[0], -1.0f, 1.0f)));
-        if (component.Rotation[1] < 0.0f) rotationDegrees *= -1.0f;
+        F32 rotationDegrees = glm::degrees(std::atan2(component.Rotation[1], component.Rotation[0]));
         ImGuiCommon::DrawFloat2("Position", component.Position, 0.05f, -IMGUI_LIMITLESS, IMGUI_LIMITLESS);
         ImGuiCommon::DrawFloat("Rotation", rotationDegrees, 0.05f, -360.0f, 360.0f);
         ImGuiCommon::DrawFloat2("Scale", component.Scale, 0.05f, 0.0f, IMGUI_LIMITLESS);
@@ -44,8 +43,7 @@ namespace Engine
 
     void LocalToParentTransformUIDesc::OnUIDraw(Entity e, Component::LocalToParentTransform2D& component)
     {
-        F32 rotationDegrees = glm::degrees(std::acos(Math::Clamp(component.Rotation[0], -1.0f, 1.0f)));
-        if (component.Rotation[1] < 0.0f) rotationDegrees *= -1.0f;
+        F32 rotationDegrees = glm::degrees(std::atan2(component.Rotation[1], component.Rotation[0]));
         ImGuiCommon::DrawFloat2("Position", component.Position, 0.05f, -IMGUI_LIMITLESS, IMGUI_LIMITLESS);
         ImGuiCommon::DrawFloat("Rotation", rotationDegrees, 0.05f, -360.0f, 360.0f);
         ImGuiCommon::DrawFloat2("Scale", component.Scale, 0.05f, 0.0f, IMGUI_LIMITLESS);
@@ -67,6 +65,17 @@ namespace Engine
             m_Registry.PopFromMap(e, oldName);
             m_Registry.PushToMap(e, component.TagName);    
         }
+    }
+
+    NameUIDesc::NameUIDesc(Registry& registry)
+        : ComponentUIDesc("Name", false, registry)
+    {
+    }
+
+    void NameUIDesc::OnUIDraw(Entity e, Component::Name& component)
+    {
+        std::string oldName = component.EntityName;
+        ImGuiCommon::DrawTextField("Name", component.EntityName);
     }
 
     BoxCollider2DUIDesc::BoxCollider2DUIDesc(Registry& registry)
@@ -99,6 +108,9 @@ namespace Engine
         const std::array<std::string, 2> types = { "Static", "Dynamic" };
         std::string currentType =
             component.Type == Physics::RigidBodyType2D::Dynamic ? types[1] : types[0];
+        F32 mass = component.PhysicsBody->GetMass();
+        ImGuiCommon::DrawFloat("Mass", mass, 0.05f, 0.0f, IMGUI_LIMITLESS);
+        component.PhysicsBody->SetMass(mass);
         if (ImGuiCommon::BeginCombo("Type", currentType.c_str())) // The second parameter is the label previewed before opening the combo.
         {
             for (const auto& type : types)

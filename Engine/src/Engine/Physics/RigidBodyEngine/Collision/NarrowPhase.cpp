@@ -13,6 +13,11 @@ namespace Engine::Physics
 
 	NarrowPhase2D::~NarrowPhase2D()
 	{
+		Clear();
+	}
+
+	void NarrowPhase2D::Clear()
+	{
 		ContactInfoEntry2D* currentNode = m_ContactInfos;
 		while (currentNode != nullptr)
 		{
@@ -24,6 +29,7 @@ namespace Engine::Physics
 			Delete<ContactInfoEntry2D>(currentNode);
 			currentNode = next;
 		}
+		m_ContactInfos = nullptr;
 	}
 
 
@@ -76,7 +82,7 @@ namespace Engine::Physics
 			}
 			else if (!wasTouching && isTouching)
 			{
-				m_ContactListener->OnContactBegin(currentInfo->Info);
+ 				m_ContactListener->OnContactBegin(currentInfo->Info);
 				currentInfo->Info.SetTouch(true);
 			}
 			ContactManager::Destroy(narrowContact);

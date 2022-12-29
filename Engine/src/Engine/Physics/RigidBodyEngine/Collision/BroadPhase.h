@@ -25,6 +25,7 @@ namespace Engine::Physics
 		// Returns the undelying tree structure.
 		const BVHTree2D<Bounds>& GetBVHTree() const { return m_Tree; }
 		BVHTree2D<Bounds>& GetBVHTree() { return m_Tree; }
+		void Clear();
 		
 		// Performs Callback on nodes, that intersects with `bounds`.
 		template <typename Callback>
@@ -82,6 +83,16 @@ namespace Engine::Physics
 	void BroadPhase2D<Bounds>::Query(const Bounds& bounds, Callback callback)
 	{
 		m_Tree.Query([&callback, this](I32 nodeId) { return this->QueryCallback(nodeId, callback); }, bounds);
+	}
+
+	template<typename Bounds>
+	inline void BroadPhase2D<Bounds>::Clear()
+	{
+		m_MovingBodies.clear();
+		m_ContactsMap.clear();
+		m_PrimalityMap.clear();
+		m_BroadToNarrowContactMap.clear();
+		m_Tree.Clear();
 	}
 
 	template<typename Bounds>

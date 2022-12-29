@@ -2,61 +2,254 @@
 #include "SceneSerializer.h"
 
 #include "ComponentSerializer.h"
+#include "Prefab.h"
 #include "Engine/ECS/View.h"
 #include "Engine/Scene/Scene.h"
-#include "Engine/Memory/MemoryManager.h"
+#include "Engine/Scene/SceneUtils.h"
 
 namespace Engine
 {
     SceneSerializer::SceneSerializer(Scene& scene)
         : m_Scene(scene)
     {
-        m_ComponentSerializers.push_back(CreateRef<TagSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<LocalToWorldTransformSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<LocalToParentTransformSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<ChildRelSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<ParentRelSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<RigidBody2DSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<BoxCollider2DSerializer>(m_Emitter, m_Scene));
-        m_ComponentSerializers.push_back(CreateRef<SpriteRendererSerializer>(m_Emitter, m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<TagSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<NameSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<LocalToWorldTransformSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<LocalToParentTransformSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<CameraSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<ChildRelSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<ParentRelSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<RigidBody2DSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<BoxCollider2DSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<SpriteRendererSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<SpriteAnimationSerializer>(m_Scene));
+        m_ComponentSerializers.push_back(CreateRef<PrefabSerializer>(m_Scene));
     }
 
-    void SceneSerializer::Serialize(const std::string& filePath)
+    void SceneSerializer::Serialize(const std::string& filepath)
     {
+        YAML::Emitter emitter;
         auto& registry = m_Scene.GetRegistry();
-        m_Emitter << YAML::BeginMap;
-        m_Emitter << YAML::Key << "Scene" << YAML::Value << "Default";
-        m_Emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "Scene" << YAML::Value << "Default";
+
+        // Prefabs.
+        emitter << YAML::Key << "Prefabs" << YAML::Value << YAML::BeginSeq;
+        for (auto e : View<Component::Prefab>(registry))
+        {
+            if (!registry.Has<Component::BelongsToPrefab>(e)) SerializePrefab(e, emitter);
+        }
+        emitter << YAML::EndSeq;
+
+        // Entities.
+        emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
         for (auto e : View<>(registry))
         {
-            m_Emitter << YAML::BeginMap;
-            m_Emitter << YAML::Key << "Entity" << YAML::Value << e.Id;
-            for (auto& componentSerializer : m_ComponentSerializers)
-            {
-                componentSerializer->SerializeComponentOf(e);
-            }
-            m_Emitter << YAML::EndMap;
+            if (!registry.Has<Component::Prefab>(e) && !registry.Has<Component::BelongsToPrefab>(e))
+                SerializeEntity(
+                    e, emitter);
         }
-        m_Emitter << YAML::EndSeq;
-        m_Emitter << YAML::EndMap;
-        std::ofstream scene(filePath);
-        scene << m_Emitter.c_str();
+        emitter << YAML::EndSeq;
+
+        emitter << YAML::EndMap;
+        Write(filepath, emitter);
     }
 
-    void SceneSerializer::Deserialize(const std::string& filePath)
+    void SceneSerializer::SerializeEntity(Entity entity, YAML::Emitter& emitter)
     {
-        //TODO: keep id map to resolve entity-entity relations.
-        
-        m_Nodes = YAML::LoadFile(filePath);
-        auto entities = m_Nodes["Entities"];
+        ENGINE_CORE_TRACE("Serializing entity {} ({})", m_Scene.GetRegistry().Get<Component::Tag>(entity).TagName,
+                          entity.Id);
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "Entity" << YAML::Value << entity.Id;
+        for (auto& componentSerializer : m_ComponentSerializers)
+        {
+            componentSerializer->SerializeComponentOf(entity, emitter);
+        }
+        emitter << YAML::EndMap;
+    }
+
+    void SceneSerializer::SerializeGeneratedPrefab(const std::vector<Entity>& entities, const std::string& prefabName,
+                                                   U64 prefabId)
+    {
+        YAML::Emitter emitter;
+        auto& registry = m_Scene.GetRegistry();
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "Prefab" << YAML::Value << YAML::BeginMap;
+        emitter << YAML::Key << "Name" << YAML::Value << prefabName;
+        emitter << YAML::Key << "Id" << YAML::Value << prefabId;
+        emitter << YAML::EndMap;
+
+        // Prefabs.
+        emitter << YAML::Key << "Prefabs" << YAML::Value << YAML::BeginSeq;
         for (auto e : entities)
         {
-            std::string entityName = e["Tag"]["Tag"].as<std::string>();
-            auto realE = m_Scene.GetRegistry().CreateEntity(entityName);
-            for (auto& componentSerializer : m_ComponentSerializers)
+            if (registry.Has<Component::Prefab>(e)) SerializePrefab(e, emitter);
+        }
+        emitter << YAML::EndSeq;
+
+        // Entities.
+        emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
+        for (auto e : entities)
+        {
+            if (!registry.Has<Component::Prefab>(e) && !registry.Has<Component::BelongsToPrefab>(e))
+                SerializeEntity(
+                    e, emitter);
+        }
+        emitter << YAML::EndSeq;
+
+        emitter << YAML::EndMap;
+        Write(prefabName, emitter);
+    }
+
+    void SceneSerializer::SerializePrefab(Entity prefab, YAML::Emitter& emitter)
+    {
+        auto& prefabComp = m_Scene.GetRegistry().Get<Component::Prefab>(prefab);
+        ENGINE_CORE_TRACE("Serializing prefab {} ({})", prefabComp.Name, prefabComp.Id);
+        emitter << YAML::BeginMap;
+        emitter << YAML::Key << "Prefab" << YAML::Value << prefab.Id;
+        for (auto& componentSerializer : m_ComponentSerializers)
+        {
+            componentSerializer->SerializeComponentOf(prefab, emitter);
+        }
+        emitter << YAML::EndMap;
+    }
+
+    std::vector<Entity> SceneSerializer::Deserialize(const std::string& filePath)
+    {
+        YAML::Node nodes = YAML::LoadFile(filePath);
+
+        std::unordered_map<Entity, Entity> deserializedToTrueEntityMap;
+        std::unordered_map<Entity, std::vector<Entity*>> entityRelationsMap;
+
+        auto prefabs = nodes["Prefabs"];
+        auto addedFromPrefabs = DeserializePrefabs(prefabs, deserializedToTrueEntityMap, entityRelationsMap);
+        auto entities = nodes["Entities"];
+        auto addedFromEntities = DeserializeEntities(entities, deserializedToTrueEntityMap, entityRelationsMap);
+
+        FixRelations(deserializedToTrueEntityMap, entityRelationsMap);
+
+        std::vector<Entity> addedEntities = addedFromPrefabs;
+        addedEntities.reserve(addedEntities.size() + addedFromEntities.size());
+        addedEntities.insert(addedEntities.end(), addedFromEntities.begin(), addedFromEntities.end());
+        return addedEntities;
+    }
+
+    std::vector<Entity> SceneSerializer::DeserializeEntities(YAML::Node& entities,
+                                                             std::unordered_map<Entity, Entity>& deserializedToTrue,
+                                                             std::unordered_map<Entity, std::vector<Entity*>>&
+                                                             entityRelations)
+    {
+        std::vector<Entity> addedEntities;
+        for (auto e : entities)
+        {
+            addedEntities.push_back(DeserializeEntity(e, deserializedToTrue, entityRelations));
+        }
+        return addedEntities;
+    }
+
+    std::vector<Entity> SceneSerializer::DeserializePrefabs(YAML::Node& prefabs,
+                                                            std::unordered_map<Entity, Entity>& deserializedToTrue,
+                                                            std::unordered_map<Entity, std::vector<Entity*>>&
+                                                            entityRelations)
+    {
+        auto& registry = m_Scene.GetRegistry();
+        std::vector<Entity> addedEntities;
+        // Each prefab is essentially a scene.
+        for (auto prefab : prefabs)
+        {
+            auto addedFromPrefab = Deserialize(prefab["PrefabDetails"]["Name"].as<std::string>());
+            addedEntities.reserve(addedEntities.size() + addedFromPrefab.size() + 1);
+            addedEntities.insert(addedEntities.end(), addedFromPrefab.begin(), addedFromPrefab.end());
+            // Now just deserialize prefab `entity`, and add top level entity from prefab `scene` as it's child.
+            Entity prefabEntity = DeserializeEntityExcludeComponents(prefab,
+                deserializedToTrue,
+                entityRelations,
+                {ChildRelSerializer::GetStaticSingature()},
+                "Prefab");
+            // Entities, deserialized earlier, have 1 common parent (otherwise prefab is ill-formed).
+            Entity topEntity = SceneUtils::FindTopOfTree(addedFromPrefab.front(), registry);
+            SceneUtils::AddChild(m_Scene, prefabEntity, topEntity);
+            addedEntities.push_back(prefabEntity);
+        }
+        return addedEntities;
+    }
+
+    Entity SceneSerializer::DeserializeEntity(YAML::Node& entity,
+                                              std::unordered_map<Entity, Entity>& deserializedToTrue,
+                                              std::unordered_map<Entity, std::vector<Entity*>>& entityRelations,
+                                              const std::string& entityTag)
+    {
+        std::string entityName = entity["Tag"]["Tag"].as<std::string>();
+        auto realE = m_Scene.GetRegistry().CreateEntity(entityName);
+
+        Entity deserealizedEntityId = entity[entityTag].as<Entity>();
+        deserializedToTrue[deserealizedEntityId] = realE;
+        ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id,
+                          realE);
+        for (auto& componentSerializer : m_ComponentSerializers)
+        {
+            componentSerializer->DeserializeComponentOf(realE, entity);
+            componentSerializer->FillEntityRelationsMap(realE, entityRelations);
+        }
+        return realE;
+    }
+
+    Entity SceneSerializer::DeserializeEntityExcludeComponents(YAML::Node& entity,
+                                                               std::unordered_map<Entity, Entity>& deserializedToTrue,
+                                                               std::unordered_map<Entity, std::vector<Entity*>>&
+                                                               entityRelations,
+                                                               const std::vector<ComponentSignature>&
+                                                               excludingSignatures, const std::string& entityTag)
+    {
+        std::string entityName = entity["Tag"]["Tag"].as<std::string>();
+        auto realE = m_Scene.GetRegistry().CreateEntity(entityName);
+
+        Entity deserealizedEntityId = entity[entityTag].as<Entity>();
+        deserializedToTrue[deserealizedEntityId] = realE;
+        ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id,
+                          realE);
+        for (auto& componentSerializer : m_ComponentSerializers)
+        {
+            if (ShouldNotDeserialize(*componentSerializer, excludingSignatures)) continue;
+            componentSerializer->DeserializeComponentOf(realE, entity);
+            componentSerializer->FillEntityRelationsMap(realE, entityRelations);
+        }
+        return realE;
+    }
+
+    void SceneSerializer::FixRelations(std::unordered_map<Entity, Entity>& deserializedToTrue,
+                                       std::unordered_map<Entity, std::vector<Entity*>>& entityRelations)
+    {
+        // Fixing entities (which behave like pointers).
+        for (auto&& [desEntity, entityLocations] : entityRelations)
+        {
+            for (auto* loc : entityLocations)
             {
-                componentSerializer->DeserializeComponentOf(realE, e);
+                *loc = deserializedToTrue[desEntity];
             }
         }
+    }
+
+    bool SceneSerializer::ShouldNotDeserialize(ComponentSerializerBase& compSerializer,
+                                               const std::vector<ComponentSignature>& excludingSignatures)
+    {
+        auto it = std::ranges::find(excludingSignatures, compSerializer.GetSignature());
+        return it != excludingSignatures.end();
+    }
+
+    void SceneSerializer::Write(const std::string& filepath, YAML::Emitter& emitter)
+    {
+        std::ofstream scene(filepath);
+        scene << emitter.c_str();
+    }
+
+    void SceneSerializer::SetComponentSerializers(const std::vector<Ref<ComponentSerializerBase>>& compSerializers)
+    {
+        m_ComponentSerializers = compSerializers;
+    }
+
+    const std::vector<Ref<ComponentSerializerBase>>& SceneSerializer::GetComponentSerializers() const
+    {
+        return m_ComponentSerializers;
     }
 }

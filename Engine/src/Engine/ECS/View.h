@@ -104,7 +104,7 @@ namespace Engine
                 // Check that registry actually has all components.
                 for (auto id : m_ComponentIds)
                 {
-                    ENGINE_ASSERT(m_Registry.IsComponentExists(id), "Registry does not have that component")
+                    if (!m_Registry.IsComponentExists(id)) return;
                 }
                 // Sort the components based on how many entities are in them,
                 // for faster search.
@@ -119,6 +119,7 @@ namespace Engine
 
         Iterator begin() const
         {
+            if (m_ReferencePool == nullptr) return end();
             auto begin = Iterator(m_Registry, m_ComponentIds, m_ReferencePool, static_cast<U32>(m_ReferencePool->GetDenseEntities().size()) - 1, m_AllEntities);
             while (begin != end() && !begin.IsValid()) ++begin;
             return begin;

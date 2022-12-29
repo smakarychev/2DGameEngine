@@ -5,6 +5,7 @@
 #include "SceneUtils.h"
 #include "Engine/Core/Input.h"
 #include "Engine/ECS/View.h"
+#include "Serialization/Prefab.h"
 
 namespace Engine
 {
@@ -14,6 +15,7 @@ namespace Engine
         m_ActiveEntity = NULL_ENTITY;
         auto& registry = m_Scene.GetRegistry();
         m_ComponentUIDescriptions.push_back(CreateRef<TagUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<NameUIDesc>(registry));
         m_ComponentUIDescriptions.push_back(CreateRef<LocalToWorldTransformUIDesc>(registry));
         m_ComponentUIDescriptions.push_back(CreateRef<LocalToParentTransformUIDesc>(registry));
         m_ComponentUIDescriptions.push_back(CreateRef<BoxCollider2DUIDesc>(registry));
@@ -38,6 +40,21 @@ namespace Engine
         DrawInspectorPanel();
     }
 
+    void ScenePanels::OnMainMenuDraw()
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Save", nullptr, false)) m_SaveDialog.IsActive = true;
+                if (ImGui::MenuItem("Open", nullptr, false)) m_OpenDialog.IsActive = true;
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+        DrawDialogs();
+    }
+    
     bool ScenePanels::OnMousePressed(MouseButtonPressedEvent& event)
     {
         m_FindActiveEntity = true;
@@ -70,36 +87,30 @@ namespace Engine
     void ScenePanels::DrawHierarchyPanel()
     {
         m_TraversalMap.clear();
-        std::vector<Entity> topLevelHierarchy = FindTopLevelHierarchy();
+        std::vector<Entity> topLevelEntities = FindTopLevelEntities();
         auto& registry = m_Scene.GetRegistry();
         ImGui::Begin("Scene");
 
-        for (auto e : topLevelHierarchy)
+        for (auto e : topLevelEntities)
         {
             DrawHierarchyOf(e);
-            MarkHierarchyOf(e);
+            MarkHierarchyOf(e, m_TraversalMap);
+        }
+
+        // Drag and drop to change hierarchy.
+        ImGui::Dummy(ImGui::GetContentRegionAvail());
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("entityHierarchy"))
+            {
+                Entity dragged = *static_cast<Entity*>(payload->Data);
+                if (registry.Has<Component::ParentRel>(dragged)) SceneUtils::RemoveChild(m_Scene, dragged);
+            }
+            ImGui::EndDragDropTarget();
         }
         
-        for (auto e : View<>(registry))
-        {
-            if (m_TraversalMap[e] == true) continue;
-            m_TraversalMap[e] = true;
-            
-            auto& tag = registry.Get<Component::Tag>(e);
-            ImGuiTreeNodeFlags flags = ((m_ActiveEntity == e) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-            flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-            bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)e, flags, (tag.TagName + " (" + std::to_string(e.Id) + ")").c_str());
-            if (ImGui::IsItemClicked())
-            {
-                m_ActiveEntity = e;
-            }
-            if (opened)
-            {
-                ImGui::TreePop();
-            }
-        }
         // Right-click to create an entity.
-        if (ImGui::BeginPopupContextWindow(0, 1, false))
+        if (ImGui::BeginPopupContextWindow(nullptr, 1, false))
         {
             if (ImGui::MenuItem("Create Empty Entity"))
             {
@@ -117,10 +128,40 @@ namespace Engine
 
         bool hasChildren = registry.Has<Component::ChildRel>(entity);
         
-        auto& tag = registry.Get<Component::Tag>(entity);
+        auto& name = registry.Get<Component::Name>(entity);
         ImGuiTreeNodeFlags flags = ((m_ActiveEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth | (hasChildren ? ImGuiTreeNodeFlags_DefaultOpen : 0);
-        bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags, (tag.TagName + " (" + std::to_string(entity.Id) + ")").c_str());
+        bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags, (name.EntityName + " (" + std::to_string(entity.Id) + ")").c_str());
+
+        // Right click on entity to open it's menu.
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Create prefab from entity and it's children")) 
+            {
+                m_PrefabDialog.IsActive = true;
+                m_PrefabDialog.Entity = entity;
+            }
+            ImGui::EndPopup();
+        }
+        
+        // Drag and drop to change hierarchy.
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+        {
+            // Set payload to carry the index of our item (could be anything)
+            ImGui::SetDragDropPayload("entityHierarchy", &entity, sizeof(Entity));
+            ImGui::Text((name.EntityName + " (" + std::to_string(entity.Id) + ")").c_str());
+            ImGui::EndDragDropSource();
+        }
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("entityHierarchy"))
+            {
+                Entity dragged = *static_cast<Entity*>(payload->Data);
+                SceneUtils::AddChild(m_Scene, entity, dragged);
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
         if (ImGui::IsItemClicked())
         {
             m_ActiveEntity = entity;
@@ -142,40 +183,38 @@ namespace Engine
         }
     }
 
-    void ScenePanels::MarkHierarchyOf(Entity entity)
+    void ScenePanels::MarkHierarchyOf(Entity entity, std::unordered_map<Entity, bool>& traversalMap)
     {
         auto& registry = m_Scene.GetRegistry();
-        m_TraversalMap[entity] = true;
+        if (traversalMap[entity]) return;
+        traversalMap[entity] = true;        
         if (registry.Has<Component::ChildRel>(entity))
         {
             auto& childRel = registry.Get<Component::ChildRel>(entity);
             auto curr = childRel.First;
             while (curr != NULL_ENTITY)
             {
-                MarkHierarchyOf(curr);
+                MarkHierarchyOf(curr, traversalMap);
                 auto& parentRel = registry.Get<Component::ParentRel>(curr);
                 curr = parentRel.Next;
             }
         }
     }
-    
-    std::vector<Entity> ScenePanels::FindTopLevelHierarchy()
+
+    std::vector<Entity> ScenePanels::FindTopLevelEntities()
     {
         std::vector<Entity> result;
         std::unordered_map<Entity, bool> traversal;
         auto& registry = m_Scene.GetRegistry();
-        for (auto e : View<Component::ParentRel>(registry))
+
+        for (auto e : View<>(registry))
         {
             if (traversal[e]) continue;
-            auto& parentRel = registry.Get<Component::ParentRel>(e);
-            Entity curr = parentRel.Parent;
-            while(registry.Has<Component::ParentRel>(curr))
-            {
-                traversal[curr] = true;
-                curr = registry.Get<Component::ParentRel>(curr).Parent;
-            }
-            result.push_back(curr);
+            MarkHierarchyOf(e, traversal);
+            if (registry.Has<Component::ParentRel>(e)) continue;
+            result.push_back(e);
         }
+
         return result;
     }
 
@@ -238,6 +277,46 @@ namespace Engine
         }
 
         if (removeComponent) uiDesc.RemoveComponent(m_ActiveEntity);
+    }
+
+    void ScenePanels::DrawDialogs()
+    {
+        if (m_SaveDialog.IsActive)
+        {
+            ImGui::Begin("Save scene");
+            ImGuiCommon::DrawTextField("Scene name", m_SaveDialog.FileName);
+            if (ImGui::Button("Save"))
+            {
+                m_Scene.Save(m_SaveDialog.FileName);
+                m_SaveDialog.FileName = {};
+                m_SaveDialog.IsActive = false;
+            }
+            ImGui::End();
+        }
+        if (m_OpenDialog.IsActive)
+        {
+            ImGui::Begin("Open scene");
+            ImGuiCommon::DrawTextField("Scene name", m_OpenDialog.FileName);
+            if (ImGui::Button("Open"))
+            {
+                m_Scene.Open(m_OpenDialog.FileName);
+                m_OpenDialog.FileName = {};
+                m_OpenDialog.IsActive = false;
+            }
+            ImGui::End();
+        }
+        if (m_PrefabDialog.IsActive)
+        {
+            ImGui::Begin("Save prefab");
+            ImGuiCommon::DrawTextField("Prefab name", m_PrefabDialog.FileName);
+            if (ImGui::Button("Save"))
+            {
+                PrefabUtils::CreatePrefabFromEntity(m_PrefabDialog.Entity, m_PrefabDialog.FileName, m_Scene);
+                m_PrefabDialog.FileName = {};
+                m_PrefabDialog.IsActive = false;
+            }
+            ImGui::End();
+        }
     }
 
     void ScenePanels::SaveState()

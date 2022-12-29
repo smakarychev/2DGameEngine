@@ -1,13 +1,17 @@
 ﻿#include "MarioScene.h"
 
 #include "MarioActions.h"
+#include "MarioComponentSerializers.h"
 #include "Engine/ECS/View.h"
 #include "Engine/Scene/SceneUtils.h"
 
 void MarioScene::OnInit()
 {
-    // Create camera entity.
-    CreateCamera();
+    InitSensorCallbacks();
+    m_SceneSerializer.AddComponentSerializer<SensorsSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioInputSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioStateSerializer>();
+    m_SceneSerializer.AddComponentSerializer<CollisionCallbackSerializer>();
     
     // Create sorting layer for correct render order.
     // The structure is Background->Middleground->Default.
@@ -26,6 +30,7 @@ void MarioScene::OnInit()
     // Set custom contact listener.
     m_RigidBodyWorld2D.SetContactListener(&m_ContactListener);
     m_ContactListener.SetRegistry(&m_Registry);
+    m_ContactListener.SetSensorCallbacks(&m_SensorCallbacks);
 
     // Load assets.
     m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Thin.ttf");
@@ -51,45 +56,40 @@ void MarioScene::OnInit()
         m_MarioSprites.get(),
         glm::uvec2{205, 410}, glm::uvec2{30, 28}, 1, 0
     );
-    m_Animations.push_back(walkRight);
-    m_Animations.push_back(walkLeft);
-    m_Animations.push_back(jumpRight);
-    m_Animations.push_back(jumpLeft);
-    m_Animations.push_back(stand);
-    m_AnimationsMap["wRight"] = walkRight.get();
-    m_AnimationsMap["wLeft"] = walkLeft.get();
-    m_AnimationsMap["jRight"] = jumpRight.get();
-    m_AnimationsMap["jLeft"] = jumpLeft.get();
-    m_AnimationsMap["stand"] = stand.get();
-
-    // Add entities.
-    AddPlayer();
-    CreateLevel();
-    m_SceneSerializer.Serialize("assets/scenes/test.scene");
-    //m_SceneSerializer.Deserialize("assets/scenes/test.scene");
+    m_AnimationsMap["wRight"] = walkRight;
+    m_AnimationsMap["wLeft"] = walkLeft;
+    m_AnimationsMap["jRight"] = jumpRight;
+    m_AnimationsMap["jLeft"] = jumpLeft;
+    m_AnimationsMap["stand"] = stand;
 }
 
 void MarioScene::OnUpdate(F32 dt)
 {
+    if (!m_IsSceneReady) return;
+    
     // Call systems.
     SMove();
     SPhysics(dt);
     SState();
     SAnimation(dt);
 
-    auto& camera = GetMainCamera();
-    camera.CameraController->OnUpdate(dt);
-    camera.CameraFrameBuffer->Bind();
+    auto* camera = GetMainCamera();
+    if (!camera) return;
+    camera->CameraController->OnUpdate(dt);
+    camera->CameraFrameBuffer->Bind();
     m_ScenePanels.OnUpdate();
-    m_SceneGraph.UpdateTransforms();
-    camera.CameraFrameBuffer->Unbind();
+    m_SceneGraph.OnUpdate();
+    camera->CameraFrameBuffer->Unbind();
     SCamera();
 }
 
 void MarioScene::OnEvent(Event& event)
 {
-    auto& camera = GetMainCamera();
-    camera.CameraController->OnEvent(event);
+    if (!m_IsSceneReady) return;
+    
+    auto* camera = GetMainCamera();
+    if (!camera) return;
+    camera->CameraController->OnEvent(event);
     m_ScenePanels.OnEvent(event);
     EventDispatcher dispatcher(event);
     dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_FN(MarioScene::OnMousePressed));
@@ -97,6 +97,8 @@ void MarioScene::OnEvent(Event& event)
 
 void MarioScene::OnRender()
 {
+    if (!m_IsSceneReady) return;
+        
     const auto& sortingLayer = Renderer2D::GetSortingLayer();
     Renderer2D::SetSortingLayer(m_SortingLayer);
     SRender();
@@ -105,9 +107,38 @@ void MarioScene::OnRender()
 
 void MarioScene::OnImguiUpdate()
 {
-    auto& camera = GetMainCamera();
-    m_MainViewportSize = ImguiMainViewport(*camera.CameraFrameBuffer);
+    m_ScenePanels.OnMainMenuDraw();
+    
+    if (!m_IsSceneReady) return;
+    
     m_ScenePanels.OnImguiUpdate();
+    auto* camera = GetMainCamera();
+    if (!camera) return;
+    m_MainViewportSize = ImguiMainViewport(*camera->CameraFrameBuffer);
+}
+
+void MarioScene::Open(const std::string& filename)
+{
+    // Clear current scene.
+    Clear();
+    // Open (deserialize new scene).
+    m_SceneSerializer.Deserialize("assets/scenes/" + filename + ".scene");
+    
+    SceneUtils::SynchronizePhysics(*this);
+    m_IsSceneReady = true;
+}
+
+void MarioScene::Save(const std::string& filename)
+{
+    // Serialize scene.
+    m_SceneSerializer.Serialize("assets/scenes/" + filename + ".scene");
+}
+
+void MarioScene::Clear()
+{
+    Renderer2D::Reset();
+    m_Registry.Clear();
+    m_RigidBodyWorld2D.Clear();
 }
 
 void MarioScene::PerformAction(Action& action)
@@ -117,7 +148,9 @@ void MarioScene::PerformAction(Action& action)
 
 FrameBuffer* MarioScene::GetMainFrameBuffer()
 {
-    return GetMainCamera().CameraFrameBuffer.get();
+    auto* camera = GetMainCamera();
+    if (!camera) return nullptr;
+    return GetMainCamera()->CameraFrameBuffer.get();
 }
 
 void MarioScene::SPhysics(F32 dt)
@@ -127,16 +160,21 @@ void MarioScene::SPhysics(F32 dt)
     {
         SceneUtils::SynchronizeWithPhysics(*this, e);
     }
+    for (auto e : View<Component::RigidBody2D, Component::LocalToParentTransform2D>(m_Registry))
+    {
+        SceneUtils::SynchronizeWithPhysicsLocalTransforms(*this, e);
+    }
 }
 
 void MarioScene::SRender()
 {
-    auto& camera = GetMainCamera();
-    camera.CameraFrameBuffer->Bind();
+    auto* camera = GetMainCamera();
+    if (!camera) return;
+    camera->CameraFrameBuffer->Bind();
     RenderCommand::ClearScreen();
     I32 clearInteger = static_cast<I32>(NULL_ENTITY);
-    camera.CameraFrameBuffer->ClearAttachment(1, RendererAPI::DataType::Int, &clearInteger);
-    Renderer2D::BeginScene(camera.CameraController->GetCamera().get());
+    camera->CameraFrameBuffer->ClearAttachment(1, RendererAPI::DataType::Int, &clearInteger);
+    Renderer2D::BeginScene(camera->CameraController->GetCamera().get());
 
     for (auto e : View<Component::SpriteRenderer>(m_Registry))
     {
@@ -151,7 +189,7 @@ void MarioScene::SRender()
     //BVHTreeDrawer::Draw(m_RigidBodyWorld2D.GetBroadPhase().GetBVHTree());
     
     Renderer2D::EndScene();
-    camera.CameraFrameBuffer->Unbind();
+    camera->CameraFrameBuffer->Unbind();
     ValidateViewport();
 }
 
@@ -269,6 +307,30 @@ void MarioScene::SCamera()
     }
 }
 
+void MarioScene::InitSensorCallbacks()
+{
+    Component::CollisionCallback::SensorCallback jumpCallback = [](
+        Registry* registry, const Component::CollisionCallback::CollisionData& collisionData,
+        [[maybe_unused]] const Physics::ContactInfo2D& contact)
+    {
+        auto& collisionCallback = registry->Get<Component::CollisionCallback>(collisionData.Primary);
+        Entity parent = registry->Get<Component::ParentRel>(collisionData.Primary).Parent;
+        switch (collisionData.ContactState)
+        {
+        case Physics::ContactListener::ContactState::Begin:
+            collisionCallback.CollisionCount++;
+            registry->Get<Component::MarioInput>(parent).CanJump = true;
+            break;
+        case Physics::ContactListener::ContactState::End:
+            collisionCallback.CollisionCount--;
+            if (collisionCallback.CollisionCount == 0)
+                registry->Get<Component::MarioInput>(parent).CanJump = false;
+            break;
+        }
+    };
+    m_SensorCallbacks.push_back(jumpCallback);
+}
+
 void MarioScene::CreateCamera()
 {
     auto&& [camera, tf] = SceneUtils::AddDefaultEntity(*this, "camera");
@@ -305,31 +367,9 @@ void MarioScene::AddPlayer()
     auto& childRel = m_Registry.Add<Component::ChildRel>(player);
     SceneUtils::AddChild(*this, player, footSensor);
     // ************* Relations ***************
-
-
-    static Component::CollisionCallback::SensorCallback jumpCallback = [](
-        Registry* registry, const Component::CollisionCallback::CollisionData& collisionData,
-        [[maybe_unused]] const Physics::ContactInfo2D& contact)
-    {
-        
-        static U32 collisionsCount = 0;
-        Entity parent = registry->Get<Component::ParentRel>(collisionData.Primary).Parent;
-        switch (collisionData.ContactState)
-        {
-        case Physics::ContactListener::ContactState::Begin:
-            collisionsCount++;
-            registry->Get<Component::MarioInput>(parent).CanJump = true;
-            break;
-        case Physics::ContactListener::ContactState::End:
-            collisionsCount--;
-            if (collisionsCount == 0)
-                registry->Get<Component::MarioInput>(parent).CanJump = false;
-            break;
-        }
-    };
-
+   
     auto& collisionCallback = m_Registry.Add<Component::CollisionCallback>(footSensor);
-    collisionCallback.Callback = jumpCallback;
+    collisionCallback.SensorCallbackIndex = 0;
     
     m_Registry.Add<Component::SpriteRenderer>(player, Component::SpriteRenderer(
                                                   m_MarioSprites.get(),
@@ -341,7 +381,7 @@ void MarioScene::AddPlayer()
                                               ));
 
     auto& anim = m_Registry.Add<Component::Animation>(player);
-    anim.SpriteAnimation = m_Animations.front().get();
+    anim.SpriteAnimation = m_AnimationsMap["stand"];
 }
 
 void MarioScene::CreateLevel()
@@ -418,26 +458,26 @@ void MarioScene::CreateLevel()
 
 void MarioScene::ValidateViewport()
 {
-    auto& camera = GetMainCamera();
-    auto& framebuffer = camera.CameraFrameBuffer;
+    auto* camera = GetMainCamera();
+    auto& framebuffer = camera->CameraFrameBuffer;
     if (FrameBuffer::Spec spec = framebuffer->GetSpec();
         m_MainViewportSize.x > 0.0f && m_MainViewportSize.y > 0.0f &&
         (spec.Width != m_MainViewportSize.x || spec.Height != m_MainViewportSize.y))
     {
         framebuffer->Resize((U32)m_MainViewportSize.x, (U32)m_MainViewportSize.y);
-        camera.CameraController->GetCamera()->SetViewport((U32)m_MainViewportSize.x, (U32)m_MainViewportSize.y);
+        camera->CameraController->GetCamera()->SetViewport((U32)m_MainViewportSize.x, (U32)m_MainViewportSize.y);
         RenderCommand::SetViewport((U32)m_MainViewportSize.x, (U32)m_MainViewportSize.y);
     }
 }
 
-Component::Camera& MarioScene::GetMainCamera()
+Component::Camera* MarioScene::GetMainCamera()
 {
     for (auto cameraE : View<Component::Camera>(m_Registry))
     {
         auto& camera = m_Registry.Get<Component::Camera>(cameraE);
-        if (camera.IsPrimary) return camera;
+        if (camera.IsPrimary) return &camera;
     }
-    ENGINE_ASSERT(false, "Main camera unset.")
+    return nullptr;
 }
 
 bool MarioScene::OnMousePressed(MouseButtonPressedEvent& event)

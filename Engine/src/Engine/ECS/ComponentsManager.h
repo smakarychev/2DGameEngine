@@ -46,6 +46,10 @@ namespace Engine
 
         U32 GetComponentCount() const { return static_cast<U32>(m_SparseSet.GetDense().size()); }
         const std::vector<Entity> GetDenseEntities() const { return m_SparseSet.GetDense(); }
+
+	    void SetDebugName(const std::string& name) { m_DebugName = name; }
+	    const std::string& GetDebugName() const { return m_DebugName; }
+	    
     private:
         U8* GetOrCreate(U32 index);
         const U8* TryGet(U32 index) const;
@@ -57,6 +61,8 @@ namespace Engine
         std::vector<U8*> m_ComponentsPaged;
         U32 m_TypeSizeBytes{};
         SparseSetPaged<U32, Entity, EntityIdDecomposer> m_SparseSet;
+
+	    std::string m_DebugName{"Default"};
     };
 
     inline ComponentPool::ComponentPool(U32 typeSizeBytes)
@@ -251,6 +257,7 @@ namespace Engine
         {
             // No pool for that component exists yet.
             const Ref<ComponentPool> newPool = CreateRef<TComponentPool<T>>(sizeof(T));
+            newPool->SetDebugName(typeid(T).name());
             m_Pools[componentId] = newPool;
         }
 

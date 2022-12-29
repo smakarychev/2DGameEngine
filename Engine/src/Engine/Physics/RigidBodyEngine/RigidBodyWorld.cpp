@@ -13,6 +13,11 @@ namespace Engine::Physics
 
 	RigidBodyWorld2D::~RigidBodyWorld2D()
 	{
+		Clear();
+	}
+
+	void RigidBodyWorld2D::Clear()
+	{
 		while (m_BodyList != nullptr)
 		{
 			RigidBodyListEntry2D* next = m_BodyList->Next;
@@ -27,6 +32,10 @@ namespace Engine::Physics
 			Delete<ColliderListEntry2D>(m_ColliderList);
 			m_ColliderList = next;
 		}
+		m_NarrowPhase.Clear();
+		m_BroadPhase.Clear();
+		m_BroadPhaseNodesMap.clear();
+		m_BroadPhaseNodesToDelete.clear();
 	}
 
 	RigidBody2D* RigidBodyWorld2D::CreateBody(const RigidBodyDef2D& rbDef)

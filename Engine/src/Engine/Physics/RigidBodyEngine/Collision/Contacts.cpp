@@ -463,8 +463,8 @@ namespace Engine::Physics
 				const Component::LocalToWorldTransform2D& tfA = *colA->GetAttachedTransform();
 				const Component::LocalToWorldTransform2D& tfB = *colB->GetAttachedTransform();
 				// CoM is in world coordinates.
-				glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Position;
-				glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Position;
+				glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Transform(colA->GetCenterOfMass());
+				glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Transform(colB->GetCenterOfMass());
 				glm::vec2 normal = tfA.TransformDirection(manifold.LocalNormal);
 				glm::vec2 tangent{ -normal.y, normal.x };
 				
@@ -533,8 +533,8 @@ namespace Engine::Physics
 			const Component::LocalToWorldTransform2D& tfA = *colA->GetAttachedTransform();
 			const Component::LocalToWorldTransform2D& tfB = *colB->GetAttachedTransform();
 			
-			glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Position;
-			glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Position;
+			glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Transform(colA->GetCenterOfMass());
+			glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Transform(colB->GetCenterOfMass());
 
 			bool isAImmovable = !rbA || rbA->GetType() == RigidBodyType2D::Static;
 			bool isBImmovable = !rbB || rbB->GetType() == RigidBodyType2D::Static;
@@ -691,8 +691,8 @@ namespace Engine::Physics
 			const Component::LocalToWorldTransform2D& tfA = *colA->GetAttachedTransform();
 			const Component::LocalToWorldTransform2D& tfB = *colB->GetAttachedTransform();
 			
-			glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Position;
-			glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Position;
+			glm::vec2 centerOfMassA = rbA ? tfA.Transform(rbA->GetCenterOfMass()) : tfA.Transform(colA->GetCenterOfMass());
+			glm::vec2 centerOfMassB = rbB ? tfB.Transform(rbB->GetCenterOfMass()) : tfB.Transform(colB->GetCenterOfMass());
 
 			F32 massInvA = rbA ? rbA->GetInverseMass() : 0.0f;
 			F32 massInvB = rbB ? rbB->GetInverseMass() : 0.0f;

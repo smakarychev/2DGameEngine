@@ -47,7 +47,7 @@ namespace Engine::Physics
 		friend class Engine::BVHTreeDrawer;
 	public:
 		BVHTree2D();
-
+		void Clear();
 		// `itemId` is id of object in some external container,
 		// Returns the index of node.
 		I32 Insert(void* payload, const Bounds& bounds);
@@ -93,6 +93,14 @@ namespace Engine::Physics
 	template<typename Bounds>
 	BVHTree2D<Bounds>::BVHTree2D()
 	{
+		Clear();
+	}
+
+	template<typename Bounds>
+	inline void BVHTree2D<Bounds>::Clear()
+	{
+		m_Nodes.clear();
+		m_TreeRoot = BVHNode<Bounds>::NULL_NODE;
 		// Allocate initial buffer for nodes.
 		static U32 initialNodesAmount = 16;
 		Resize(0, initialNodesAmount);

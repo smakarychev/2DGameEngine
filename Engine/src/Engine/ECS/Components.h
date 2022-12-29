@@ -47,6 +47,11 @@ namespace Engine::Component
         Ref<FrameBuffer> CameraFrameBuffer{nullptr};
         bool IsPrimary{false};
     };
+
+    struct Name
+    {
+        std::string EntityName;
+    };
     
     struct Tag
     {
@@ -67,6 +72,7 @@ namespace Engine::Component
         LocalToWorldTransform2D(const glm::vec2& pos, const glm::vec2& scale, F32 rotation);
         LocalToWorldTransform2D(const LocalToParentTransform2D& transform);
         LocalToWorldTransform2D Concatenate(const LocalToWorldTransform2D& other);
+        LocalToWorldTransform2D Inverse();
 
         // Very common functions, so it makes sense to just put it here.
         glm::vec2 Transform(const glm::vec2& point) const;
@@ -191,7 +197,8 @@ namespace Engine::Component
 
     struct Animation
     {
-        Engine::SpriteAnimation* SpriteAnimation{nullptr};
+        // TODO: maybe store animation in it's own manager, like textures?
+        Ref<Engine::SpriteAnimation> SpriteAnimation{nullptr};
     };
 
 
@@ -219,6 +226,7 @@ namespace Engine::Component
 
     struct Sensors
     {
+        Entity Top{NULL_ENTITY};
         Entity Bottom{NULL_ENTITY};
         Entity Left{NULL_ENTITY};
         Entity Right{NULL_ENTITY};
@@ -234,7 +242,8 @@ namespace Engine::Component
         };
         using SensorCallback = void (*)(Registry* registry, const CollisionData& collisionData,
                                         [[maybe_unused]] const Physics::ContactInfo2D& contact);
-        SensorCallback Callback{nullptr};
+        I32 SensorCallbackIndex{-1};
+        U32 CollisionCount{0};
     };
 
 

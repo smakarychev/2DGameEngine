@@ -75,6 +75,11 @@ namespace Engine::Physics
 		}
 	}
 
+	glm::vec2 BoxCollider2D::GetCenterOfMass() const
+	{
+		return Center;
+	}
+
 	Collider2D* BoxCollider2D::Clone()
 	{
 		return New<BoxCollider2D>(Center, HalfSize);
@@ -125,6 +130,11 @@ namespace Engine::Physics
 		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = Center };
 	}
 
+	glm::vec2 CircleCollider2D::GetCenterOfMass() const
+	{
+		return Center;
+	}
+
 	Collider2D* EdgeCollider2D::Clone()
 	{
 		return New<EdgeCollider2D>(Start, End);
@@ -151,6 +161,11 @@ namespace Engine::Physics
 		F32 mass = 0.0f;
 		F32 inertia = 0.0f;
 		return MassInfo2D{ .Mass = mass, .Inertia = inertia, .CenterOfMass = glm::vec2{0.0f} };
+	}
+
+	glm::vec2 EdgeCollider2D::GetCenterOfMass() const
+	{
+		return (End + Start) * 0.5f;
 	}
 
 	void Collider2D::Destroy(Collider2D* collider)

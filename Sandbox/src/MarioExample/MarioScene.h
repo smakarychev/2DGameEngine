@@ -10,6 +10,10 @@ using namespace Engine::Types;
 class MarioScene final : public Scene
 {
 public:
+    void Open(const std::string& filename) override;
+    void Save(const std::string& filename) override;
+    void Clear() override;
+    
     void OnInit() override;
     void OnUpdate(F32 dt) override;
     void OnEvent(Event& event) override;
@@ -28,13 +32,14 @@ public:
     void SState();
     void SCamera();
 private:
+    void InitSensorCallbacks();
     void CreateCamera();
     void AddPlayer();
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
     void CreateLevel();
     void ValidateViewport();
 
-    Component::Camera& GetMainCamera();
+    Component::Camera* GetMainCamera();
     
     bool OnMousePressed(MouseButtonPressedEvent& event);
 private:
@@ -45,6 +50,10 @@ private:
     Ref<Texture> m_BrickTexture;
     Ref<Texture> m_MarioSprites;
     Ref<Font> m_Font;
-    std::vector<Ref<SpriteAnimation>> m_Animations;
-    std::unordered_map<std::string, SpriteAnimation*> m_AnimationsMap;
+    std::unordered_map<std::string, Ref<SpriteAnimation>> m_AnimationsMap;
+    std::vector<Component::CollisionCallback::SensorCallback> m_SensorCallbacks;
+
+    bool m_RequiresLoad{false};
+    std::string m_SceneLoadPath{};
+    
 };

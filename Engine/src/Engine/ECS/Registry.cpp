@@ -6,17 +6,24 @@ namespace Engine
 {
     Registry::~Registry()
     {
-        // Temp.
+        Clear();
+    }
+
+    void Registry::Clear()
+    {
         for (const auto& e : m_EntityManager.m_EntitiesSparseSet)
         {
             DeleteEntity(e);
         }
+        m_EntityManager.m_EntitiesMap.clear();
+        m_EntityManager.m_FreeEntities.clear();
     }
-    
+
     Entity Registry::CreateEntity(const std::string& tag)
     {
         Entity entityId = m_EntityManager.AddEntity(tag);
         auto& tagC = m_ComponentManager.Add<Component::Tag>(entityId, tag);
+        auto& nameC = m_ComponentManager.Add<Component::Name>(entityId, tag);
 
         // TODO: this is temp.
         PushToMap(entityId, tagC.TagName);

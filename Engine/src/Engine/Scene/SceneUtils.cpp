@@ -6,6 +6,32 @@
 #include "Engine/ECS/View.h"
 #include "imgui/imgui.h"
 
+namespace
+{
+    using namespace Engine;
+    bool BFS(Entity startNode, Entity toFindNode, Registry& registry)
+    {
+        std::queue<Entity> entityQueue;
+        entityQueue.push(startNode);
+        while (!entityQueue.empty())
+        {
+            Entity curr = entityQueue.front(); entityQueue.pop();
+            if (curr == toFindNode) return true;
+            if (registry.Has<Component::ChildRel>(curr))
+            {
+                auto& childRel = registry.Get<Component::ChildRel>(curr);
+                Entity child = childRel.First;
+                for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+                {
+                    entityQueue.push(child);
+                    child = registry.Get<Component::ParentRel>(child).Next;
+                }
+            }
+        }
+        return false;
+    }
+}
+
 namespace Engine
 {
     SceneUtils::EntityTransformPair SceneUtils::AddDefaultEntity(Scene& scene, const std::string& tag)
@@ -68,14 +94,14 @@ namespace Engine
         
     }
 
-    Component::Camera& SceneUtils::AddDefault2DCamera(Scene& scene, Entity entity)
+    Component::Camera& SceneUtils::AddDefault2DCamera(Scene& scene, Entity entity, CameraController::ControllerType type)
     {
         auto camera = Camera::Create(glm::vec3(0.0f, 0.0f, 1.0f), 45.0f, 16.0f / 9.0f);
         glm::vec2 viewportSize = { Application::Get().GetWindow().GetWidth(), Application::Get().GetWindow().GetHeight() };
         camera->SetViewport((U32)viewportSize.x, (U32)viewportSize.y);
         camera->SetProjection(Camera::ProjectionType::Orthographic);
         camera->SetZoom(6.0f);
-        auto cameraController = CameraController::Create(CameraController::ControllerType::Editor2D, camera);
+        auto cameraController = CameraController::Create(type, camera);
 
         FrameBuffer::Spec spec;
         spec.Width = camera->GetViewportWidth(); spec.Height = camera->GetViewportHeight();
@@ -87,8 +113,7 @@ namespace Engine
         auto frameBuffer = FrameBuffer::Create(spec);
 
         auto& registry = scene.GetRegistry();
-        auto& tf = registry.Get<Component::LocalToWorldTransform2D>(entity);
-        auto& cameraComp = registry.Add<Component::Camera>(entity);
+        auto& cameraComp = registry.AddOrGet<Component::Camera>(entity);
         cameraComp.CameraController = cameraController;
         cameraComp.CameraFrameBuffer = frameBuffer;
         return cameraComp;
@@ -135,6 +160,19 @@ namespace Engine
         }
     }
 
+    void SceneUtils::SynchronizePhysics(Scene& scene)
+    {
+        auto& registry = scene.GetRegistry();
+        for (auto e : View<Component::BoxCollider2D>(registry))
+        {
+            SceneUtils::SynchronizePhysics(scene, e, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
+        }
+        for (auto e : View<Component::RigidBody2D>(registry))
+        {
+            SceneUtils::SynchronizePhysics(scene, e, SceneUtils::PhysicsSynchroSetting::RBOnly);
+        }
+    }
+
     void SceneUtils::SynchronizeWithPhysics(Scene& scene, Entity entity)
     {
         auto& registry = scene.GetRegistry();
@@ -156,40 +194,51 @@ namespace Engine
         localToWorld = {tf.Position, tf.Scale, tf.Rotation};
     }
 
+    void SceneUtils::SynchronizeWithPhysicsLocalTransforms(Scene& scene, Entity entity)
+    {
+        auto& registry = scene.GetRegistry();
+        auto& tf = registry.Get<Component::LocalToWorldTransform2D>(entity);
+        Entity parent = registry.Get<Component::ParentRel>(entity).Parent;
+        auto& parentTf = registry.Get<Component::LocalToWorldTransform2D>(parent);
+        registry.Get<Component::LocalToParentTransform2D>(entity) = tf.Concatenate(parentTf.Inverse());
+    }
 
 
     void SceneUtils::AddChild(Scene& scene, Entity parent, Entity child)
     {
         auto& registry = scene.GetRegistry();
+        // Check that child is not parent's parent.
+        if (BFS(child, parent, registry)) return;
+        // Remove child from previous parent.
+        if (registry.Has<Component::ParentRel>(child)) RemoveChild(scene, child);
+        
         if (!registry.Has<Component::ChildRel>(parent)) registry.Add<Component::ChildRel>(parent);
+        auto& parentTf = registry.Get<Component::LocalToWorldTransform2D>(parent);
         auto& childRel = registry.Get<Component::ChildRel>(parent);
-        if (childRel.ChildrenCount == 0)
-        {
-            childRel.First = child;
-            auto& parentRel = registry.Add<Component::ParentRel>(child);
-            registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child);
-            if (registry.Has<Component::ParentRel>(parent))
-            {
-                parentRel.Depth = registry.Get<Component::ParentRel>(parent).Depth + 1;
-            }
-            childRel.ChildrenCount = 1;
-            parentRel.Parent = parent;
-            return;
-        }
 
+        auto& childParentRel = registry.Add<Component::ParentRel>(child);
+        childParentRel.Parent = parent;
+        childParentRel.Depth = registry.Has<Component::ParentRel>(parent) ?
+            registry.Get<Component::ParentRel>(parent).Depth + 1 :
+            1;
         childRel.ChildrenCount++;
-        auto& newParentRel = registry.Add<Component::ParentRel>(child);
-        registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child);
-        newParentRel.Parent = parent;
-
         if (childRel.ChildrenCount != 1)
         {
+            // Add to "linked list".
             auto& firstChildParentRel = registry.Get<Component::ParentRel>(childRel.First);
             firstChildParentRel.Prev = child;
-            newParentRel.Next = childRel.First;
+            childParentRel.Next = childRel.First;
         }
-        
         childRel.First = child;
+        // Change transform, so that child stays in place when attached.
+        registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child).Concatenate(parentTf.Inverse());
+        // Update all `child` children depth.
+        TraverseTreeAndApply(child, registry, [&](Entity e)
+        {
+            if (e == child) return;
+            auto& parentRel = registry.Get<Component::ParentRel>(e);
+            parentRel.Depth = registry.Get<Component::ParentRel>(parentRel.Parent).Depth + 1;
+        });
     }
 
     void SceneUtils::RemoveChild(Scene& scene, Entity child)
@@ -205,8 +254,24 @@ namespace Engine
         if (parentRel.Next != NULL_ENTITY) registry.Get<Component::ParentRel>(parentRel.Next).Prev = parentRel.Prev;
         if (child == parentChildRef.First) parentChildRef.First = parentRel.Next;
         parentChildRef.ChildrenCount--;
+
+        // Update all `child` children depth.
+        TraverseTreeAndApply(child, registry, [&](Entity e)
+        {
+            if (e == child) return;
+            auto& parentRel = registry.Get<Component::ParentRel>(e);
+            parentRel.Depth = registry.Get<Component::ParentRel>(parentRel.Parent).Depth - 1;
+        });
+
         registry.Remove<Component::ParentRel>(child);
         registry.Remove<Component::LocalToParentTransform2D>(child);
         if (parentChildRef.ChildrenCount == 0) registry.Remove<Component::ChildRel>(parent);
+    }
+
+    Entity SceneUtils::FindTopOfTree(Entity treeEntity, Registry& registry)
+    {
+        Entity curr = treeEntity;
+        while (registry.Has<Component::ParentRel>(curr)) curr = registry.Get<Component::ParentRel>(curr).Parent;
+        return curr;
     }
 }

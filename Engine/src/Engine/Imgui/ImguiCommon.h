@@ -44,7 +44,7 @@ namespace Engine
 			if (ImGui::BeginTable(label.c_str(), 2, flags))
 			{
 				ImGui::TableNextColumn();
-				ImGui::Text(label.c_str());
+				ImGui::TextWrapped(label.c_str());
 				ImGui::TableNextColumn();
 				auto retVal = fn();
 				if (!delayEnd || !retVal) ImGui::EndTable();
@@ -71,8 +71,8 @@ namespace Engine
 		inline void DrawTextField(const std::string& label, std::string& text)
 		{
 			ENGINE_CORE_ASSERT(text.size() < 256, "Text too big.")
-			char buf[256];
-			strcpy(buf, text.c_str());
+			char buf[256] = {};
+			text.copy(buf, text.size() + 1);
 			Draw2Columns(label, [&](){ return ImGui::InputText( std::string("##" + label).c_str(), buf, 256); });
 			text = std::string(buf);
 		}

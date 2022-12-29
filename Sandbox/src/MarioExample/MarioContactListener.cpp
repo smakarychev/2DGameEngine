@@ -25,11 +25,11 @@ void MarioContactListener::PropagateToCallback(const Physics::ContactInfo2D& con
 	if (colA->IsSensor() && m_Registry->Has<Component::CollisionCallback>(eA))
 	{
 		auto& collisionCallback = m_Registry->Get<Component::CollisionCallback>(eA);
-		collisionCallback.Callback(m_Registry, {eA, eB, state}, contact);
+		(*m_SensorCallbacks)[collisionCallback.SensorCallbackIndex](m_Registry, {eA, eB, state}, contact);
 	}
 	else if (colB->IsSensor() && m_Registry->Has<Component::CollisionCallback>(eB))
 	{
 		auto& collisionCallback = m_Registry->Get<Component::CollisionCallback>(eB);
-		collisionCallback.Callback(m_Registry, {eB, eA, state}, contact);
+		(*m_SensorCallbacks)[collisionCallback.SensorCallbackIndex](m_Registry, {eB, eA, state}, contact);
 	}
 }

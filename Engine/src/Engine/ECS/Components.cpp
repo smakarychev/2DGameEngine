@@ -43,6 +43,15 @@ namespace Engine
         return result;
     }
 
+    Component::LocalToWorldTransform2D Component::LocalToWorldTransform2D::Inverse()
+    {
+        LocalToWorldTransform2D result;
+        result.Rotation = glm::vec2{ Rotation.RotationVec.x, -Rotation.RotationVec.y };
+        result.Scale = 1.0f / Scale;
+        result.Position = -result.Scale * Math::Rotate(this->Position, result.Rotation);
+        return result;
+    }
+
     Component::LocalToWorldTransform2D::LocalToWorldTransform2D() = default;
 
     glm::vec2 Component::LocalToWorldTransform2D::Transform(const glm::vec2& point) const

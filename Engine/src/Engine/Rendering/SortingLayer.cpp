@@ -22,8 +22,8 @@ namespace Engine
 	void SortingLayer::PlaceBefore(const Layer& first, const Layer& second)
 	{
 		// Layer's priority is same as layer's index in array.
-		U32 firstIndex =  static_cast<U32>(first.Priority);
-		U32 secondIndex = static_cast<U32>(second.Priority);
+		U8 firstIndex =  first.Priority;
+		U8 secondIndex = second.Priority;
 		std::swap(m_Layers[firstIndex], m_Layers[secondIndex]);
 		m_Layers[firstIndex].Priority = firstIndex;
 		m_Layers[secondIndex].Priority = secondIndex;

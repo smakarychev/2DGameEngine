@@ -9,6 +9,7 @@ namespace Engine
     {
     public:
         ~Registry();
+        void Clear();
         Entity CreateEntity(const std::string& tag = "Default");
         Entity GetEntity(Entity entity) const;
         EntityContainer& GetEntities(const std::string& tag) const;

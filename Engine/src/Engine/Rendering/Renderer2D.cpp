@@ -90,6 +90,17 @@ namespace Engine
         s_BatchData.DrawCalls = 0;
     }
 
+    void Renderer2D::Reset()
+    {
+        s_BatchData.TriangleBatch.Reset();
+        s_BatchData.LineBatch.Reset();
+        s_BatchData.TextBatch.Reset();
+        s_BatchData.TriangleBatchEditor.Reset();
+        s_BatchData.LineBatchEditor.Reset();
+        s_BatchData.TextBatchEditor.Reset();
+        s_BatchData.DrawCalls = 0;
+    }
+
     void Renderer2D::DrawQuad(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer,
                               RendererAPI::PrimitiveType primitiveType)
     {

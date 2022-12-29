@@ -190,6 +190,7 @@ namespace Engine
     void BatchRenderer2D<Vertex>::Flush()
     {
         m_Data.Shader->Bind();
+        m_Data.Vao->Bind();
         for (U32 i = 0; i < m_Data.CurrentTextureIndex; i++) m_Data.UsedTextures[i]->Bind(i);
         ENGINE_CORE_ASSERT(m_Data.Vao->GetVertexBuffers().size() == 1, "Batch must have only one vbo.")
 
@@ -203,6 +204,7 @@ namespace Engine
     template <typename Vertex>
     void BatchRenderer2D<Vertex>::Reset()
     {
+        if (!m_IsInitialized) return;
         m_Data.CurrentVertices = 0;
         m_Data.CurrentIndices = 0;
         m_Data.CurrentTextureIndex = 0;
@@ -585,6 +587,7 @@ namespace Engine
         
         static void BeginScene(Camera* camera, SortingLayer* sortingLayer = &DefaultSortingLayer);
         static void EndScene();
+        static void Reset();
 
         static void DrawQuad(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer,
                              RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);

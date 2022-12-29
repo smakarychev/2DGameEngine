@@ -22,6 +22,7 @@ namespace Engine::Physics
 	public:
 		RigidBodyWorld2D(const glm::vec2& gravity = glm::vec2{ 0.0f, -10.0f });
 		~RigidBodyWorld2D();
+		void Clear();
 		// All rigid bodies shall be created by this method.
 		RigidBody2D* CreateBody(const RigidBodyDef2D& rbDef);
 		void RemoveBody(RigidBody2D* body);

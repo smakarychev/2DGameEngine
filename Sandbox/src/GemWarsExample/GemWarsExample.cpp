@@ -97,7 +97,7 @@ void GemWarsExample::sEnemySpawner()
     I32 spawnThreshold = 2 * 60;
     if (m_CurrentFrame - m_LastEnemySpawnTime > spawnThreshold)
     {
-        U32 enemiesToSpawn = Random::UInt(1, 3);
+        U32 enemiesToSpawn = Random::UInt32(1, 3);
         for (U32 i = 0; i < enemiesToSpawn; i++)
         {
             Entity enemy = m_Registry.CreateEntity("enemy");
@@ -121,7 +121,7 @@ void GemWarsExample::sEnemySpawner()
             }
 
             m_Registry.Get<Component::GemWarsRigidBody2D>(enemy).Velocity = glm::normalize(Random::Float2(-1.0, 1.0));
-            m_Registry.Add<Component::GemWarsMesh2D>(enemy, Random::UInt(3, 8), nullptr,
+            m_Registry.Add<Component::GemWarsMesh2D>(enemy, Random::UInt32(3, 8), nullptr,
                                                          glm::vec4(Random::Float3(0.2f, 0.6f), 1.0));
             m_Registry.Add<Component::GemWarsScore>(enemy, 
                 m_Registry.Get<Component::GemWarsMesh2D>(enemy).Shape.GetNumberOfVertices() * 10);

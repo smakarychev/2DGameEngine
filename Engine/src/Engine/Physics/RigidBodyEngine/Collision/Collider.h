@@ -210,7 +210,9 @@ namespace Engine::Physics
 		
 		virtual DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const = 0;
 		virtual MassInfo2D CalculateMass() const = 0;
-
+		virtual glm::vec2 GetCenterOfMass() const = 0;
+		
+			
 	protected:
 		Type m_Type;
 		void* m_UserData = nullptr;
@@ -232,6 +234,7 @@ namespace Engine::Physics
 
 		glm::vec2 GetFaceDirection(I32 vertexId) const;
 		glm::vec2 GetVertex(I32 vertexId) const;
+		glm::vec2 GetCenterOfMass() const override;
 		glm::vec2 HalfSize;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;
@@ -247,7 +250,8 @@ namespace Engine::Physics
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const override;
 		MassInfo2D CalculateMass() const override;
-
+		glm::vec2 GetCenterOfMass() const override;
+		
 		F32 Radius;
 		// Center is relative to it's rigidbody.
 		glm::vec2 Center;
@@ -261,7 +265,8 @@ namespace Engine::Physics
 		Collider2D* Clone() override;
 		DefaultBounds2D GenerateBounds(const Component::LocalToWorldTransform2D& transform) const override;
 		MassInfo2D CalculateMass() const override;
-
+		glm::vec2 GetCenterOfMass() const override;
+		
 		// Normal is computed when needed, as an outward normal from `Start` to `End`.
 		// Relative to rigidbody.
 		glm::vec2 Start;

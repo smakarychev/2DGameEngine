@@ -11,7 +11,7 @@ namespace Engine {
 
 	Application::Application() : m_IsRunning(true)
 	{
-		ENGINE_CORE_ASSERT(s_Instance == nullptr, "Application already exists.");
+		ENGINE_CORE_ASSERT(s_Instance == nullptr, "Application already exists.")
 		s_Instance = this;
 		OnCreate();
 	}
@@ -46,14 +46,14 @@ namespace Engine {
 		m_Window->OnUpdate();
 
 		m_ImguiLayer->BeginFrame();
-		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
+		for (auto& layer : m_LayerStack)
 		{
-			(*it)->OnUpdate();
+			layer->OnUpdate();
 		}
 
-		for (auto it = m_LayerStack.begin(); it != m_LayerStack.end(); it++)
+		for (auto& layer : m_LayerStack)
 		{
-			(*it)->OnImguiUpdate();
+			layer->OnImguiUpdate();
 		}
 		m_ImguiLayer->EndFrame();
 

@@ -22,6 +22,8 @@ namespace Engine::Physics
 		NarrowPhase2D(BroadPhase2D<>& broadPhase);
 		~NarrowPhase2D();
 
+		void Clear();
+
 		void Collide();
 		void* OnPotentialContactCreate(const PotentialContact2D& potentialContact);
 		void OnPotentialContactDestroy(ContactInfoEntry2D* contactInfoEntry);

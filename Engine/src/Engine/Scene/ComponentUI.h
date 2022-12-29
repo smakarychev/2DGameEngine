@@ -97,6 +97,13 @@ namespace Engine
         void OnUIDraw(Entity e, Component::Tag& component) override;
     };
 
+    class NameUIDesc : public ComponentUIDesc<Component::Name>
+    {
+    public:
+        NameUIDesc(Registry& registry);
+        void OnUIDraw(Entity e, Component::Name& component) override;
+    };
+
     class BoxCollider2DUIDesc : public ComponentUIDesc<Component::BoxCollider2D>
     {
     public:

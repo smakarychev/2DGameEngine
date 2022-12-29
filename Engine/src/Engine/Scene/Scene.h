@@ -21,6 +21,9 @@ namespace Engine
 	public:
 		Scene() : m_SceneGraph(m_Registry), m_ScenePanels(*this), m_SceneSerializer(*this) {}
 		virtual ~Scene() = default;
+		virtual void Open(const std::string& filename) {}
+		virtual void Save(const std::string& filename) {}
+		virtual void Clear() {}
 		virtual void OnInit() = 0;
 		virtual void OnUpdate(F32 dt) = 0;
 		virtual void OnEvent(Event& event) = 0;
@@ -36,8 +39,7 @@ namespace Engine
 		
 		Registry& GetRegistry() { return m_Registry; }
 		Physics::RigidBodyWorld2D& GetRigidBodyWorld2D() { return m_RigidBodyWorld2D; }
-
-		
+		SceneSerializer& GetSerializer() { return m_SceneSerializer; }
 	protected:
 		std::vector<Ref<Action>> m_RegisteredActions = std::vector<Ref<Action>>(Key::KEY_COUNT, nullptr);
 
@@ -47,5 +49,7 @@ namespace Engine
 		ScenePanels m_ScenePanels;
 		SceneSerializer m_SceneSerializer;
 		glm::vec2 m_MainViewportSize{};
+
+		bool m_IsSceneReady{false};
 	};
 }

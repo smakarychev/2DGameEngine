@@ -164,18 +164,22 @@ namespace Engine
 		return glm::vec2(worldCoords);
 	}
 
+	CameraController::CameraController(Ref<Camera> camera)
+		: m_Camera(camera)
+	{
+	}
+
 	Ref<CameraController> CameraController::Create(ControllerType type, Ref<Camera> camera)
 	{
+		Ref<CameraController> newCam;
 		switch (type)
 		{
-		case Engine::CameraController::ControllerType::FPS:
-			return Ref<FPSCameraController>(New<FPSCameraController>(camera), Delete<FPSCameraController>);
-		case Engine::CameraController::ControllerType::Editor:
-			return Ref<EditorCameraController>(New<EditorCameraController>(camera), Delete<EditorCameraController>);
-		case Engine::CameraController::ControllerType::Editor2D:
-			return Ref<Editor2DCameraController>(New<Editor2DCameraController>(camera), Delete<Editor2DCameraController>);
+		case Engine::CameraController::ControllerType::FPS: newCam = CreateRef<FPSCameraController>(camera); break;
+		case Engine::CameraController::ControllerType::Editor: newCam = CreateRef<EditorCameraController>(camera); break;
+		case Engine::CameraController::ControllerType::Editor2D: newCam = CreateRef<Editor2DCameraController>(camera); break;
 		}
-		return {};
+		newCam->SetControllerType(type);
+		return newCam;
 	}
 
 	const F32 FPSCameraController::DEFAULT_TRANSLATION_SPEED		= 1.0f;
@@ -183,10 +187,11 @@ namespace Engine
 	const F32 FPSCameraController::DEFAULT_E_YAW					= 0.0f;
 	const F32 FPSCameraController::DEFAULT_E_PITCH					= 0.0f;
 
-	FPSCameraController::FPSCameraController(Ref<Camera> camera) : m_Camera(std::move(camera)),
+	FPSCameraController::FPSCameraController(Ref<Camera> camera)
+		: CameraController(camera),
 		m_TranslationSpeed(DEFAULT_TRANSLATION_SPEED), m_MouseSensitivity(DEFAULT_SENSITIVITY),
 		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH), m_MouseCoords(glm::vec2{0.0f})
-	{ 
+	{
 		m_MouseCoords = Input::MousePosition();
 		m_Camera->UpdateViewMatrix();
 		m_Camera->UpdateViewProjection();
@@ -251,7 +256,8 @@ namespace Engine
 	const F32 EditorCameraController::DEFAULT_DISTANCE					= 5.0f;
 	const glm::vec3 EditorCameraController::DEFAULT_FOCAL_POINT			= glm::vec3(0.0);
 
-	EditorCameraController::EditorCameraController(Ref<Camera> camera) : m_Camera(std::move(camera)),
+	EditorCameraController::EditorCameraController(Ref<Camera> camera)
+		: CameraController(camera),
 		m_TranslationSpeed(DEFAULT_TRANSLATION_SPEED), m_RotationSpeed(DEFAULT_ROTATION_SPEED),
 		m_Yaw(DEFAULT_E_YAW), m_Pitch(DEFAULT_E_PITCH),
 		m_MouseCoords(0, 0), m_FocalPoint(DEFAULT_FOCAL_POINT),

@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+#include "Engine/Core/Camera.h"
 #include "yaml-cpp/yaml.h"
 
 namespace YAML
@@ -23,10 +24,10 @@ namespace YAML
         }
     };
     
-    template <>
-    struct convert<glm::vec2>
+    template <typename T>
+    struct convert<glm::vec<2, T, glm::defaultp>>
     {
-        static Node encode(const glm::vec2& rhs)
+        static Node encode(const glm::vec<2, T, glm::defaultp>& rhs)
         {
             Node node;
             node.push_back(rhs.x);
@@ -34,23 +35,23 @@ namespace YAML
             return node;
         }
 
-        static bool decode(const Node& node, glm::vec2& rhs)
+        static bool decode(const Node& node, glm::vec<2, T, glm::defaultp>& rhs)
         {
             if (!node.IsSequence() || node.size() != 2)
             {
                 return false;
             }
 
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
+            rhs.x = node[0].as<T>();
+            rhs.y = node[1].as<T>();
             return true;
         }
     };
 
-    template <>
-    struct convert<glm::vec3>
+    template <typename T>
+    struct convert<glm::vec<3, T, glm::defaultp>>
     {
-        static Node encode(const glm::vec3& rhs)
+        static Node encode(const glm::vec<3, T, glm::defaultp>& rhs)
         {
             Node node;
             node.push_back(rhs.x);
@@ -59,24 +60,24 @@ namespace YAML
             return node;
         }
 
-        static bool decode(const Node& node, glm::vec3& rhs)
+        static bool decode(const Node& node, glm::vec<3, T, glm::defaultp>& rhs)
         {
             if (!node.IsSequence() || node.size() != 3)
             {
                 return false;
             }
 
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
+            rhs.x = node[0].as<T>();
+            rhs.y = node[1].as<T>();
+            rhs.z = node[2].as<T>();
             return true;
         }
     };
-    
-    template <>
-    struct convert<glm::vec4>
+
+    template <typename T>
+    struct convert<glm::vec<4, T, glm::defaultp>>
     {
-        static Node encode(const glm::vec4& rhs)
+        static Node encode(const glm::vec<4, T, glm::defaultp>& rhs)
         {
             Node node;
             node.push_back(rhs.x);
@@ -86,36 +87,39 @@ namespace YAML
             return node;
         }
 
-        static bool decode(const Node& node, glm::vec4& rhs)
+        static bool decode(const Node& node, glm::vec<4, T, glm::defaultp>& rhs)
         {
             if (!node.IsSequence() || node.size() != 4)
             {
                 return false;
             }
 
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            rhs.w = node[3].as<float>();
+            rhs.x = node[0].as<T>();
+            rhs.y = node[1].as<T>();
+            rhs.z = node[2].as<T>();
+            rhs.w = node[3].as<T>();
             return true;
         }
     };
 
-    inline Emitter& operator<<(Emitter& out, const glm::vec2& vec)
+    template <typename T>
+    Emitter& operator<<(Emitter& out, const glm::vec<2, T, glm::defaultp>& vec)
     {
         out << Flow;
         out << BeginSeq << vec.x << vec.y << EndSeq;
         return out;
     }
 
-    inline Emitter& operator<<(Emitter& out, const glm::vec3& vec)
+    template <typename T>
+    Emitter& operator<<(Emitter& out, const glm::vec<3, T, glm::defaultp>& vec)
     {
         out << Flow;
         out << BeginSeq << vec.x << vec.y << vec.z << EndSeq;
         return out;
     }
 
-    inline Emitter& operator<<(Emitter& out, const glm::vec4& vec)
+    template <typename T>
+    Emitter& operator<<(Emitter& out, const glm::vec<4, T, glm::defaultp>& vec)
     {
         out << Flow;
         out << BeginSeq << vec.x << vec.y << vec.z << vec.w << EndSeq;
@@ -123,14 +127,29 @@ namespace YAML
     }
 }
 
-namespace Engine
+namespace Engine::SerializationUtils
 {
+    // TODO: compile-time maps.
+    
+    inline std::string GetRigidBodyTypeAsString(const Component::RigidBody2D& rb)
+    {
+        if (rb.Type == Physics::RigidBodyType2D::Static) return "Static";
+        return "Dynamic";
+    }
+
+    inline Physics::RigidBodyType2D GetRigidBodyTypeFromString(const std::string& type)
+    {
+        if (type == "Static") return Physics::RigidBodyType2D::Static;
+        return Physics::RigidBodyType2D::Dynamic;
+    }
+    
     inline std::vector<std::string> GetRigidBodyFlagsAsStrings(const Component::RigidBody2D& rb)
     {
         std::vector<std::string> result;
-        static std::unordered_map<Physics::RigidBodyDef2D::BodyFlags, std::string> flagMap;
-        flagMap.emplace(Physics::RigidBodyDef2D::BodyFlags::RestrictRotation, "Restrict Rotation");
-        flagMap.emplace(Physics::RigidBodyDef2D::BodyFlags::UseSyntheticMass, "Use synthetic mass");
+        static std::unordered_map<Physics::RigidBodyDef2D::BodyFlags, std::string> flagMap {
+            std::make_pair(Physics::RigidBodyDef2D::BodyFlags::RestrictRotation, "Restrict Rotation"),
+            std::make_pair(Physics::RigidBodyDef2D::BodyFlags::UseSyntheticMass, "Use synthetic mass")
+        };
         auto flags = rb.Flags;
         for (auto&& [flag, str] : flagMap)
         {
@@ -142,9 +161,10 @@ namespace Engine
     inline Physics::RigidBodyDef2D::BodyFlags GetBodyFlagsFromStrings(const std::vector<std::string>& flags)
     {
         Physics::RigidBodyDef2D::BodyFlags result = Physics::RigidBodyDef2D::BodyFlags::None;
-        static std::unordered_map<std::string, Physics::RigidBodyDef2D::BodyFlags> flagMap;
-        flagMap.emplace("Restrict Rotation", Physics::RigidBodyDef2D::BodyFlags::RestrictRotation);
-        flagMap.emplace("Use synthetic mass", Physics::RigidBodyDef2D::BodyFlags::UseSyntheticMass);
+        static std::unordered_map<std::string, Physics::RigidBodyDef2D::BodyFlags> flagMap {
+            std::make_pair("Restrict Rotation", Physics::RigidBodyDef2D::BodyFlags::RestrictRotation),
+            std::make_pair("Use synthetic mass", Physics::RigidBodyDef2D::BodyFlags::UseSyntheticMass)
+        };
         for (auto& flag : flags)
         {
             auto it = flagMap.find(flag);
@@ -153,4 +173,35 @@ namespace Engine
         }
         return result;
     }
+
+    struct CameraControllerHasher
+    {
+        template <typename T>
+        std::size_t operator()(T t) const { return static_cast<std::size_t>(t); }
+    };
+        
+    inline std::string GetCameraControllerTypeAsString(const Component::Camera& camera)
+    {
+        static std::unordered_map<CameraController::ControllerType, std::string, CameraControllerHasher> typeMap {
+            std::make_pair(CameraController::ControllerType::FPS, "FPS"),
+            std::make_pair(CameraController::ControllerType::Editor, "Editor"),
+            std::make_pair(CameraController::ControllerType::Editor2D, "Editor2D"),
+            std::make_pair(CameraController::ControllerType::Custom, "Custom")
+        };
+        auto it = typeMap.find(camera.CameraController->GetControllerType());
+        return it->second;
+    }
+
+    inline CameraController::ControllerType GetCameraControllerTypeFromString(const std::string& type)
+    {
+        static std::unordered_map<std::string, CameraController::ControllerType> typeMap {
+            std::make_pair("FPS", CameraController::ControllerType::FPS),
+            std::make_pair("Editor", CameraController::ControllerType::Editor),
+            std::make_pair("Editor2D", CameraController::ControllerType::Editor2D),
+            std::make_pair("Custom", CameraController::ControllerType::Custom)
+        };
+        auto it = typeMap.find(type);
+        return it->second;
+    }
+    
 }

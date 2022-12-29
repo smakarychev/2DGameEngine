@@ -47,30 +47,53 @@ namespace Engine
         return glm::vec4(Float(left, right), Float(left, right), Float(left, right), Float(left, right));
     }
 
-    I32 Random::Int()
+    I32 Random::Int32()
     {
-        std::uniform_int_distribution<I32> distrib(std::numeric_limits<I32>::min(), std::numeric_limits<I32>::max());
+        static std::uniform_int_distribution<I32> distrib(std::numeric_limits<I32>::min(), std::numeric_limits<I32>::max());
         return distrib(m_Mt);
     }
 
-    U32 Random::UInt()
+    U32 Random::UInt32()
     {
-        std::uniform_int_distribution<U32> distrib(std::numeric_limits<U32>::min(), std::numeric_limits<U32>::max());
+        static std::uniform_int_distribution<U32> distrib(std::numeric_limits<U32>::min(), std::numeric_limits<U32>::max());
         return distrib(m_Mt);
     }
 
-    I32 Random::Int(I32 left, I32 right)
+    I32 Random::Int32(I32 left, I32 right)
     {
         std::uniform_int_distribution<I32> distrib(left, right);
         return distrib(m_Mt);
     }
 
-    U32 Random::UInt(U32 left, U32 right)
+    U32 Random::UInt32(U32 left, U32 right)
     {
         std::uniform_int_distribution<U32> distrib(left, right);
         return distrib(m_Mt);
     }
 
+    I64 Random::Int64()
+    {
+        static std::uniform_int_distribution<I64> distrib(std::numeric_limits<I64>::min(), std::numeric_limits<I64>::max());
+        return distrib(m_Mt);
+    }
+
+    U64 Random::UInt64()
+    {
+        static std::uniform_int_distribution<U64> distrib(std::numeric_limits<U64>::min(), std::numeric_limits<U64>::max());
+        return distrib(m_Mt);
+    }
+
+    I64 Random::Int64(I64 left, I64 right)
+    {
+        std::uniform_int_distribution<I64> distrib(left, right);
+        return distrib(m_Mt);
+    }
+
+    U64 Random::UInt64(U64 left, U64 right)
+    {
+        static std::uniform_int_distribution<U64> distrib(left, right);
+        return distrib(m_Mt);
+    }
 }
 
 

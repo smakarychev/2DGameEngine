@@ -98,15 +98,22 @@ namespace Engine
 	public:
 		enum class ControllerType
 		{
-			FPS, Editor, Editor2D
+			FPS, Editor, Editor2D, Custom
 		};
 	public:
+		CameraController(Ref<Camera> camera);
 		virtual ~CameraController() = default;
 		static Ref<CameraController> Create(ControllerType type, Ref<Camera> camera);
 
 		virtual void OnUpdate(F32 dt) = 0;
 		virtual bool OnEvent(Event& event) = 0;
-		virtual Ref<Camera> GetCamera() = 0;
+		Ref<Camera> GetCamera() { return m_Camera; }
+
+		ControllerType GetControllerType() const { return m_Type; }
+		void SetControllerType(ControllerType type) { m_Type = type; }
+	protected:
+		Ref<Camera> m_Camera;
+		ControllerType m_Type{ControllerType::FPS};
 	};
 
 	class FPSCameraController : public CameraController
@@ -116,12 +123,10 @@ namespace Engine
 
 		void OnUpdate(F32 dt) override;
 		bool OnEvent(Event& event) override;
-		Ref<Camera> GetCamera() override { return m_Camera; }
 
 		void SetTranslationSpeed(F32 speed) { m_TranslationSpeed = speed; }
 		void SetMouseSensitivity(F32 sensitivity) { m_MouseSensitivity = sensitivity; }
 	private:
-		Ref<Camera> m_Camera;
 		F32 m_TranslationSpeed;
 		F32 m_MouseSensitivity;
 
@@ -142,15 +147,12 @@ namespace Engine
 
 		void OnUpdate(F32 dt) override;
 		bool OnEvent(Event& event) override;
-		Ref<Camera> GetCamera() override { return m_Camera; }
 
 		void SetTranslationSpeed(F32 speed) { m_TranslationSpeed = speed; }
 		void SetRotationSpeed(F32 speed) { m_RotationSpeed = speed; }
 	protected:
 		F32 ZoomSpeed() const;
 	protected:
-		Ref<Camera> m_Camera;
-
 		F32 m_TranslationSpeed, m_RotationSpeed;
 		F32 m_Yaw, m_Pitch;
 		glm::vec2 m_MouseCoords;

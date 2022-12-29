@@ -5,6 +5,7 @@ namespace Engine
 {
 	SpriteAnimation::SpriteAnimation(Texture* sprites, const glm::uvec2& startPoint, const glm::uvec2& spriteSize, U32 frameCount, U32 fpsSpeed, F32 maxDuration)
 		: m_SpriteSheet(sprites), m_StartPosition(startPoint), m_SpriteSize(spriteSize), m_FrameCount(frameCount),
+	      m_FpsSpeed(fpsSpeed),
 		  m_FrameDuration(fpsSpeed != 0.0f ? 1.0f / static_cast<F32>(fpsSpeed) : 1.0f), m_MaxDuration(maxDuration)
 	{
 		std::array<glm::vec2, 2> uvRect{};
