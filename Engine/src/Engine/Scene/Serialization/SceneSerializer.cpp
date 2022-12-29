@@ -169,6 +169,14 @@ namespace Engine
             // Entities, deserialized earlier, have 1 common parent (otherwise prefab is ill-formed).
             Entity topEntity = SceneUtils::FindTopOfTree(addedFromPrefab.front(), registry);
             SceneUtils::AddChild(m_Scene, prefabEntity, topEntity);
+            for (auto e : addedFromPrefab)
+            {
+                if (!registry.Has<Component::BelongsToPrefab>(e))
+                {
+                    auto belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
+                    belongsToPrefab.PrefabId = registry.Get<Component::Prefab>(prefabEntity).Id;
+                }
+            }
             addedEntities.push_back(prefabEntity);
         }
         return addedEntities;

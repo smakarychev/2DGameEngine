@@ -25,18 +25,18 @@ namespace Engine
             }
         });
         serializer.SerializeGeneratedPrefab(prefabEntities, fullName, prefabId);
-        // Add `BelongsToPrefab` component to every entity in prefab.
-        for (auto e : prefabEntities)
-        {
-            auto& belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
-            belongsToPrefab.PrefabId = prefabId;
-        }
         // Add new `Prefab` entity - when serializing, only this entity will be serialized.
         auto&& [prefab, tf] = SceneUtils::AddDefaultEntity(scene, "prefab-" + prefabName);
         auto& prefabComp = registry.Add<Component::Prefab>(prefab);
         prefabComp.Id = prefabId;
         prefabComp.Name = fullName;
         SceneUtils::AddChild(scene, prefab, entity);
+        // Add `BelongsToPrefab` component to every entity in prefab.
+        for (auto e : prefabEntities)
+        {
+            auto& belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
+            belongsToPrefab.PrefabId = prefabId;
+        }
     }
 
     PrefabSerializer::PrefabSerializer(Scene& scene)

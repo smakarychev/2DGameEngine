@@ -5,6 +5,7 @@
 #include "Engine/Core/Core.h"
 #include "Engine/ECS/View.h"
 #include "imgui/imgui.h"
+#include "Serialization/Prefab.h"
 
 namespace
 {
@@ -207,6 +208,10 @@ namespace Engine
     void SceneUtils::AddChild(Scene& scene, Entity parent, Entity child)
     {
         auto& registry = scene.GetRegistry();
+        // Check that neither parent nor child belong to prefab - prefabs shall stay untouched.
+        if (registry.Has<Component::BelongsToPrefab>(parent) ||
+        //    registry.Has<Component::Prefab>(parent) || // TODO: fix me
+            registry.Has<Component::BelongsToPrefab>(child)) return;
         // Check that child is not parent's parent.
         if (BFS(child, parent, registry)) return;
         // Remove child from previous parent.
@@ -245,6 +250,9 @@ namespace Engine
     {
         auto& registry = scene.GetRegistry();
         ENGINE_CORE_ASSERT(registry.Has<Component::ParentRel>(child), "Entity has no parent.")
+        // Check that child doesn't belong to prefab - prefabs shall stay untouched.
+        if (registry.Has<Component::BelongsToPrefab>(child)) return;
+        
         auto& parentRel = registry.Get<Component::ParentRel>(child);
 
         Entity parent = parentRel.Parent;
