@@ -114,6 +114,45 @@ namespace Engine
         emitter << YAML::EndMap;
     }
 
+    void SceneSerializer::OnImguiPayloadAccept(const ImGuiPayload* payload, const PayloadAdditionalInfo& pai)
+    {
+        auto& registry = m_Scene.GetRegistry();
+        std::string payloadFile = std::string((char*)payload->Data);
+        SceneUtils::AssetPayloadType assetType = SceneUtils::GetAssetPayloadTypeFromString(payloadFile);
+        switch (assetType)
+        {
+        case SceneUtils::AssetPayloadType::Scene:
+        {
+            m_Scene.Open(std::filesystem::path(payloadFile).stem().string());
+            break;        
+        }
+        
+        case SceneUtils::AssetPayloadType::Prefab:
+        {
+            Entity prefab = AddPrefabToScene(payloadFile);
+            registry.Get<Component::LocalToWorldTransform2D>(prefab).Position = pai.MousePos;
+            m_Scene.OnSceneGlobalUpdate();
+            break;
+        }
+            
+        case SceneUtils::AssetPayloadType::Image:
+        {
+            Entity entityUnderMouse = pai.EntityUnderMouse;
+            if (entityUnderMouse != NULL_ENTITY)
+            {
+                if (registry.Has<Component::SpriteRenderer>(entityUnderMouse))
+                {
+                    registry.Get<Component::SpriteRenderer>(entityUnderMouse).Texture = Texture::LoadTextureFromFile(payloadFile).get();
+                }
+            }
+            break;
+        }
+        case SceneUtils::AssetPayloadType::Font:
+        case SceneUtils::AssetPayloadType::Unknown:
+            break;
+        }
+    }
+
     std::vector<Entity> SceneSerializer::Deserialize(const std::string& filePath)
     {
         YAML::Node nodes = YAML::LoadFile(filePath);
@@ -168,7 +207,7 @@ namespace Engine
                 "Prefab");
             // Entities, deserialized earlier, have 1 common parent (otherwise prefab is ill-formed).
             Entity topEntity = SceneUtils::FindTopOfTree(addedFromPrefab.front(), registry);
-            SceneUtils::AddChild(m_Scene, prefabEntity, topEntity);
+            SceneUtils::AddChild(m_Scene, prefabEntity, topEntity, false, SceneUtils::LocalTransformPolicy::SameAsWorld);
             for (auto e : addedFromPrefab)
             {
                 if (!registry.Has<Component::BelongsToPrefab>(e))
@@ -180,6 +219,22 @@ namespace Engine
             addedEntities.push_back(prefabEntity);
         }
         return addedEntities;
+    }
+
+    Entity SceneSerializer::AddPrefabToScene(const std::string& prefabPath)
+    {
+        auto& registry = m_Scene.GetRegistry();
+        auto prefabEntities = Deserialize(prefabPath);
+        YAML::Node nodes = YAML::LoadFile(prefabPath);
+        std::string prefabName = nodes["Prefab"]["Name"].as<std::string>();
+        U64 prefabId = nodes["Prefab"]["Id"].as<U64>();
+        std::vector<Entity> addToPrefab;
+        addToPrefab.reserve(prefabEntities.size());
+        for (auto e : prefabEntities)
+        {
+            if (!registry.Has<Component::BelongsToPrefab>(e)) addToPrefab.push_back(e);
+        }
+        return PrefabUtils::CreatePrefab(prefabName, prefabId, addToPrefab, m_Scene);
     }
 
     Entity SceneSerializer::DeserializeEntity(YAML::Node& entity,

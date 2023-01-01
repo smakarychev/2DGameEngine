@@ -16,14 +16,16 @@ namespace Engine
     public:
         SceneGraph(Registry& registry);
         void OnUpdate();
+        void UpdateGraphOfEntity(Entity entity);
+        void ReflectEntityTransformToPrefabTransform();
     private:
-        void UpdateTransforms();
+        void UpdateTransforms(const std::vector<Entity>& topLevelEntities);
         std::vector<Entity> FindTopLevelEntities();
         void MarkHierarchyOf(Entity entity, std::unordered_map<Entity, bool>& traversalMap);
+
         
     private:
         std::vector<std::vector<EntityWorldTransformInfo>> m_TransformHierarchy{};
-        std::vector<Entity> m_TopLevelEntities;
 
         std::unordered_map<Entity, bool> m_DrawTraversalMap;
         

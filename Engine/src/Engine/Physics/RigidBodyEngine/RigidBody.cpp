@@ -128,7 +128,12 @@ namespace Engine::Physics
 		AddForce(force);
 		AddTorque((point.x - m_CenterOfMass.x) * force.y - (point.y - m_CenterOfMass.y) * force.x);
 	}
-	
+
+	void RigidBody2D::SetAttachedTransform(Component::LocalToWorldTransform2D* transform)
+	{
+		m_AttachedTransform = transform;
+	}
+
 	Component::LocalToWorldTransform2D& RigidBody2D::GetTransform() const
 	{
 		return *m_AttachedTransform;

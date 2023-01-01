@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Texture.h"
+#include "Engine/Core/UUID.h"
 
 namespace Engine
 {
@@ -11,10 +12,16 @@ namespace Engine
     public:
         SpriteAnimation(Texture* sprites, const glm::uvec2& startPoint, const glm::uvec2& spriteSize, U32 frameCount,
                         U32 fpsSpeed, F32 maxDuration = 0);
+        SpriteAnimation(const SpriteAnimation& other);
         void Update(F32 dt);
         const std::array<glm::vec2, 4>& GetCurrentFrameUV() const { return m_CurrentFrameUV; }
         bool HasEnded() const { return m_MaxDuration != 0.0f && m_TotalDuration >= m_MaxDuration; }
+
+        UUID GetUUID() const { return m_UUID; }
+        
     private:
+        UUID m_UUID{};
+        
         Texture* m_SpriteSheet = nullptr;
         glm::uvec2 m_StartPosition = glm::uvec2{0, 0};
         glm::uvec2 m_SpriteSize = glm::uvec2{16, 16};

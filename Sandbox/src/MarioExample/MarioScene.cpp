@@ -108,13 +108,37 @@ void MarioScene::OnRender()
 void MarioScene::OnImguiUpdate()
 {
     m_ScenePanels.OnMainMenuDraw();
+
+    glm::vec2 mousePos = Input::MousePosition();
+    
+    auto* camera = GetMainCamera();
+    FrameBuffer* frameBuffer = nullptr;
+    Entity entityUnderMouse = NULL_ENTITY;
+    if (camera)
+    {
+        frameBuffer = camera->CameraFrameBuffer.get();
+        frameBuffer->Bind();
+        if (SceneUtils::HasEntityUnderMouse(mousePos, frameBuffer)) entityUnderMouse = SceneUtils::GetEntityUnderMouse(mousePos, frameBuffer);
+        frameBuffer->Unbind();
+        mousePos = camera->CameraController->GetCamera()->ScreenToWorldPoint(mousePos);
+        mousePos = Math::SnapToGrid(mousePos, {1.0f, 1.0f});
+    }
+    
+    m_MainViewportSize = ImguiMainViewportAcceptDnD(frameBuffer, "Viewport", [&](const ImGuiPayload* payload)
+    {
+        m_SceneSerializer.OnImguiPayloadAccept(payload, {.MousePos = mousePos, .EntityUnderMouse = entityUnderMouse});
+    });
     
     if (!m_IsSceneReady) return;
     
     m_ScenePanels.OnImguiUpdate();
-    auto* camera = GetMainCamera();
-    if (!camera) return;
-    m_MainViewportSize = ImguiMainViewport(*camera->CameraFrameBuffer);
+}
+
+void MarioScene::OnSceneGlobalUpdate()
+{
+    m_SceneGraph.OnUpdate();
+    SceneUtils::SynchronizePhysics(*this);
+    m_ScenePanels.ResetActiveEntity();
 }
 
 void MarioScene::Open(const std::string& filename)
@@ -123,8 +147,8 @@ void MarioScene::Open(const std::string& filename)
     Clear();
     // Open (deserialize new scene).
     m_SceneSerializer.Deserialize("assets/scenes/" + filename + ".scene");
-    
-    SceneUtils::SynchronizePhysics(*this);
+
+    OnSceneGlobalUpdate();
     m_IsSceneReady = true;
 }
 
@@ -155,6 +179,7 @@ FrameBuffer* MarioScene::GetMainFrameBuffer()
 
 void MarioScene::SPhysics(F32 dt)
 {
+    SceneUtils::PreparePhysics(*this);
     m_RigidBodyWorld2D.Update(dt);
     for (auto e : View<Component::RigidBody2D>(m_Registry))
     {
@@ -255,29 +280,29 @@ void MarioScene::SAnimation(F32 dt)
         const auto& state = m_Registry.Get<Component::MarioState>(e);
         if (state.IsMovingLeft)
         {
-            if (state.IsInMidAir && animation.SpriteAnimation != m_AnimationsMap["jLeft"])
+            if (state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["jLeft"]->GetUUID())
             {
-                animation.SpriteAnimation = m_AnimationsMap["jLeft"];
+                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["jLeft"]);
             }
-            else if (!state.IsInMidAir && animation.SpriteAnimation != m_AnimationsMap["wLeft"])
+            else if (!state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["wLeft"]->GetUUID())
             {
-                animation.SpriteAnimation = m_AnimationsMap["wLeft"];
+                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["wLeft"]);
             }
         }
         else if (state.IsMovingRight)
         {
-            if (state.IsInMidAir && animation.SpriteAnimation != m_AnimationsMap["jRight"])
+            if (state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["jRight"]->GetUUID())
             {
-                animation.SpriteAnimation = m_AnimationsMap["jRight"];
+                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["jRight"]);
             }
-            else if (!state.IsInMidAir && animation.SpriteAnimation != m_AnimationsMap["wRight"])
+            else if (!state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["wRight"]->GetUUID())
             {
-                animation.SpriteAnimation = m_AnimationsMap["wRight"];
+                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["wRight"]);
             }
         }
         else
         {
-            animation.SpriteAnimation = m_AnimationsMap["stand"];
+            animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["stand"]);
         }
     }
 }
@@ -329,131 +354,6 @@ void MarioScene::InitSensorCallbacks()
         }
     };
     m_SensorCallbacks.push_back(jumpCallback);
-}
-
-void MarioScene::CreateCamera()
-{
-    auto&& [camera, tf] = SceneUtils::AddDefaultEntity(*this, "camera");
-    auto& cameraComp = SceneUtils::AddDefault2DCamera(*this, camera);
-    cameraComp.IsPrimary = true;
-}
-
-void MarioScene::AddPlayer()
-{
-    auto&& [player, tf] = SceneUtils::AddDefaultEntity(*this, "player");
-
-    Physics::Filter playerFilter{ .GroupIndex = -1 };
-    auto& rb = m_Registry.Add<Component::RigidBody2D>(player);
-    auto& col = m_Registry.Add<Component::BoxCollider2D>(player);
-    m_Registry.Add<Component::MarioInput>(player);
-    m_Registry.Add<Component::MarioState>(player);
-
-    rb.Type = Physics::RigidBodyType2D::Dynamic;
-    rb.Flags = Physics::RigidBodyDef2D::BodyFlags::RestrictRotation;
-    SceneUtils::SynchronizePhysics(*this, player);
-    col.PhysicsCollider->SetFilter(playerFilter);
-
-    auto& sensors = m_Registry.Add<Component::Sensors>(player);
-    auto&& [footSensor, footTf] = SceneUtils::AddDefaultEntity(*this, "foot sensor");
-    sensors.Bottom = footSensor; 
-    auto& footCol = m_Registry.Add<Component::BoxCollider2D>(footSensor);
-    footTf.Scale = tf.Scale * glm::vec2{0.85f, 0.15f};
-    footCol.Offset.y = -tf.Scale.y * 0.5f;
-    footCol.IsSensor = true;
-    SceneUtils::SynchronizePhysics(*this, footSensor, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
-    footCol.PhysicsCollider->SetFilter(playerFilter);
-
-    // ************* Relations ***************
-    auto& childRel = m_Registry.Add<Component::ChildRel>(player);
-    SceneUtils::AddChild(*this, player, footSensor);
-    // ************* Relations ***************
-   
-    auto& collisionCallback = m_Registry.Add<Component::CollisionCallback>(footSensor);
-    collisionCallback.SensorCallbackIndex = 0;
-    
-    m_Registry.Add<Component::SpriteRenderer>(player, Component::SpriteRenderer(
-                                                  m_MarioSprites.get(),
-                                                  m_MarioSprites->GetSubTexturePixelsUV({216, 410}, {15, 28}),
-                                                  glm::vec4{1.0f},
-                                                  glm::vec2{1.0f, 1.0f},
-                                                  m_SortingLayer.GetLayer("Middleground"),
-                                                  1
-                                              ));
-
-    auto& anim = m_Registry.Add<Component::Animation>(player);
-    anim.SpriteAnimation = m_AnimationsMap["stand"];
-}
-
-void MarioScene::CreateLevel()
-{
-    // Add background
-    {
-        auto&& [background, tf] = SceneUtils::AddDefaultEntity(*this, "background");
-        tf.Scale = {80.0f, 15.0f};
-        auto& sr = m_Registry.Add<Component::SpriteRenderer>(background);
-        sr.Tint = {0.52f, 0.80f, 0.92f, 1.0f};
-        sr.SortingLayer = m_SortingLayer.GetLayer("Background");
-        sr.OrderInLayer = -1;
-    }
-    {
-        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
-        auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
-        auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
-        tf.Position = glm::vec2{0.0f, -6.0f};
-        tf.Scale = glm::vec2{20.0f, 1.0f};
-        SceneUtils::SynchronizePhysics(*this, floor);
-        m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-                                                      m_BrickTexture.get(),
-                                                      std::array<glm::vec2, 4>{
-                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
-                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-                                                      },
-                                                      glm::vec4{1.0f},
-                                                      glm::vec2{20.0f, 1.0f},
-                                                      m_SortingLayer.GetLayer("Middleground"),
-                                                      0
-                                                  ));
-    }
-
-    // Smaller platforms.
-    {
-        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
-        auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
-        auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
-        tf.Position = glm::vec2{2.0f, -2.0f};
-        tf.Scale = glm::vec2{2.0f, 1.0f};
-        SceneUtils::SynchronizePhysics(*this, floor);
-        m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-                                                      m_BrickTexture.get(),
-                                                      std::array<glm::vec2, 4>{
-                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
-                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-                                                      },
-                                                      glm::vec4{1.0f},
-                                                      glm::vec2{2.0f, 1.0f},
-                                                      m_SortingLayer.GetLayer("Middleground"),
-                                                      0
-                                                  ));
-    }
-    {
-        auto&& [floor, tf] = SceneUtils::AddDefaultEntity(*this, "level");
-        auto& rb = m_Registry.Add<Component::RigidBody2D>(floor);
-        auto& col = m_Registry.Add<Component::BoxCollider2D>(floor);
-        tf.Position = glm::vec2{3.0f, -3.0f};
-        tf.Scale = glm::vec2{2.0f, 1.0f};
-        SceneUtils::SynchronizePhysics(*this, floor);
-        m_Registry.Add<Component::SpriteRenderer>(floor, Component::SpriteRenderer(
-                                                      m_BrickTexture.get(),
-                                                      std::array<glm::vec2, 4>{
-                                                          glm::vec2{0.0f, 0.0f}, glm::vec2{1.0f, 0.0f},
-                                                          glm::vec2{1.0f, 1.0f}, glm::vec2{0.0f, 1.0f}
-                                                      },
-                                                      glm::vec4{1.0f},
-                                                      glm::vec2{2.0f, 1.0f},
-                                                      m_SortingLayer.GetLayer("Middleground"),
-                                                      0
-                                                  ));
-    }
 }
 
 void MarioScene::ValidateViewport()

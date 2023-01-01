@@ -20,10 +20,10 @@ namespace Engine
         virtual ~ComponentSerializerBase() = default;
         virtual void SerializeComponentOf(Entity e, YAML::Emitter& emitter) = 0;
         virtual void DeserializeComponentOf(Entity e, YAML::Node& node) = 0;
-
-        virtual void FillEntityRelationsMap(Entity e, std::unordered_map<Entity, std::vector<Entity*>>& map)
-        {
-        }
+        virtual void AddEmptyComponentTo(Entity e) = 0;
+        virtual bool SupportsCreationInEditor() = 0;
+        
+        virtual void FillEntityRelationsMap(Entity e, std::unordered_map<Entity, std::vector<Entity*>>& map) {}
 
         const ComponentSignature& GetSignature() const { return m_ComponentSignature; }
 
@@ -42,6 +42,8 @@ namespace Engine
         ComponentSerializer(const ComponentSignature& signature, Scene& scene);
         void SerializeComponentOf(Entity e, YAML::Emitter& emitter) override;
         void DeserializeComponentOf(Entity e, YAML::Node& node) override;
+        void AddEmptyComponentTo(Entity e) override {}
+        bool SupportsCreationInEditor() override { return false; }
 
     protected:
         virtual void SerializeComponent(const T& component, YAML::Emitter& emitter) = 0;
@@ -147,6 +149,8 @@ namespace Engine
         RigidBody2DSerializer(Scene& scene);
         void SerializeComponent(const Component::RigidBody2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
+        bool SupportsCreationInEditor() override { return true; }
+        void AddEmptyComponentTo(Entity e) override;
     };
 
     class BoxCollider2DSerializer : public ComponentSerializer<Component::BoxCollider2D>
@@ -156,6 +160,8 @@ namespace Engine
         BoxCollider2DSerializer(Scene& scene);
         void SerializeComponent(const Component::BoxCollider2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
+        bool SupportsCreationInEditor() override { return true; }
+        void AddEmptyComponentTo(Entity e) override;
     };
 
     class SpriteRendererSerializer : public ComponentSerializer<Component::SpriteRenderer>
@@ -165,6 +171,8 @@ namespace Engine
         SpriteRendererSerializer(Scene& scene);
         void SerializeComponent(const Component::SpriteRenderer& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
+        bool SupportsCreationInEditor() override { return true; }
+        void AddEmptyComponentTo(Entity e) override;
     };
 
     class SpriteAnimationSerializer : public ComponentSerializer<Component::Animation>

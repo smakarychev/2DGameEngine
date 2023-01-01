@@ -2,6 +2,8 @@
 #include "ComponentSerializer.h"
 #include "Engine/Core/Core.h"
 
+struct ImGuiPayload;
+
 namespace Engine
 {
     class ComponentSerializerBase;
@@ -14,7 +16,12 @@ namespace Engine
     class SceneSerializer
     {
         using ComponentSignature = ComponentSerializerBase::ComponentSignature;
-
+    public:
+        struct PayloadAdditionalInfo
+        {
+            glm::vec2 MousePos{0.0f, 0.0f};
+            Entity EntityUnderMouse{NULL_ENTITY};
+        };
     public:
         SceneSerializer(Scene& scene);
         void Serialize(const std::string& filepath);
@@ -33,6 +40,8 @@ namespace Engine
         void SerializeGeneratedPrefab(const std::vector<Entity>& entities, const std::string& prefabName, U64 prefabId);
         void SerializePrefab(Entity prefab, YAML::Emitter& emitter);
 
+        void OnImguiPayloadAccept(const ImGuiPayload* payload, const PayloadAdditionalInfo& pai);
+
         void Write(const std::string& filepath, YAML::Emitter& emitter);
 
         template <typename T>
@@ -48,6 +57,7 @@ namespace Engine
         std::vector<Entity> DeserializePrefabs(YAML::Node& prefabs,
                                                std::unordered_map<Entity, Entity>& deserializedToTrue,
                                                std::unordered_map<Entity, std::vector<Entity*>>& entityRelations);
+        Entity AddPrefabToScene(const std::string& prefabPath);
         void FixRelations(std::unordered_map<Entity, Entity>& deserializedToTrue,
                           std::unordered_map<Entity, std::vector<Entity*>>& entityRelations);
 

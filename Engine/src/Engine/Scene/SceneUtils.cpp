@@ -45,6 +45,25 @@ namespace Engine
         return {entity, tf};
     }
 
+    void SceneUtils::DeleteEntity(Scene& scene, Entity entity)
+    {
+        // Before deleting entity, detach it from parent (if any) and delete it's children (if any).
+        auto& registry = scene.GetRegistry();
+        if (registry.Has<Component::ChildRel>(entity))
+        {
+            auto& childRel = registry.Get<Component::ChildRel>(entity);
+            Entity child = childRel.First;
+            for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+            {
+                Entity next = registry.Get<Component::ParentRel>(child).Next;
+                DeleteEntity(scene, child);
+                child = next;
+            }
+        }
+        if (registry.Has<Component::ParentRel>(entity)) RemoveChild(scene, entity);
+        registry.DeleteEntity(entity);
+    }
+
     void SceneUtils::AddDefaultPhysicalRigidBody2D(Scene& scene, Entity entity)
     {
         auto& registry = scene.GetRegistry();
@@ -118,6 +137,24 @@ namespace Engine
         cameraComp.CameraController = cameraController;
         cameraComp.CameraFrameBuffer = frameBuffer;
         return cameraComp;
+    }
+
+    void SceneUtils::PreparePhysics(Scene& scene)
+    {
+        auto& registry = scene.GetRegistry();
+        for (auto e : View<Component::BoxCollider2D>(registry))
+        {
+            auto& tf = registry.Get<Component::LocalToWorldTransform2D>(e);
+            auto& col = registry.Get<Component::BoxCollider2D>(e);
+            col.PhysicsCollider->SetAttachedTransform(&tf);
+            SceneUtils::SynchronizePhysics(scene, e, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
+        }
+        for (auto e : View<Component::RigidBody2D>(registry))
+        {
+            auto& tf = registry.Get<Component::LocalToWorldTransform2D>(e);
+            auto& rb = registry.Get<Component::RigidBody2D>(e);
+            rb.PhysicsBody->SetAttachedTransform(&tf);
+        }
     }
 
     void SceneUtils::SynchronizePhysics(Scene& scene, Entity entity, PhysicsSynchroSetting synchroSetting)
@@ -205,20 +242,27 @@ namespace Engine
     }
 
 
-    void SceneUtils::AddChild(Scene& scene, Entity parent, Entity child)
+    void SceneUtils::AddChild(Scene& scene, Entity parent, Entity child, LocalTransformPolicy localTransformPolicy)
+    {
+        AddChild(scene, parent, child, true, localTransformPolicy);
+    }
+
+    void SceneUtils::AddChild(Scene& scene, Entity parent, Entity child, bool usePrefabConstraints, LocalTransformPolicy localTransformPolicy)
     {
         auto& registry = scene.GetRegistry();
         // Check that neither parent nor child belong to prefab - prefabs shall stay untouched.
-        if (registry.Has<Component::BelongsToPrefab>(parent) ||
-        //    registry.Has<Component::Prefab>(parent) || // TODO: fix me
-            registry.Has<Component::BelongsToPrefab>(child)) return;
+        if (usePrefabConstraints)
+        {
+            if (registry.Has<Component::BelongsToPrefab>(parent) ||
+                registry.Has<Component::Prefab>(parent) ||
+                registry.Has<Component::BelongsToPrefab>(child)) return;
+        }
         // Check that child is not parent's parent.
         if (BFS(child, parent, registry)) return;
         // Remove child from previous parent.
         if (registry.Has<Component::ParentRel>(child)) RemoveChild(scene, child);
         
         if (!registry.Has<Component::ChildRel>(parent)) registry.Add<Component::ChildRel>(parent);
-        auto& parentTf = registry.Get<Component::LocalToWorldTransform2D>(parent);
         auto& childRel = registry.Get<Component::ChildRel>(parent);
 
         auto& childParentRel = registry.Add<Component::ParentRel>(child);
@@ -236,13 +280,27 @@ namespace Engine
         }
         childRel.First = child;
         // Change transform, so that child stays in place when attached.
-        registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child).Concatenate(parentTf.Inverse());
+        switch (localTransformPolicy)
+        {
+            case LocalTransformPolicy::Default:
+            {
+                auto& parentTf = registry.Get<Component::LocalToWorldTransform2D>(parent);
+                registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child).Concatenate(parentTf.Inverse());
+                break;
+            }
+            case LocalTransformPolicy::SameAsWorld:
+            {
+                registry.Add<Component::LocalToParentTransform2D>(child) = registry.Get<Component::LocalToWorldTransform2D>(child);
+                registry.Get<Component::LocalToWorldTransform2D>(child) = Component::LocalToWorldTransform2D{};
+                break;
+            }
+        }
         // Update all `child` children depth.
         TraverseTreeAndApply(child, registry, [&](Entity e)
         {
             if (e == child) return;
             auto& parentRel = registry.Get<Component::ParentRel>(e);
-            parentRel.Depth = registry.Get<Component::ParentRel>(parentRel.Parent).Depth + 1;
+            parentRel.Depth += 1;
         });
     }
 
@@ -268,7 +326,7 @@ namespace Engine
         {
             if (e == child) return;
             auto& parentRel = registry.Get<Component::ParentRel>(e);
-            parentRel.Depth = registry.Get<Component::ParentRel>(parentRel.Parent).Depth - 1;
+            parentRel.Depth -= 1;
         });
 
         registry.Remove<Component::ParentRel>(child);
@@ -281,5 +339,39 @@ namespace Engine
         Entity curr = treeEntity;
         while (registry.Has<Component::ParentRel>(curr)) curr = registry.Get<Component::ParentRel>(curr).Parent;
         return curr;
+    }
+
+    bool SceneUtils::HasEntityUnderMouse(const glm::vec2& mousePos, FrameBuffer* frameBuffer)
+    {
+        return !(mousePos.x < 0.0f || mousePos.x > ImguiState::MainViewportSize.x ||
+            mousePos.y < 0.0f || mousePos.y > ImguiState::MainViewportSize.y);
+    }
+
+    Entity SceneUtils::GetEntityUnderMouse(const glm::vec2& mousePos, FrameBuffer* frameBuffer)
+    {
+        // Read id texture, and get entityId from it.
+        I32 entityId = frameBuffer->ReadPixel(1, static_cast<U32>(mousePos.x), static_cast<U32>(mousePos.y),
+                                              RendererAPI::DataType::Int);
+        return entityId;
+    }
+
+    SceneUtils::AssetPayloadType SceneUtils::GetAssetPayloadTypeFromString(const std::string& fileName)
+    {
+        static std::vector<std::string> sceneExtensions  = { "scene" };
+        static std::vector<std::string> prefabExtensions = {"prefab"};
+        static std::vector<std::string> imageExtensions  = { "png", "jpg", "jpeg" };
+        // TODO: Font.
+        
+        std::string fileExtension{};
+        auto pos = fileName.find_last_of(".");
+        if (pos == std::string::npos)
+        {
+            ENGINE_CORE_ERROR("Invalid file name: {}", fileName);
+            return AssetPayloadType::Unknown;
+        }
+        fileExtension = fileName.substr(pos + 1);
+        if (std::ranges::find(sceneExtensions, fileExtension) != sceneExtensions.end()) return AssetPayloadType::Scene;
+        if (std::ranges::find(prefabExtensions, fileExtension) != prefabExtensions.end()) return AssetPayloadType::Prefab;
+        if (std::ranges::find(imageExtensions, fileExtension) != imageExtensions.end()) return AssetPayloadType::Image;
     }
 }

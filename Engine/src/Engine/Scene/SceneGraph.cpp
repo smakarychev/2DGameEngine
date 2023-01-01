@@ -3,6 +3,7 @@
 #include "SceneGraph.h"
 
 #include "Engine/ECS/View.h"
+#include "Serialization/Prefab.h"
 
 namespace Engine
 {
@@ -14,17 +15,21 @@ namespace Engine
 
     void SceneGraph::OnUpdate()
     {
-        m_TopLevelEntities = FindTopLevelEntities();
-
-        UpdateTransforms();
+        const std::vector<Entity>& topLevelEntities = FindTopLevelEntities();
+        UpdateTransforms(topLevelEntities);
     }
 
-    void SceneGraph::UpdateTransforms()
+    void SceneGraph::UpdateGraphOfEntity(Entity entity)
+    {
+        UpdateTransforms({entity});
+    }
+
+    void SceneGraph::UpdateTransforms(const std::vector<Entity>& topLevelEntities)
     {
         for (auto& tlayer : m_TransformHierarchy) tlayer.clear();
 
         // First add the top level entities, since they do not depend on any other entities.
-        for (auto e : m_TopLevelEntities)
+        for (auto e : topLevelEntities)
         {
             m_TransformHierarchy[0].emplace_back(-1, e, m_Registry.Get<Component::LocalToWorldTransform2D>(e));
         }
@@ -114,6 +119,26 @@ namespace Engine
                 auto& parentRel = m_Registry.Get<Component::ParentRel>(curr);
                 curr = parentRel.Next;
             }
+        }
+    }
+
+    void SceneGraph::ReflectEntityTransformToPrefabTransform()
+    {
+        for (auto prefab : View<Component::Prefab>(m_Registry))
+        {
+            bool hasParent = m_Registry.Has<Component::ParentRel>(prefab);
+            auto& eTf = m_Registry.Get<Component::LocalToWorldTransform2D>(m_Registry.Get<Component::ChildRel>(prefab).First);
+            auto& eTfLocal = m_Registry.Get<Component::LocalToParentTransform2D>(m_Registry.Get<Component::ChildRel>(prefab).First);
+
+            if (hasParent)
+            {
+                m_Registry.Get<Component::LocalToParentTransform2D>(prefab).Position = eTfLocal.Position;
+            }
+            else
+            {
+                m_Registry.Get<Component::LocalToWorldTransform2D>(prefab).Position = eTf.Position;
+            }
+            eTfLocal.Position = glm::vec2{0.0f, 0.0f};
         }
     }
 }

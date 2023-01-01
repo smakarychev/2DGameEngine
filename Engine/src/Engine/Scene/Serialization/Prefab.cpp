@@ -26,17 +26,40 @@ namespace Engine
         });
         serializer.SerializeGeneratedPrefab(prefabEntities, fullName, prefabId);
         // Add new `Prefab` entity - when serializing, only this entity will be serialized.
-        auto&& [prefab, tf] = SceneUtils::AddDefaultEntity(scene, "prefab-" + prefabName);
+        Entity prefab = CreatePrefab(fullName, prefabId, entity, prefabEntities, scene);
+        if (registry.Has<Component::ParentRel>(entity))
+        {
+            SceneUtils::AddChild(scene, registry.Get<Component::ParentRel>(entity).Parent, prefab);
+        }
+    }
+
+    Entity PrefabUtils::CreatePrefab(const std::string& prefabName, U64 prefabId, const std::vector<Entity>& entities,
+                                     Scene& scene)
+    {
+        Registry& registry = scene.GetRegistry();
+        return CreatePrefab(prefabName, prefabId, SceneUtils::FindTopOfTree(entities.front(), registry), entities,
+                            scene);
+    }
+
+    Entity PrefabUtils::CreatePrefab(const std::string& prefabName, U64 prefabId, Entity topLevelEntity,
+                                     const std::vector<Entity>& entities, Scene& scene)
+    {
+        Registry& registry = scene.GetRegistry();
+        auto&& [prefab, tf] = SceneUtils::AddDefaultEntity(
+            scene, "prefab-" + std::filesystem::path(prefabName).stem().string());
         auto& prefabComp = registry.Add<Component::Prefab>(prefab);
         prefabComp.Id = prefabId;
-        prefabComp.Name = fullName;
-        SceneUtils::AddChild(scene, prefab, entity);
+        prefabComp.Name = prefabName;
+        //// Swap child's and prefab's positions (prefab's position is 0).
+       // std::swap(tf.Position, registry.Get<Component::LocalToWorldTransform2D>(topLevelEntity).Position);
+        SceneUtils::AddChild(scene, prefab, topLevelEntity, false, SceneUtils::LocalTransformPolicy::SameAsWorld);
         // Add `BelongsToPrefab` component to every entity in prefab.
-        for (auto e : prefabEntities)
+        for (auto e : entities)
         {
             auto& belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
             belongsToPrefab.PrefabId = prefabId;
         }
+        return prefab;
     }
 
     PrefabSerializer::PrefabSerializer(Scene& scene)
@@ -60,5 +83,4 @@ namespace Engine
         prefabComponent.Name = prefab["Name"].as<std::string>();
         prefabComponent.Id = prefab["Id"].as<U64>();
     }
-
 }

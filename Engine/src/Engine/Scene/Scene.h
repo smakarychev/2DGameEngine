@@ -33,11 +33,16 @@ namespace Engine
 		
 		// This is not pure virtual, since it is unnecessary.
 		virtual void OnImguiUpdate() {}
+		// TODO: very questionable name, basically the purpose of this function is
+		// to update internal structures upon introducing new prefabs, etc.
+		virtual void OnSceneGlobalUpdate() {}
+		
 		bool HasAction(InputCode input) const { return m_RegisteredActions[input] != nullptr; }
 		Action& GetAction(InputCode input) const { return *m_RegisteredActions[input]; }
 		void RegisterAction(InputCode input, Ref<Action> action) { m_RegisteredActions[input] = std::move(action); }
 		
 		Registry& GetRegistry() { return m_Registry; }
+		SceneGraph& GetSceneGraph() { return m_SceneGraph; }
 		Physics::RigidBodyWorld2D& GetRigidBodyWorld2D() { return m_RigidBodyWorld2D; }
 		SceneSerializer& GetSerializer() { return m_SceneSerializer; }
 	protected:

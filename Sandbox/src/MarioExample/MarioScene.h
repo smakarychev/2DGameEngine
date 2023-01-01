@@ -19,6 +19,7 @@ public:
     void OnEvent(Event& event) override;
     void OnRender() override;
     void OnImguiUpdate() override;
+    void OnSceneGlobalUpdate() override;
     void PerformAction(Action& action) override;
     FrameBuffer* GetMainFrameBuffer() override;
 public:
@@ -33,10 +34,7 @@ public:
     void SCamera();
 private:
     void InitSensorCallbacks();
-    void CreateCamera();
-    void AddPlayer();
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
-    void CreateLevel();
     void ValidateViewport();
 
     Component::Camera* GetMainCamera();

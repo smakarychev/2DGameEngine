@@ -233,6 +233,15 @@ namespace Engine
         pRComp.Flags = flags;
     }
 
+    void RigidBody2DSerializer::AddEmptyComponentTo(Entity e)
+    {
+        if (!m_Registry.Has<Component::RigidBody2D>(e))
+        {
+            auto& rb = m_Registry.Add<Component::RigidBody2D>(e);
+            SceneUtils::AddDefaultPhysicalRigidBody2D(m_Scene, e);
+        }
+    }
+
     BoxCollider2DSerializer::BoxCollider2DSerializer(Scene& scene)
         : ComponentSerializer<Component::BoxCollider2D>(GetStaticSingature(), scene)
     {
@@ -277,6 +286,15 @@ namespace Engine
         boxComp.Offset = box["Offset"].as<glm::vec2>();
         boxComp.HalfSize = box["HalfSize"].as<glm::vec2>();
         boxComp.IsSensor = box["IsSensor"].as<bool>();
+    }
+
+    void BoxCollider2DSerializer::AddEmptyComponentTo(Entity e)
+    {
+        if (!m_Registry.Has<Component::BoxCollider2D>(e))
+        {
+            auto& col = m_Registry.Add<Component::BoxCollider2D>(e);
+            SceneUtils::AddDefaultBoxCollider2D(m_Scene, e);
+        }
     }
 
     SpriteRendererSerializer::SpriteRendererSerializer(Scene& scene)
@@ -329,6 +347,14 @@ namespace Engine
         sRComp.OrderInLayer = sR["OrderInLayer"].as<I16>();
         sRComp.FlipX = sR["FlipX"].as<bool>();
         sRComp.FlipY = sR["FlipY"].as<bool>();
+    }
+
+    void SpriteRendererSerializer::AddEmptyComponentTo(Entity e)
+    {
+        if (!m_Registry.Has<Component::SpriteRenderer>(e))
+        {
+            auto& spr = m_Registry.Add<Component::SpriteRenderer>(e);
+        }
     }
 
     SpriteAnimationSerializer::SpriteAnimationSerializer(Scene& scene)

@@ -154,7 +154,7 @@ namespace Engine
             std::swap((*sparseSet)[mappedIndex], (*lvSparseSet)[mappedLvIndex]);
         }
         ENGINE_CORE_ASSERT(!m_Dense.empty(), "Set is empty")
-        popCallback((*sparseSet)[mappedIndex]);
+        popCallback(static_cast<ST>(m_Dense.size() - 1));
         (*sparseSet)[mappedIndex] = m_NullFlag;
         m_Dense.pop_back();
     }

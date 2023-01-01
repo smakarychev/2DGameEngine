@@ -15,22 +15,51 @@ namespace Engine
 		inline bool BlockEventPropagation = false;
 		inline glm::vec2 MainViewportSize = {1600.0f, 900.0f};
 	}
-	
+
+	template <typename Fn>
+	glm::vec2 ImguiMainViewportAcceptDnD(FrameBuffer* frameBuffer, const std::string& windowName, Fn dndFunction);
+
 	inline glm::vec2 ImguiMainViewport(const FrameBuffer& frameBuffer, const std::string& windowName = "Viewport")
 	{
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-        ImGui::Begin(windowName.c_str());
+		return ImguiMainViewportAcceptDnD(const_cast<FrameBuffer*>(&frameBuffer), windowName, [](const ImGuiPayload* payload){});
+	}
+	
+	inline glm::vec2 ImguiMainViewport(FrameBuffer* frameBuffer, const std::string& windowName = "Viewport")
+	{
+		return ImguiMainViewportAcceptDnD(frameBuffer, windowName, [](const ImGuiPayload* payload){});
+	}
 
-        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        U64 textureID = frameBuffer.GetColorBufferId(0);
-        ImGui::Image(reinterpret_cast<void*>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-        ImGui::PopStyleVar(1);
+	template <typename Fn>
+	glm::vec2 ImguiMainViewportAcceptDnD(FrameBuffer* frameBuffer, const std::string& windowName, Fn dndFunction)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::Begin(windowName.c_str());
+
+		ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+		if (frameBuffer)
+		{
+			U64 textureID = frameBuffer->GetColorBufferId(0);
+			ImGui::Image(reinterpret_cast<ImTextureID>(textureID), viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		}
+		else
+		{
+			ImGui::Dummy(viewportSize);
+		}
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetsPayload"))
+			{
+				dndFunction(payload);
+			}
+			ImGui::EndDragDropTarget();
+		}
+		ImGui::PopStyleVar(1);
 
 		// Check if we need to block events.
 		ImguiState::BlockEventPropagation = !ImGui::IsWindowHovered(); 
 
 		ImGui::End();
-        return glm::vec2{ viewportSize.x, viewportSize.y };
+		return glm::vec2{ viewportSize.x, viewportSize.y };
 	}
 
 	static constexpr auto IMGUI_LIMITLESS = FLT_MAX / INT_MAX;

@@ -125,6 +125,7 @@ namespace Engine::Physics
 		// Apply the given force at some point (in world space).
 		void ApplyForce(const glm::vec2& force, const glm::vec2& point);
 
+		void SetAttachedTransform(Component::LocalToWorldTransform2D* transform);
 		// Returns transform, associated with rigidbody.
 		Component::LocalToWorldTransform2D& GetTransform() const;
 		glm::vec2 TransformToWorld(const glm::vec2& point) const;

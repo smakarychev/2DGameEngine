@@ -59,6 +59,7 @@ namespace Engine
 		glm::vec3 GetRight() const;
 
 		glm::vec2 ScreenToWorldPoint(const glm::vec2& screenPosition) const;
+		glm::vec2 WorldToScreenPoint(const glm::vec2& worldPosition) const;
 
 	private:
 		void UpdateViewMatrix();

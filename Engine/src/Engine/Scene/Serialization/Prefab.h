@@ -6,6 +6,7 @@
 namespace Engine
 {
     using namespace Types;
+
     namespace Component
     {
         struct Prefab
@@ -24,8 +25,12 @@ namespace Engine
     {
         inline U64 GeneratePrefabId() { return Random::UInt64(); }
         void CreatePrefabFromEntity(Entity entity, const std::string& prefabName, Scene& scene);
+        Entity CreatePrefab(const std::string& prefabName, U64 prefabId, const std::vector<Entity>& entities,
+                            Scene& scene);
+        Entity CreatePrefab(const std::string& prefabName, U64 prefabId, Entity topLevelEntity,
+                            const std::vector<Entity>& entities, Scene& scene);
     }
-    
+
     class PrefabSerializer : public ComponentSerializer<Component::Prefab>
     {
     public:

@@ -115,7 +115,7 @@ namespace Engine::Component
         // Pointer to real (physics engine's) body.
         RBHandle PhysicsBody{nullptr};
         Physics::RigidBodyType2D Type{Physics::RigidBodyType2D::Static};
-        Physics::RigidBodyDef2D::BodyFlags Flags{Physics::RigidBodyDef2D::BodyFlags::None};
+        Physics::RigidBodyDef2D::BodyFlags Flags{Physics::RigidBodyDef2D::BodyFlags::RestrictRotation};
         
         // Only default constructor - creation of that component depends on rigid body world, and other things,
         // so it is handled by Scene object.

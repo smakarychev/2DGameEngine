@@ -75,7 +75,7 @@ namespace Engine
 		}
 
 		// Returns `value mod base` when base is the power of 2.
-		inline constexpr std::integral auto FastMod(std::integral auto value, std::integral auto base)
+		constexpr std::integral auto FastMod(std::integral auto value, std::integral auto base)
 		{
 			ENGINE_CORE_ASSERT(IsPowerOf2(base), "Base have to be a power of 2.")
 			return value & (base - 1);
@@ -83,13 +83,13 @@ namespace Engine
 
 		// Clamps `val` between `min` and `max`.
 		template <typename T>
-		inline T Clamp(T val, T min, T max)
+		T Clamp(T val, T min, T max)
 		{
 			return std::clamp<T>(val, min, max);
 		}
 
 		template <typename T>
-		inline T Abs(const T& val)
+		T Abs(const T& val)
 		{
 			return std::abs(val);
 		}
@@ -100,25 +100,25 @@ namespace Engine
 			return glm::vec2{ Math::Abs(val.x), Math::Abs(val.y) };
 		}
 
-		inline constexpr std::floating_point auto Sqrt(std::floating_point auto val)
+		constexpr std::floating_point auto Sqrt(std::floating_point auto val)
 		{
 			return std::sqrt(val);
 		}
 
 		template <typename T>
-		inline constexpr T Max(const T& first, const T& second)
+		constexpr T Max(const T& first, const T& second)
 		{
 			return std::max<T>(first, second);
 		}
 
 		template <typename T>
-		inline T Min(const T& first, const T& second)
+		T Min(const T& first, const T& second)
 		{
 			return std::min<T>(first, second);
 		}
 
 		template <typename T = float>
-		inline constexpr T Pi()
+		constexpr T Pi()
 		{
 			return static_cast<T>(3.14159265358979323846);
 		}
@@ -127,6 +127,25 @@ namespace Engine
 		{
 			return static_cast<U64>(pair.first) << 32 | static_cast<U32>(pair.second);
 		}
+
+		constexpr std::floating_point auto SnapToGrid(std::floating_point auto val, std::floating_point auto size)
+		{
+			return std::floor((val + size * 0.5f) / size) * size;
+		}
 		
+		constexpr std::floating_point auto Align(std::floating_point auto val, std::floating_point auto size)
+		{
+			return SnapToGrid(val, size);
+		}
+
+		constexpr glm::vec2 SnapToGrid(const glm::vec2& val, const glm::vec2& size)
+		{
+			return { Align(val.x, size.x), Align(val.y, size.y) };
+		}
+
+		constexpr glm::vec2 Align(const glm::vec2& val, const glm::vec2& size)
+		{
+			return SnapToGrid(val, size);
+		}
 	}
 }
