@@ -77,6 +77,7 @@ void MarioScene::OnUpdate(F32 dt)
     if (!camera) return;
     camera->CameraController->OnUpdate(dt);
     camera->CameraFrameBuffer->Bind();
+    m_SceneSerializer.OnCopyPaste();
     m_ScenePanels.OnUpdate();
     m_SceneGraph.OnUpdate();
     camera->CameraFrameBuffer->Unbind();
@@ -168,13 +169,6 @@ void MarioScene::Clear()
 void MarioScene::PerformAction(Action& action)
 {
     action.Execute();
-}
-
-FrameBuffer* MarioScene::GetMainFrameBuffer()
-{
-    auto* camera = GetMainCamera();
-    if (!camera) return nullptr;
-    return GetMainCamera()->CameraFrameBuffer.get();
 }
 
 void MarioScene::SPhysics(F32 dt)
@@ -379,6 +373,14 @@ Component::Camera* MarioScene::GetMainCamera()
     }
     return nullptr;
 }
+
+FrameBuffer* MarioScene::GetMainFrameBuffer()
+{
+    auto* camera = GetMainCamera();
+    if (!camera) return nullptr;
+    return GetMainCamera()->CameraFrameBuffer.get();
+}
+
 
 bool MarioScene::OnMousePressed(MouseButtonPressedEvent& event)
 {

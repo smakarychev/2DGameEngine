@@ -43,6 +43,7 @@ namespace Engine
         void OnImguiUpdate();
         void OnMainMenuDraw();
         void ResetActiveEntity() { m_ActiveEntity = NULL_ENTITY; }
+        Entity GetActiveEntity() const { return m_ActiveEntity; }
     private:
         bool OnMousePressed(MouseButtonPressedEvent& event);
         void FindActiveEntityOnViewPortPressed();

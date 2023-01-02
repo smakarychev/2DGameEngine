@@ -296,9 +296,8 @@ namespace Engine
             }
         }
         // Update all `child` children depth.
-        TraverseTreeAndApply(child, registry, [&](Entity e)
+        TraverseExceptRootAndApply(child, registry, [&](Entity e)
         {
-            if (e == child) return;
             auto& parentRel = registry.Get<Component::ParentRel>(e);
             parentRel.Depth += 1;
         });
@@ -322,9 +321,8 @@ namespace Engine
         parentChildRef.ChildrenCount--;
 
         // Update all `child` children depth.
-        TraverseTreeAndApply(child, registry, [&](Entity e)
+        TraverseExceptRootAndApply(child, registry, [&](Entity e)
         {
-            if (e == child) return;
             auto& parentRel = registry.Get<Component::ParentRel>(e);
             parentRel.Depth -= 1;
         });
@@ -334,11 +332,33 @@ namespace Engine
         if (parentChildRef.ChildrenCount == 0) registry.Remove<Component::ChildRel>(parent);
     }
 
+    void SceneUtils::EnqueueImmediateChildren(Entity startNode, Registry& registry, std::queue<Entity>& entityQueue)
+    {
+        if (registry.Has<Component::ChildRel>(startNode))
+        {
+            auto& childRel = registry.Get<Component::ChildRel>(startNode);
+            Entity child = childRel.First;
+            for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+            {
+                entityQueue.push(child);
+                child = registry.Get<Component::ParentRel>(child).Next;
+            }
+        }
+    }
+
     Entity SceneUtils::FindTopOfTree(Entity treeEntity, Registry& registry)
     {
         Entity curr = treeEntity;
         while (registry.Has<Component::ParentRel>(curr)) curr = registry.Get<Component::ParentRel>(curr).Parent;
         return curr;
+    }
+
+    glm::vec2 SceneUtils::GetMousePosition(Scene& scene)
+    {
+        glm::vec2 mousePos = Input::MousePosition();
+        auto* camera = scene.GetMainCamera();
+        if (camera) return camera->CameraController->GetCamera()->ScreenToWorldPoint(mousePos);
+        return mousePos;
     }
 
     bool SceneUtils::HasEntityUnderMouse(const glm::vec2& mousePos, FrameBuffer* frameBuffer)

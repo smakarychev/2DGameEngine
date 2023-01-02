@@ -22,6 +22,11 @@ namespace Engine
             glm::vec2 MousePos{0.0f, 0.0f};
             Entity EntityUnderMouse{NULL_ENTITY};
         };
+        struct CopyPasteInfo
+        {
+            bool HasSaved{false};
+            std::string SaveFileName{"assets/prefabs/temp.prefab"};
+        };
     public:
         SceneSerializer(Scene& scene);
         void Serialize(const std::string& filepath);
@@ -50,6 +55,8 @@ namespace Engine
         void SetComponentSerializers(const std::vector<Ref<ComponentSerializerBase>>& compSerializers);
         const std::vector<Ref<ComponentSerializerBase>>& GetComponentSerializers() const;
 
+        void OnCopyPaste();
+
     private:
         std::vector<Entity> DeserializeEntities(YAML::Node& entities,
                                                 std::unordered_map<Entity, Entity>& deserializedToTrue,
@@ -65,6 +72,7 @@ namespace Engine
                                   const std::vector<ComponentSignature>& excludingSignatures);
 
     private:
+        CopyPasteInfo m_CopyPasteInfo{};
         std::vector<Ref<ComponentSerializerBase>> m_ComponentSerializers;
         Scene& m_Scene;
     };

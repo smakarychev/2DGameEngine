@@ -84,6 +84,19 @@ namespace Engine
         if (!SceneUtils::HasEntityUnderMouse(mousePos, frameBuffer)) return;
         Entity entityUnderMouse = SceneUtils::GetEntityUnderMouse(mousePos, frameBuffer);
         m_ActiveEntity = entityUnderMouse;
+        // If entity belongs to prefab, set it's prefab as active entity instead.
+        auto& registry = m_Scene.GetRegistry();
+        if (registry.Has<Component::BelongsToPrefab>(m_ActiveEntity))
+        {
+            auto& belToPrefab = registry.Get<Component::BelongsToPrefab>(m_ActiveEntity);
+            U64 prefabId = belToPrefab.PrefabId;
+            Entity parent = registry.Get<Component::ParentRel>(m_ActiveEntity).Parent;
+            while (!registry.Has<Component::Prefab>(parent) && !registry.Get<Component::Prefab>(parent).Id == prefabId)
+            {
+                parent = registry.Get<Component::ParentRel>(parent).Parent;
+            }
+            m_ActiveEntity = parent;
+        }
     }
 
     void ScenePanels::DrawHierarchyPanel()

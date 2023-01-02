@@ -21,6 +21,7 @@ public:
     void OnImguiUpdate() override;
     void OnSceneGlobalUpdate() override;
     void PerformAction(Action& action) override;
+    Component::Camera* GetMainCamera() override;
     FrameBuffer* GetMainFrameBuffer() override;
 public:
     // 'Systems'
@@ -36,8 +37,6 @@ private:
     void InitSensorCallbacks();
     // TODO: save / load level from file (not a real reflection obv. (for now :^)).
     void ValidateViewport();
-
-    Component::Camera* GetMainCamera();
     
     bool OnMousePressed(MouseButtonPressedEvent& event);
 private:

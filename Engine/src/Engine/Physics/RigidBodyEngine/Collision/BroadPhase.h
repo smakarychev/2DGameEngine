@@ -174,7 +174,7 @@ namespace Engine::Physics
 		Collider2D* primaryCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(m_CurrentlyTestedNode));
 		Collider2D* otherCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(otherNode));
 		// No contact resolution between colliders of the same body.
-		if (primaryCollider->GetAttachedRigidBody() == otherCollider->GetAttachedRigidBody()) return;
+		if (primaryCollider->GetAttachedRigidBody() == otherCollider->GetAttachedRigidBody() && primaryCollider->GetAttachedRigidBody() != nullptr) return;
 
 		auto& curContacts = m_ContactsMap[m_CurrentlyTestedNode];
 		auto& otherContacts = m_ContactsMap[otherNode];

@@ -166,7 +166,7 @@ namespace Engine
 
 	glm::vec2 Camera::WorldToScreenPoint(const glm::vec2& worldPosition) const
 	{
-		return glm::vec2(m_ViewMatrix * glm::vec4(worldPosition, 0, 1.0f));
+		return glm::vec2(m_ViewProjection * glm::vec4(worldPosition, 0, 1.0f));
 	}
 
 	CameraController::CameraController(Ref<Camera> camera)

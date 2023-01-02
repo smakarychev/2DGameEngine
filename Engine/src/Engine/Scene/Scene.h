@@ -6,6 +6,7 @@
 #include "SceneGraph.h"
 
 #include "Engine/Core/Camera.h"
+#include "Engine/Core/Input.h"
 #include "Engine/ECS/Registry.h"
 #include "Engine/Events/Event.h"
 #include "Engine/Scene/ScenePanels.h"
@@ -29,6 +30,7 @@ namespace Engine
 		virtual void OnEvent(Event& event) = 0;
 		virtual void OnRender() = 0;
 		virtual void PerformAction(Action& action) = 0;
+		virtual Component::Camera* GetMainCamera() = 0;
 		virtual FrameBuffer* GetMainFrameBuffer() = 0;
 		
 		// This is not pure virtual, since it is unnecessary.
@@ -43,6 +45,7 @@ namespace Engine
 		
 		Registry& GetRegistry() { return m_Registry; }
 		SceneGraph& GetSceneGraph() { return m_SceneGraph; }
+		ScenePanels& GetScenePanels() { return m_ScenePanels; }
 		Physics::RigidBodyWorld2D& GetRigidBodyWorld2D() { return m_RigidBodyWorld2D; }
 		SceneSerializer& GetSerializer() { return m_SceneSerializer; }
 	protected:

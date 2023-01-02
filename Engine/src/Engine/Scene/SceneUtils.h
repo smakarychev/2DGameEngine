@@ -54,17 +54,22 @@ namespace  Engine
         static void AddChild(Scene& scene, Entity parent, Entity child, bool usePrefabConstraints, LocalTransformPolicy localTransformPolicy = LocalTransformPolicy::Default);
         static void RemoveChild(Scene& scene, Entity child);
 
+        static void EnqueueImmediateChildren(Entity startNode, Registry& registry, std::queue<Entity>& entityQueue);
         template <typename Fn>
         static void TraverseTreeAndApply(Entity startNode, Registry& registry, Fn fn);
+        template <typename Fn>
+        static void TraverseExceptRootAndApply(Entity startNode, Registry& registry, Fn fn);
+        
         static Entity FindTopOfTree(Entity treeEntity, Registry& registry);
 
+        static glm::vec2 GetMousePosition(Scene& scene);
         static bool HasEntityUnderMouse(const glm::vec2& mousePos, FrameBuffer* frameBuffer);
         static Entity GetEntityUnderMouse(const glm::vec2& mousePos, FrameBuffer* frameBuffer);
         
         static AssetPayloadType GetAssetPayloadTypeFromString(const std::string& fileName);
         
     };
-
+    
     template <typename Fn>
     void SceneUtils::TraverseTreeAndApply(Entity startNode, Registry& registry, Fn fn)
     {
@@ -75,17 +80,25 @@ namespace  Engine
             Entity curr = entityQueue.front(); entityQueue.pop();
 
             fn(curr);
+
+            EnqueueImmediateChildren(curr, registry, entityQueue);
+        }
+    }
+
+    template <typename Fn>
+    void SceneUtils::TraverseExceptRootAndApply(Entity startNode, Registry& registry, Fn fn)
+    {
+        std::queue<Entity> entityQueue;
+
+        EnqueueImmediateChildren(startNode, registry, entityQueue);
+        
+        while (!entityQueue.empty())
+        {
+            Entity curr = entityQueue.front(); entityQueue.pop();
+
+            fn(curr);
             
-            if (registry.Has<Component::ChildRel>(curr))
-            {
-                auto& childRel = registry.Get<Component::ChildRel>(curr);
-                Entity child = childRel.First;
-                for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
-                {
-                    entityQueue.push(child);
-                    child = registry.Get<Component::ParentRel>(child).Next;
-                }
-            }
+            EnqueueImmediateChildren(curr, registry, entityQueue);
         }
     }
 }

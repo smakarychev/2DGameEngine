@@ -3,6 +3,7 @@
 
 #include "ComponentSerializer.h"
 #include "Prefab.h"
+#include "Engine/Core/Input.h"
 #include "Engine/ECS/View.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Scene/SceneUtils.h"
@@ -91,9 +92,7 @@ namespace Engine
         emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
         for (auto e : entities)
         {
-            if (!registry.Has<Component::Prefab>(e) && !registry.Has<Component::BelongsToPrefab>(e))
-                SerializeEntity(
-                    e, emitter);
+            if (!registry.Has<Component::Prefab>(e) && !registry.Has<Component::BelongsToPrefab>(e)) SerializeEntity(e, emitter);
         }
         emitter << YAML::EndSeq;
 
@@ -212,7 +211,7 @@ namespace Engine
             {
                 if (!registry.Has<Component::BelongsToPrefab>(e))
                 {
-                    auto belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
+                    auto& belongsToPrefab = registry.Add<Component::BelongsToPrefab>(e);
                     belongsToPrefab.PrefabId = registry.Get<Component::Prefab>(prefabEntity).Id;
                 }
             }
@@ -314,5 +313,39 @@ namespace Engine
     const std::vector<Ref<ComponentSerializerBase>>& SceneSerializer::GetComponentSerializers() const
     {
         return m_ComponentSerializers;
+    }
+
+    void SceneSerializer::OnCopyPaste()
+    {
+        auto& registry = m_Scene.GetRegistry();
+        if (Input::GetKey(Key::LeftControl))
+        {
+            bool copy = Input::GetKeyDown(Key::C);
+            bool paste = Input::GetKeyDown(Key::V);
+            Entity active = m_Scene.GetScenePanels().GetActiveEntity();
+            if (copy)
+            {
+                if (!registry.Has<Component::Prefab>(active)) return;
+                std::vector<Entity> entitiesToSerialize;
+                SceneUtils::TraverseTreeAndApply(active, registry, [&](Entity e)
+                {
+                   entitiesToSerialize.push_back(e); 
+                });
+                SerializeGeneratedPrefab(entitiesToSerialize, m_CopyPasteInfo.SaveFileName, PrefabUtils::GeneratePrefabId());
+                m_CopyPasteInfo.HasSaved = true;
+            }
+            else if (paste)
+            {
+                if (!m_CopyPasteInfo.HasSaved) return;
+                // The only thing saved `prefab` has is reference to some other prefab, we just need to add that prefab to scene.
+                YAML::Node nodes = YAML::LoadFile(m_CopyPasteInfo.SaveFileName);
+                std::string prefabPath = nodes["Prefabs"][0]["PrefabDetails"]["Name"].as<std::string>();
+                Entity prefab = AddPrefabToScene(prefabPath);
+                glm::vec2 mousePos = SceneUtils::GetMousePosition(m_Scene);
+                mousePos = Math::Align(mousePos, {1.0f,1.0f});
+                registry.Get<Component::LocalToWorldTransform2D>(prefab).Position = mousePos;
+                m_Scene.OnSceneGlobalUpdate();
+            }
+        }
     }
 }
