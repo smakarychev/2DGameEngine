@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+    class Scene;
     class Registry;
 }
 
@@ -12,7 +13,9 @@ namespace Engine
     class ComponentUIDescBase
     {
     public:
-        ComponentUIDescBase(const std::string& name, bool isRemovable, Registry& registry);
+        using ComponentSignature = const char*;
+    public:
+        ComponentUIDescBase(const ComponentSignature& signature, bool isRemovable, Scene& scene);
         virtual ~ComponentUIDescBase();
         virtual void OnUIDraw(Entity e) = 0;
         virtual U64 GetComponentID() const = 0;
@@ -20,19 +23,22 @@ namespace Engine
         virtual bool ShouldDraw(Entity e) = 0;
         
         Registry& GetAttachedRegistry() const { return m_Registry; }
-        const std::string& GetComponentName() const { return m_ComponentName; }
+        const ComponentSignature& GetSignature() const { return m_Signature; }
         bool IsComponentRemovable() const { return m_IsRemovable; }
     protected:
-        std::string m_ComponentName{"Default"};
+        ComponentSignature m_Signature{"Default"};
         bool m_IsRemovable{false};
+        Scene& m_Scene;
         Registry& m_Registry;
     };
 
+#define COMPONENT_UI_DESC_SIGNATURE(x) static constexpr Engine::ComponentUIDescBase::ComponentSignature GetStaticSignature() { return #x; }
+    
     template <typename T>
     class ComponentUIDesc : public ComponentUIDescBase
     {
     public:
-        ComponentUIDesc(const std::string& name, bool isRemovable, Registry& registry);
+        ComponentUIDesc(const ComponentSignature& signature, bool isRemovable, Scene& scene);
         void OnUIDraw(Entity e) override;
         U64 GetComponentID() const override;
         void RemoveComponent(Entity e) override;
@@ -45,8 +51,8 @@ namespace Engine
     };
 
     template <typename T>
-    ComponentUIDesc<T>::ComponentUIDesc(const std::string& name, bool isRemovable, Registry& registry)
-        : ComponentUIDescBase(name, isRemovable, registry),
+    ComponentUIDesc<T>::ComponentUIDesc(const ComponentSignature& signature, bool isRemovable, Scene& scene)
+        : ComponentUIDescBase(signature, isRemovable, scene),
           m_ComponentId(ComponentFamily::TYPE<T>)
     {
     }
@@ -78,7 +84,8 @@ namespace Engine
     class LocalToWorldTransformUIDesc : public ComponentUIDesc<Component::LocalToWorldTransform2D>
     {
     public:
-        LocalToWorldTransformUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(Transform2D)
+        LocalToWorldTransformUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::LocalToWorldTransform2D& component) override;
         bool ShouldDraw(Entity e) override;
     };
@@ -86,42 +93,40 @@ namespace Engine
     class LocalToParentTransformUIDesc : public ComponentUIDesc<Component::LocalToParentTransform2D>
     {
     public:
-        LocalToParentTransformUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(Transform2D)
+        LocalToParentTransformUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::LocalToParentTransform2D& component) override;
-    };
-
-    class TagUIDesc : public ComponentUIDesc<Component::Tag>
-    {
-    public:
-        TagUIDesc(Registry& registry);
-        void OnUIDraw(Entity e, Component::Tag& component) override;
     };
 
     class NameUIDesc : public ComponentUIDesc<Component::Name>
     {
     public:
-        NameUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(Name)
+        NameUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::Name& component) override;
     };
 
     class BoxCollider2DUIDesc : public ComponentUIDesc<Component::BoxCollider2D>
     {
     public:
-        BoxCollider2DUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(BoxCollider2D)
+        BoxCollider2DUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::BoxCollider2D& component) override;
     };
 
     class RigidBody2DUIDesc : public ComponentUIDesc<Component::RigidBody2D>
     {
     public:
-        RigidBody2DUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(RigidBody2D) 
+        RigidBody2DUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::RigidBody2D& component) override;
     };
 
     class SpriteRendererUIDesc : public ComponentUIDesc<Component::SpriteRenderer>
     {
     public:
-        SpriteRendererUIDesc(Registry& registry);
+        COMPONENT_UI_DESC_SIGNATURE(SpriteRenderer) 
+        SpriteRendererUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::SpriteRenderer& component) override;
     };
     

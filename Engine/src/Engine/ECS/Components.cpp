@@ -10,12 +10,6 @@ namespace Engine::Component
     {
     }
 
-    Tag::Tag(const std::string tag): TagName(tag)
-    {
-    }
-
-    Tag::Tag() = default;
-
     LocalToWorldTransform2D::LocalToWorldTransform2D(const glm::vec2& pos, const glm::vec2& scale,
                                                                 const glm::vec2& rotation)
         : Position(pos), Scale(scale), Rotation(rotation)

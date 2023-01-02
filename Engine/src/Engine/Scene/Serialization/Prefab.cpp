@@ -63,7 +63,7 @@ namespace Engine
     }
 
     PrefabSerializer::PrefabSerializer(Scene& scene)
-        : ComponentSerializer(GetStaticSingature(), scene)
+        : ComponentSerializer(GetStaticSignature(), scene)
     {
     }
 

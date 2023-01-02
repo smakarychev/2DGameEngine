@@ -14,7 +14,7 @@ namespace Engine
     }
 
     NameSerializer::NameSerializer(Scene& scene)
-        : ComponentSerializer<Component::Name>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::Name>(GetStaticSignature(), scene)
     {
     }
 
@@ -33,28 +33,8 @@ namespace Engine
         nameComp.EntityName = name["Name"].as<std::string>();
     }
 
-    TagSerializer::TagSerializer(Scene& scene)
-        : ComponentSerializer<Component::Tag>(GetStaticSingature(), scene)
-    {
-    }
-
-    void TagSerializer::SerializeComponent(const Component::Tag& component, YAML::Emitter& emitter)
-    {
-        emitter << YAML::Key << m_ComponentSignature;
-        emitter << YAML::BeginMap;
-        emitter << YAML::Key << "Tag" << YAML::Value << component.TagName;
-        emitter << YAML::EndMap;
-    }
-
-    void TagSerializer::DeserializeComponent(Entity e, YAML::Node& node)
-    {
-        auto tag = node[m_ComponentSignature];
-        auto& tagComp = m_Registry.AddOrGet<Component::Tag>(e);
-        tagComp.TagName = tag["Tag"].as<std::string>();
-    }
-
     LocalToWorldTransformSerializer::LocalToWorldTransformSerializer(Scene& scene)
-        : ComponentSerializer<Component::LocalToWorldTransform2D>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::LocalToWorldTransform2D>(GetStaticSignature(), scene)
     {
     }
 
@@ -78,7 +58,7 @@ namespace Engine
     }
 
     LocalToParentTransformSerializer::LocalToParentTransformSerializer(Scene& scene)
-        : ComponentSerializer<Component::LocalToParentTransform2D>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::LocalToParentTransform2D>(GetStaticSignature(), scene)
     {
     }
 
@@ -102,7 +82,7 @@ namespace Engine
     }
 
     CameraSerializer::CameraSerializer(Scene& scene)
-        : ComponentSerializer<Component::Camera>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::Camera>(GetStaticSignature(), scene)
     {
     }
 
@@ -131,7 +111,7 @@ namespace Engine
     }
 
     ChildRelSerializer::ChildRelSerializer(Scene& scene)
-        : ComponentSerializer<Component::ChildRel>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::ChildRel>(GetStaticSignature(), scene)
     {
     }
 
@@ -162,7 +142,7 @@ namespace Engine
     }
 
     ParentRelSerializer::ParentRelSerializer(Scene& scene)
-        : ComponentSerializer<Component::ParentRel>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::ParentRel>(GetStaticSignature(), scene)
     {
     }
 
@@ -199,7 +179,7 @@ namespace Engine
     }
 
     RigidBody2DSerializer::RigidBody2DSerializer(Scene& scene)
-        : ComponentSerializer<Component::RigidBody2D>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::RigidBody2D>(GetStaticSignature(), scene)
     {
     }
 
@@ -243,7 +223,7 @@ namespace Engine
     }
 
     BoxCollider2DSerializer::BoxCollider2DSerializer(Scene& scene)
-        : ComponentSerializer<Component::BoxCollider2D>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::BoxCollider2D>(GetStaticSignature(), scene)
     {
     }
 
@@ -298,7 +278,7 @@ namespace Engine
     }
 
     SpriteRendererSerializer::SpriteRendererSerializer(Scene& scene)
-        : ComponentSerializer<Component::SpriteRenderer>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::SpriteRenderer>(GetStaticSignature(), scene)
     {
     }
 
@@ -358,7 +338,7 @@ namespace Engine
     }
 
     SpriteAnimationSerializer::SpriteAnimationSerializer(Scene& scene)
-        : ComponentSerializer<Component::Animation>(GetStaticSingature(), scene)
+        : ComponentSerializer<Component::Animation>(GetStaticSignature(), scene)
     {
     }
 

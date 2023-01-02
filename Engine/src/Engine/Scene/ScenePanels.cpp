@@ -13,14 +13,12 @@ namespace Engine
         : m_Scene(scene)
     {
         m_ActiveEntity = NULL_ENTITY;
-        auto& registry = m_Scene.GetRegistry();
-        m_ComponentUIDescriptions.push_back(CreateRef<TagUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<NameUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<LocalToWorldTransformUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<LocalToParentTransformUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<BoxCollider2DUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<RigidBody2DUIDesc>(registry));
-        m_ComponentUIDescriptions.push_back(CreateRef<SpriteRendererUIDesc>(registry));
+        m_ComponentUIDescriptions.push_back(CreateRef<NameUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<LocalToWorldTransformUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<LocalToParentTransformUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<BoxCollider2DUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<RigidBody2DUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<SpriteRendererUIDesc>(m_Scene));
     }
 
     void ScenePanels::OnEvent(Event& event)
@@ -283,7 +281,7 @@ namespace Engine
         ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
         ImGui::Separator();
-        bool open = ImGui::TreeNodeEx((void*)uiDesc.GetComponentID(), flags, uiDesc.GetComponentName().c_str());
+        bool open = ImGui::TreeNodeEx((void*)uiDesc.GetComponentID(), flags, uiDesc.GetSignature());
         ImGui::PopStyleVar();
         ImGui::SameLine(contentRegionAvailable.x);
         if (ImGui::Button("+"))
@@ -316,7 +314,7 @@ namespace Engine
             for (const auto& componentSerializer : m_Scene.GetSerializer().GetComponentSerializers())
             {
                 if (!componentSerializer->SupportsCreationInEditor()) continue;
-                if (ImGui::Selectable(componentSerializer->GetSignature().c_str(), false))
+                if (ImGui::Selectable(componentSerializer->GetSignature(), false))
                 {
                     componentSerializer->AddEmptyComponentTo(m_ActiveEntity);
                 }

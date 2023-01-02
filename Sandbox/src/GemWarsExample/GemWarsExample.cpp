@@ -81,12 +81,13 @@ void GemWarsExample::SpawnPlayer()
     m_Registry.Add<Component::GemWarsInput>(entity);
     m_Registry.Add<Component::GemWarsSpecialAbility>(entity, 120);
     m_Registry.Add<Component::GemWarsScore>(entity, 0);
+    m_Registry.Add<Component::GemWarsPlayerTag>(entity);
     m_Player = entity;
-    for (auto e : m_Registry.GetEntities("enemy"))
+    for (auto e : View<Component::GemWarsEnemyTag>(m_Registry))
     {
         m_Registry.DeleteEntity(e);
     }
-    for (auto e : m_Registry.GetEntities("particle"))
+    for (auto e : View<Component::GemWarsParticleTag>(m_Registry))
     {
         m_Registry.DeleteEntity(e);
     }
@@ -125,6 +126,7 @@ void GemWarsExample::sEnemySpawner()
                                                          glm::vec4(Random::Float3(0.2f, 0.6f), 1.0));
             m_Registry.Add<Component::GemWarsScore>(enemy, 
                 m_Registry.Get<Component::GemWarsMesh2D>(enemy).Shape.GetNumberOfVertices() * 10);
+            m_Registry.Add<Component::GemWarsEnemyTag>(enemy);
         }
 
         m_LastEnemySpawnTime = m_CurrentFrame;
@@ -160,6 +162,7 @@ void GemWarsExample::SpawnParticles(Entity entity)
                                                         glm::vec4{1.0f});
         gwm.Tint = m_Registry.Get<Component::GemWarsMesh2D>(entity).Tint;
         m_Registry.Add<Component::GemWarsLifeSpan>(particle, particlesLifetime);
+        m_Registry.Add<Component::GemWarsParticleTag>(particle);
     }
 }
 
@@ -177,6 +180,7 @@ void GemWarsExample::SpawnBullet(Entity entity, const glm::vec2& target)
     auto& rb = m_Registry.Add<Component::GemWarsRigidBody2D>(bullet, bulletRadius, bulletSpeed);
     rb.Velocity = bulletVelocity;
     m_Registry.Add<Component::GemWarsMesh2D>(bullet, 4, nullptr, glm::vec4(0.6f, 0.9f, 0.2f, 1.0f));
+    m_Registry.Add<Component::GemWarsBulletTag>(bullet);
 }
 
 void GemWarsExample::sSpecialAbility()
@@ -222,7 +226,7 @@ void GemWarsExample::sMovement(F32 dt)
     if (m_Registry.Get<Component::GemWarsInput>(m_Player).Shoot) SpawnBullet(
         m_Player, m_CameraController->GetCamera()->ScreenToWorldPoint(Input::MousePosition()));
     // Update all.
-    for (const auto& entity : View<>(m_Registry))
+    for (auto entity : View<>(m_Registry))
     {
         m_Registry.Get<Component::GemWarsTransform2D>(entity).Position += glm::vec3(
             m_Registry.Get<Component::GemWarsRigidBody2D>(entity).Velocity * m_Registry.Get<Component::GemWarsRigidBody2D>(entity).Speed * dt, 0.0f);
@@ -233,7 +237,7 @@ void GemWarsExample::sMovement(F32 dt)
 void GemWarsExample::sCollision()
 {
     // Check for player-enemy collision.
-    for (auto entity : m_Registry.GetEntities("enemy"))
+    for (auto entity : View<Component::GemWarsEnemyTag>(m_Registry))
     {
         if (Collide(m_Player, entity))
         {
@@ -243,7 +247,7 @@ void GemWarsExample::sCollision()
             break;
         }
     }
-    for (auto entity : m_Registry.GetEntities("particle"))
+    for (auto entity : View<Component::GemWarsParticleTag>(m_Registry))
     {
         if (Collide(m_Player, entity))
         {
@@ -265,7 +269,7 @@ void GemWarsExample::sCollision()
         playerRadius;
 
     // Check for enemy-walls collision.
-    for (auto entity : m_Registry.GetEntities("enemy"))
+    for (auto entity : View<Component::GemWarsEnemyTag>(m_Registry))
     {
         if (m_Registry.Get<Component::GemWarsTransform2D>(entity).Position.x + m_Registry.Get<Component::GemWarsRigidBody2D>(entity).CollisionRadius > m_Bounds.TopRight.x ||
             m_Registry.Get<Component::GemWarsTransform2D>(entity).Position.x - m_Registry.Get<Component::GemWarsRigidBody2D>(entity).CollisionRadius < m_Bounds.BottomLeft.x)
@@ -280,9 +284,9 @@ void GemWarsExample::sCollision()
     }
 
     // Check bullet-enemy collision.
-    for (auto bullet : m_Registry.GetEntities("bullet"))
+    for (auto bullet : View<Component::GemWarsBulletTag>(m_Registry))
     {
-        for (auto enemy :  m_Registry.GetEntities("enemy"))
+        for (auto enemy : View<Component::GemWarsEnemyTag>(m_Registry))
         {
             if (Collide(bullet, enemy))
             {
@@ -295,7 +299,7 @@ void GemWarsExample::sCollision()
         }
     }
     // Check bullet-wall collision.
-    for (auto bullet :m_Registry.GetEntities("bullet"))
+    for (auto bullet : View<Component::GemWarsBulletTag>(m_Registry))
     {
         if (m_Registry.Get<Component::GemWarsTransform2D>(bullet).Position.x - m_Registry.Get<Component::GemWarsRigidBody2D>(bullet).CollisionRadius > m_Bounds.TopRight.x ||
             m_Registry.Get<Component::GemWarsTransform2D>(bullet).Position.x + m_Registry.Get<Component::GemWarsRigidBody2D>(bullet).CollisionRadius < m_Bounds.BottomLeft.x)
@@ -381,7 +385,7 @@ void GemWarsExample::sRender()
 
 void GemWarsExample::sParticleUpdate()
 {
-    for (auto particle : m_Registry.GetEntities("particle"))
+    for (auto particle : View<Component::GemWarsParticleTag>(m_Registry))
     {
         I32 lifeSpan = m_Registry.Get<Component::GemWarsLifeSpan>(particle).Remaining;
         if (lifeSpan <= 0)

@@ -12,6 +12,13 @@ void MarioScene::OnInit()
     m_SceneSerializer.AddComponentSerializer<MarioInputSerializer>();
     m_SceneSerializer.AddComponentSerializer<MarioStateSerializer>();
     m_SceneSerializer.AddComponentSerializer<CollisionCallbackSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioPlayerTagSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioLevelTagSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioGoombaTagSerializer>();
+
+    m_ScenePanels.AddComponentUiDesc<MarioPlayerTagUIDesc>();
+    m_ScenePanels.AddComponentUiDesc<MarioLevelTagUIDesc>();
+    m_ScenePanels.AddComponentUiDesc<MarioGoombaTagUIDesc>();
     
     // Create sorting layer for correct render order.
     // The structure is Background->Middleground->Default.
@@ -69,6 +76,7 @@ void MarioScene::OnUpdate(F32 dt)
     
     // Call systems.
     SMove();
+    SGoomba(dt);
     SPhysics(dt);
     SState();
     SAnimation(dt);
@@ -250,6 +258,16 @@ void MarioScene::SMove()
 
         rb.PhysicsBody->SetLinearVelocity({vel.x, vel.y});
         input.None = true;
+    }
+}
+
+void MarioScene::SGoomba(F32 dt)
+{
+    for (auto e : View<MarioGoombaTag>(m_Registry))
+    {
+        F32 goombaHorizonalVelocity = 2.0f * sin((Time::Get() + e.GetIndex()) * dt);
+        auto& rb = m_Registry.Get<Component::RigidBody2D>(e);
+        rb.PhysicsBody->SetLinearVelocity(glm::vec2{goombaHorizonalVelocity, rb.PhysicsBody->GetLinearVelocity().y});
     }
 }
 

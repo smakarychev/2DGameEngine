@@ -42,6 +42,10 @@ namespace Engine
         void OnUpdate();
         void OnImguiUpdate();
         void OnMainMenuDraw();
+
+        template <typename T>
+        void AddComponentUiDesc();
+        
         void ResetActiveEntity() { m_ActiveEntity = NULL_ENTITY; }
         Entity GetActiveEntity() const { return m_ActiveEntity; }
     private:
@@ -87,4 +91,16 @@ namespace Engine
         };
         SavedState m_SavedState{};
     };
+
+    template <typename T>
+    void ScenePanels::AddComponentUiDesc()
+    {
+        auto newUIDesc = CreateRef<T>(m_Scene);
+        auto it = std::ranges::find_if(m_ComponentUIDescriptions, [&](auto& el)
+        {
+            return el->GetSignature() == newUIDesc->GetSignature();
+        });
+        if (it != m_ComponentUIDescriptions.end()) return;
+        m_ComponentUIDescriptions.push_back(newUIDesc);
+    }
 }

@@ -13,7 +13,7 @@ namespace Engine
     class ComponentSerializerBase
     {
     public:
-        using ComponentSignature = std::string;
+        using ComponentSignature = const char*;
 
     public:
         ComponentSerializerBase(const ComponentSignature& signature, Scene& scene);
@@ -33,7 +33,7 @@ namespace Engine
         Registry& m_Registry;
     };
 
-#define COMPONENT_SERIALIZER_SIGNATURE(x) static constexpr Engine::ComponentSerializerBase::ComponentSignature GetStaticSingature() { return x; }
+#define COMPONENT_SERIALIZER_SIGNATURE(x) static constexpr Engine::ComponentSerializerBase::ComponentSignature GetStaticSignature() { return #x; }
 
     template <typename T>
     class ComponentSerializer : public ComponentSerializerBase
@@ -80,25 +80,16 @@ namespace Engine
     class NameSerializer : public ComponentSerializer<Component::Name>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("Name")
+        COMPONENT_SERIALIZER_SIGNATURE(Name)
         NameSerializer(Scene& scene);
         void SerializeComponent(const Component::Name& component, YAML::Emitter& emitter) override;
-        void DeserializeComponent(Entity e, YAML::Node& node) override;
-    };
-
-    class TagSerializer : public ComponentSerializer<Component::Tag>
-    {
-    public:
-        COMPONENT_SERIALIZER_SIGNATURE("Tag")
-        TagSerializer(Scene& scene);
-        void SerializeComponent(const Component::Tag& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
     };
 
     class LocalToWorldTransformSerializer : public ComponentSerializer<Component::LocalToWorldTransform2D>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("LocalToWorldTransform")
+        COMPONENT_SERIALIZER_SIGNATURE(LocalToWorldTransform)
         LocalToWorldTransformSerializer(Scene& scene);
         void SerializeComponent(const Component::LocalToWorldTransform2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -107,7 +98,7 @@ namespace Engine
     class LocalToParentTransformSerializer : public ComponentSerializer<Component::LocalToParentTransform2D>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("LocalToParentTransform")
+        COMPONENT_SERIALIZER_SIGNATURE(LocalToParentTransform)
         LocalToParentTransformSerializer(Scene& scene);
         void SerializeComponent(const Component::LocalToParentTransform2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -116,7 +107,7 @@ namespace Engine
     class CameraSerializer : public ComponentSerializer<Component::Camera>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("Camera")
+        COMPONENT_SERIALIZER_SIGNATURE(Camera)
         CameraSerializer(Scene& scene);
         void SerializeComponent(const Component::Camera& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -125,7 +116,7 @@ namespace Engine
     class ChildRelSerializer : public ComponentSerializer<Component::ChildRel>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("ChildRel")
+        COMPONENT_SERIALIZER_SIGNATURE(ChildRel)
         ChildRelSerializer(Scene& scene);
         void SerializeComponent(const Component::ChildRel& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -135,7 +126,7 @@ namespace Engine
     class ParentRelSerializer : public ComponentSerializer<Component::ParentRel>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("ParentRel")
+        COMPONENT_SERIALIZER_SIGNATURE(ParentRel)
         ParentRelSerializer(Scene& scene);
         void SerializeComponent(const Component::ParentRel& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -145,7 +136,7 @@ namespace Engine
     class RigidBody2DSerializer : public ComponentSerializer<Component::RigidBody2D>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("RigidBody2D")
+        COMPONENT_SERIALIZER_SIGNATURE(RigidBody2D)
         RigidBody2DSerializer(Scene& scene);
         void SerializeComponent(const Component::RigidBody2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -156,7 +147,7 @@ namespace Engine
     class BoxCollider2DSerializer : public ComponentSerializer<Component::BoxCollider2D>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("BoxCollider2D")
+        COMPONENT_SERIALIZER_SIGNATURE(BoxCollider2D)
         BoxCollider2DSerializer(Scene& scene);
         void SerializeComponent(const Component::BoxCollider2D& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -167,7 +158,7 @@ namespace Engine
     class SpriteRendererSerializer : public ComponentSerializer<Component::SpriteRenderer>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("SpriteRenderer")
+        COMPONENT_SERIALIZER_SIGNATURE(SpriteRenderer)
         SpriteRendererSerializer(Scene& scene);
         void SerializeComponent(const Component::SpriteRenderer& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -178,7 +169,7 @@ namespace Engine
     class SpriteAnimationSerializer : public ComponentSerializer<Component::Animation>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("Animation")
+        COMPONENT_SERIALIZER_SIGNATURE(Animation)
         SpriteAnimationSerializer(Scene& scene);
         void SerializeComponent(const Component::Animation& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;

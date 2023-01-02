@@ -34,7 +34,7 @@ namespace Engine
     class PrefabSerializer : public ComponentSerializer<Component::Prefab>
     {
     public:
-        COMPONENT_SERIALIZER_SIGNATURE("PrefabDetails")
+        COMPONENT_SERIALIZER_SIGNATURE(PrefabDetails)
         PrefabSerializer(Scene& scene);
         void SerializeComponent(const Component::Prefab& component, YAML::Emitter& emitter) override;
         void DeserializeComponent(Entity e, YAML::Node& node) override;

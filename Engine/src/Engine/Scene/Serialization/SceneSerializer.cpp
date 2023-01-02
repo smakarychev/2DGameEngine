@@ -13,7 +13,6 @@ namespace Engine
     SceneSerializer::SceneSerializer(Scene& scene)
         : m_Scene(scene)
     {
-        m_ComponentSerializers.push_back(CreateRef<TagSerializer>(m_Scene));
         m_ComponentSerializers.push_back(CreateRef<NameSerializer>(m_Scene));
         m_ComponentSerializers.push_back(CreateRef<LocalToWorldTransformSerializer>(m_Scene));
         m_ComponentSerializers.push_back(CreateRef<LocalToParentTransformSerializer>(m_Scene));
@@ -58,7 +57,7 @@ namespace Engine
 
     void SceneSerializer::SerializeEntity(Entity entity, YAML::Emitter& emitter)
     {
-        ENGINE_CORE_TRACE("Serializing entity {} ({})", m_Scene.GetRegistry().Get<Component::Tag>(entity).TagName,
+        ENGINE_CORE_TRACE("Serializing entity {} ({})", m_Scene.GetRegistry().Get<Component::Name>(entity).EntityName,
                           entity.Id);
         emitter << YAML::BeginMap;
         emitter << YAML::Key << "Entity" << YAML::Value << entity.Id;
@@ -202,7 +201,7 @@ namespace Engine
             Entity prefabEntity = DeserializeEntityExcludeComponents(prefab,
                 deserializedToTrue,
                 entityRelations,
-                {ChildRelSerializer::GetStaticSingature()},
+                {ChildRelSerializer::GetStaticSignature()},
                 "Prefab");
             // Entities, deserialized earlier, have 1 common parent (otherwise prefab is ill-formed).
             Entity topEntity = SceneUtils::FindTopOfTree(addedFromPrefab.front(), registry);
@@ -241,7 +240,7 @@ namespace Engine
                                               std::unordered_map<Entity, std::vector<Entity*>>& entityRelations,
                                               const std::string& entityTag)
     {
-        std::string entityName = entity["Tag"]["Tag"].as<std::string>();
+        std::string entityName = entity["Name"]["Name"].as<std::string>();
         auto realE = m_Scene.GetRegistry().CreateEntity(entityName);
 
         Entity deserealizedEntityId = entity[entityTag].as<Entity>();
@@ -263,7 +262,7 @@ namespace Engine
                                                                const std::vector<ComponentSignature>&
                                                                excludingSignatures, const std::string& entityTag)
     {
-        std::string entityName = entity["Tag"]["Tag"].as<std::string>();
+        std::string entityName = entity["Name"]["Name"].as<std::string>();
         auto realE = m_Scene.GetRegistry().CreateEntity(entityName);
 
         Entity deserealizedEntityId = entity[entityTag].as<Entity>();

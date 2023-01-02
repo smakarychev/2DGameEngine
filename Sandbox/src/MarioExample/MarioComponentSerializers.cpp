@@ -1,7 +1,7 @@
 ﻿#include "MarioComponentSerializers.h"
 
 SensorsSerializer::SensorsSerializer(Scene& scene)
-    : ComponentSerializer<Component::Sensors>(GetStaticSingature(), scene)
+    : ComponentSerializer<Component::Sensors>(GetStaticSignature(), scene)
 {
 }
 
@@ -39,7 +39,7 @@ void SensorsSerializer::FillEntityRelationsMap(Entity e, std::unordered_map<Enti
 }
 
 MarioInputSerializer::MarioInputSerializer(Scene& scene)
-    : ComponentSerializer<Component::MarioInput>(GetStaticSingature(), scene)
+    : ComponentSerializer<Component::MarioInput>(GetStaticSignature(), scene)
 {
 }
 
@@ -67,7 +67,7 @@ void MarioInputSerializer::DeserializeComponent(Entity e, YAML::Node& node)
 }
 
 MarioStateSerializer::MarioStateSerializer(Scene& scene)
-    : ComponentSerializer<Component::MarioState>(GetStaticSingature(), scene)
+    : ComponentSerializer<Component::MarioState>(GetStaticSignature(), scene)
 {
 }
 
@@ -93,7 +93,7 @@ void MarioStateSerializer::DeserializeComponent(Entity e, YAML::Node& node)
 }
 
 CollisionCallbackSerializer::CollisionCallbackSerializer(Scene& scene)
-    : ComponentSerializer<Component::CollisionCallback>(GetStaticSingature(), scene)
+    : ComponentSerializer<Component::CollisionCallback>(GetStaticSignature(), scene)
 {
 }
 

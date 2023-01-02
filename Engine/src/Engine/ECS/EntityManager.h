@@ -22,13 +22,7 @@ namespace Engine
 		U32 GetNullEntityFlag() const { return m_EntitiesSparseSet.GetNullFlag(); }
 		
 	private:
-		struct EntityIdTag
-		{
-			Entity Entity;
-			std::string Tag;
-		};
 		EntityContainer m_EntitiesSparseSet;
-		std::unordered_map<std::string, EntityContainer> m_EntitiesMap;
 		EntityVector m_FreeEntities{};
 
 		U32 m_TotalEntities = 0;

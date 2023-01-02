@@ -12,15 +12,9 @@ namespace Engine
         void Clear();
         Entity CreateEntity(const std::string& tag = "Default");
         Entity GetEntity(Entity entity) const;
-        EntityContainer& GetEntities(const std::string& tag) const;
         void DeleteEntity(Entity entity);
         U32 TotalEntities() const { return m_EntityManager.m_TotalEntities; }
 
-        /* TODO: TEMP */
-        void PopFromMap(Entity entity, const std::string& tag);
-        void PushToMap(Entity entity, const std::string& tag);
-        /* TODO: TEMP */
-        
         // Add specified component to entity.
         template <typename T, typename ... Args>
         T& Add(Entity entity, Args&&... args);

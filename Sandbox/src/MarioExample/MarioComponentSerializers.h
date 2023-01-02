@@ -8,7 +8,7 @@ using namespace Engine;
 class SensorsSerializer : public ComponentSerializer<Component::Sensors>
 {
 public:
-    COMPONENT_SERIALIZER_SIGNATURE("Sensors")
+    COMPONENT_SERIALIZER_SIGNATURE(Sensors)
     SensorsSerializer(Scene& scene);
     void SerializeComponent(const Component::Sensors& component, YAML::Emitter& emitter) override;
     void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -18,7 +18,7 @@ public:
 class MarioInputSerializer : public ComponentSerializer<Component::MarioInput>
 {
 public:
-    COMPONENT_SERIALIZER_SIGNATURE("MarioInput")
+    COMPONENT_SERIALIZER_SIGNATURE(MarioInput)
     MarioInputSerializer(Scene& scene);
     void SerializeComponent(const Component::MarioInput& component, YAML::Emitter& emitter) override;
     void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -27,7 +27,7 @@ public:
 class MarioStateSerializer : public ComponentSerializer<Component::MarioState>
 {
 public:
-    COMPONENT_SERIALIZER_SIGNATURE("MarioState")
+    COMPONENT_SERIALIZER_SIGNATURE(MarioState)
     MarioStateSerializer(Scene& scene);
     void SerializeComponent(const Component::MarioState& component, YAML::Emitter& emitter) override;
     void DeserializeComponent(Entity e, YAML::Node& node) override;
@@ -36,7 +36,7 @@ public:
 class CollisionCallbackSerializer : public ComponentSerializer<Component::CollisionCallback>
 {
 public:
-    COMPONENT_SERIALIZER_SIGNATURE("CollisionCallback")
+    COMPONENT_SERIALIZER_SIGNATURE(CollisionCallback)
     CollisionCallbackSerializer(Scene& scene);
     void SerializeComponent(const Component::CollisionCallback& component, YAML::Emitter& emitter) override;
     void DeserializeComponent(Entity e, YAML::Node& node) override;

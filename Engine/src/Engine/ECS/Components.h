@@ -25,6 +25,38 @@ namespace Engine
     class Registry;
 }
 
+#define CREATE_TAG_COMPONENT(tag)   struct tag{};                                                                                           \
+                                    class tag##Serializer : public Engine::ComponentSerializer<tag>                                         \
+                                    {                                                                                                       \
+                                    public:                                                                                                 \
+                                        COMPONENT_SERIALIZER_SIGNATURE(tag)                                                                 \
+                                        tag##Serializer(Engine::Scene& scene)                                                               \
+                                            : ComponentSerializer<tag>(GetStaticSignature(), scene) {}                                      \
+                                        void SerializeComponent(const tag& component, YAML::Emitter& emitter) override                      \
+                                        {                                                                                                   \
+                                            emitter << YAML::Key << m_ComponentSignature << YAML::BeginMap << YAML::EndMap;                 \
+                                        }                                                                                                   \
+                                        void DeserializeComponent(Engine::Entity e, YAML::Node& node) override                              \
+                                        {                                                                                                   \
+                                            auto tagS = node[m_ComponentSignature];                                                         \
+                                        auto& tagC = m_Registry.AddOrGet<tag>(e);                                                           \
+                                        }                                                                                                   \
+                                        bool SupportsCreationInEditor() override { return true; }                                           \
+                                        void AddEmptyComponentTo(Engine::Entity e) override                                                 \
+                                        {                                                                                                   \
+                                            if (!m_Registry.Has<tag>(e))  auto& tagC = m_Registry.Add<tag>(e);                              \
+                                        }                                                                                                   \
+                                    };                                                                                                      \
+                                    class tag##UIDesc : public Engine::ComponentUIDesc<tag>                                                 \
+                                    {                                                                                                       \
+                                    public:                                                                                                 \
+                                        COMPONENT_UI_DESC_SIGNATURE(tag)                                                                    \
+                                        tag##UIDesc(Engine::Scene& scene) : ComponentUIDesc(GetStaticSignature(), true, scene){}   \
+                                        void OnUIDraw(Engine::Entity e, tag& component) override {}                                         \
+                                    };                                                                                                      \
+
+
+
 namespace Engine::Component
 {
     struct LocalToParentTransform2D;
@@ -53,14 +85,6 @@ namespace Engine::Component
         std::string EntityName;
     };
     
-    struct Tag
-    {
-        std::string TagName{"Default"};
-
-        Tag(const std::string tag);
-        Tag();
-    };
-
     struct LocalToWorldTransform2D
     {
         glm::vec2 Position{glm::vec2{0.0f}};
@@ -319,4 +343,13 @@ namespace Engine::Component
 
         GemWarsMesh2D();
     };
+
+    struct GemWarsPlayerTag
+    {};
+    struct GemWarsEnemyTag
+    {};
+    struct GemWarsBulletTag
+    {};
+    struct GemWarsParticleTag
+    {};
 }

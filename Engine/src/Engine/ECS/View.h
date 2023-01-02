@@ -94,9 +94,9 @@ namespace Engine
                 m_AllEntities = true;
                 // If we wish to return all entities, the simplest way is
                 // to iterate over entities of component pool, that has every entity,
-                // in our case it is either "tag" component or "transform2d" component,
-                // however when moving outside of 2d-only, only "tag" component will do.
-                m_ReferencePool = &m_Registry.GetComponentPool<Component::Tag>();
+                // in our case it is either "name" component or "transform2d" component,
+                // however when moving outside of 2d-only, only "name" component will do.
+                m_ReferencePool = &m_Registry.GetComponentPool<Component::Name>();
             }
             else
             {

@@ -2,7 +2,8 @@
 
 #include "Engine.h"
 #include "MarioContactListener.h"
-#include "Engine/ECS/Registry.h"
+#include "MarioTags.h"
+
 
 using namespace Engine;
 using namespace Engine::Types;
@@ -30,6 +31,7 @@ public:
     // TODO: toggle between editor/runtime rendering (currently it is editor for mouse picking).
     void SRender();
     void SMove();
+    void SGoomba(F32 dt);
     void SAnimation(F32 dt);
     void SState();
     void SCamera();

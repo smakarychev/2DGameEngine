@@ -1,21 +1,22 @@
 ﻿#include "enginepch.h"
 #include "ComponentUI.h"
 
+#include "Scene.h"
 #include "Engine/ECS/Registry.h"
 #include "Engine/Imgui/ImguiCommon.h"
 #include "imgui/imgui.h"
 
 namespace Engine
 {
-    ComponentUIDescBase::ComponentUIDescBase(const std::string& name, bool isRemovable, Registry& registry)
-        : m_ComponentName(name), m_IsRemovable(isRemovable), m_Registry(registry) 
+    ComponentUIDescBase::ComponentUIDescBase(const ComponentSignature& signature, bool isRemovable, Scene& scene)
+        : m_Signature(signature), m_IsRemovable(isRemovable), m_Scene(scene), m_Registry(scene.GetRegistry()) 
     {
     }
 
     ComponentUIDescBase::~ComponentUIDescBase() = default;
 
-    LocalToWorldTransformUIDesc::LocalToWorldTransformUIDesc(Registry& registry)
-        : ComponentUIDesc("Transform2D", false, registry)
+    LocalToWorldTransformUIDesc::LocalToWorldTransformUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), false, scene)
     {
     }
 
@@ -36,8 +37,8 @@ namespace Engine
             !m_Registry.Has<Component::LocalToParentTransform2D>(e);
     }
 
-    LocalToParentTransformUIDesc::LocalToParentTransformUIDesc(Registry& registry)
-        : ComponentUIDesc("Transform2D", false, registry)
+    LocalToParentTransformUIDesc::LocalToParentTransformUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), false, scene)
     {
     }
 
@@ -51,24 +52,8 @@ namespace Engine
         component.Rotation = glm::vec2{glm::cos(rotationRadians), glm::sin(rotationRadians)};
     }
 
-    TagUIDesc::TagUIDesc(Registry& registry)
-        : ComponentUIDesc("Tag", false, registry)
-    {
-    }
-
-    void TagUIDesc::OnUIDraw(Entity e, Component::Tag& component)
-    {
-        std::string oldName = component.TagName;
-        ImGuiCommon::DrawTextField("Tag", component.TagName);
-        if (oldName != component.TagName)
-        {
-            m_Registry.PopFromMap(e, oldName);
-            m_Registry.PushToMap(e, component.TagName);    
-        }
-    }
-
-    NameUIDesc::NameUIDesc(Registry& registry)
-        : ComponentUIDesc("Name", false, registry)
+    NameUIDesc::NameUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), false, scene)
     {
     }
 
@@ -78,8 +63,8 @@ namespace Engine
         ImGuiCommon::DrawTextField("Name", component.EntityName);
     }
 
-    BoxCollider2DUIDesc::BoxCollider2DUIDesc(Registry& registry)
-        : ComponentUIDesc("Box collider 2D", true, registry)
+    BoxCollider2DUIDesc::BoxCollider2DUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), true, scene)
     {
     }
 
@@ -98,8 +83,8 @@ namespace Engine
         }
     }
 
-    RigidBody2DUIDesc::RigidBody2DUIDesc(Registry& registry)
-        : ComponentUIDesc("Rigidbody 2D", true, registry)
+    RigidBody2DUIDesc::RigidBody2DUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), true, scene)
     {
     }
 
@@ -126,8 +111,8 @@ namespace Engine
         // TODO: flags
     }
 
-    SpriteRendererUIDesc::SpriteRendererUIDesc(Registry& registry)
-        : ComponentUIDesc("Sprite renderer", true, registry)
+    SpriteRendererUIDesc::SpriteRendererUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), true, scene)
     {
     }
 
