@@ -84,5 +84,7 @@ void main()
         case     30:     finalColor  = texture(textures[30], vTexCoord * vTextureTiling) * vColor; break;
         case     31:     finalColor  = texture(textures[31], vTexCoord * vTextureTiling) * vColor; break;
     }
+    // I don't like this but have no time to implement ordering.
+    if (finalColor.a < 0.5) discard; 
     entityId = v_EntityId;
 }

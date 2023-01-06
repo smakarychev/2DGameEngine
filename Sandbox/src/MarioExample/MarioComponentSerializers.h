@@ -15,29 +15,3 @@ public:
     void FillEntityRelationsMap(Entity e, std::unordered_map<Entity, std::vector<Entity*>>& map) override;
 };
 
-class MarioInputSerializer : public ComponentSerializer<Component::MarioInput>
-{
-public:
-    COMPONENT_SERIALIZER_SIGNATURE(MarioInput)
-    MarioInputSerializer(Scene& scene);
-    void SerializeComponent(const Component::MarioInput& component, YAML::Emitter& emitter) override;
-    void DeserializeComponent(Entity e, YAML::Node& node) override;
-};
-
-class MarioStateSerializer : public ComponentSerializer<Component::MarioState>
-{
-public:
-    COMPONENT_SERIALIZER_SIGNATURE(MarioState)
-    MarioStateSerializer(Scene& scene);
-    void SerializeComponent(const Component::MarioState& component, YAML::Emitter& emitter) override;
-    void DeserializeComponent(Entity e, YAML::Node& node) override;
-};
-
-class CollisionCallbackSerializer : public ComponentSerializer<Component::CollisionCallback>
-{
-public:
-    COMPONENT_SERIALIZER_SIGNATURE(CollisionCallback)
-    CollisionCallbackSerializer(Scene& scene);
-    void SerializeComponent(const Component::CollisionCallback& component, YAML::Emitter& emitter) override;
-    void DeserializeComponent(Entity e, YAML::Node& node) override;
-};

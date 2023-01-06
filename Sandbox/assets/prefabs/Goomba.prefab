@@ -1,0 +1,128 @@
+Prefab:
+  Name: assets/prefabs/Goomba.prefab
+  Id: 4648811280839136198
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: Goomba
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 2
+      First: 2
+    RigidBody2D:
+      Type: Dynamic
+      Flags:
+        - Restrict Rotation
+      Mass: -1
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: false
+    SpriteRenderer:
+      Texture: assets\textures\mario\goomba.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 1
+      FlipX: false
+      FlipY: false
+    Animation:
+      Texture: assets/textures/mario/mario_sprites.png
+      StartPosition: [205, 410]
+      SpriteSize: [30, 28]
+      FrameCount: 1
+      FPSSpeed: 0
+      CurrentFrame: 0
+      TotalDuration: 0
+      MaxDuration: 0
+      CurrentFrameUV:
+        - [0.488095224, 0.933940768]
+        - [0.559523821, 0.933940768]
+        - [0.559523821, 0.997722089]
+        - [0.488095224, 0.997722089]
+    Sensors:
+      Top: 16777215
+      Bottom: 16777215
+      Left: 2
+      Right: 3
+    MarioGoombaTag:
+      {}
+    MarioEnemyTag:
+      {}
+  - Entity: 2
+    Name:
+      Name: Left sensor
+    LocalToWorldTransform:
+      Position: [-0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    LocalToParentTransform:
+      Position: [-0.4, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.4]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 3
+      Prev: 16777215
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 3
+    Name:
+      Name: Right sensor
+    LocalToWorldTransform:
+      Position: [0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    LocalToParentTransform:
+      Position: [0.4, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.4]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 16777215
+      Prev: 2
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true

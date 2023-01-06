@@ -129,5 +129,13 @@ namespace Engine
         SpriteRendererUIDesc(Scene& scene);
         void OnUIDraw(Entity e, Component::SpriteRenderer& component) override;
     };
+
+    class CameraUIDesc : public ComponentUIDesc<Component::Camera>
+    {
+    public:
+        COMPONENT_UI_DESC_SIGNATURE(Camera)
+        CameraUIDesc(Scene& scene);
+        void OnUIDraw(Entity e, Component::Camera& component) override;
+    };
     
 }

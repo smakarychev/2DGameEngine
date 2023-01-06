@@ -1,0 +1,29 @@
+Prefab:
+  Name: assets/prefabs/Hill big.prefab
+  Id: 6530480523536854515
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: HillBig
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [4, 2]
+    SpriteRenderer:
+      Texture: assets\textures\mario\HillBig.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false

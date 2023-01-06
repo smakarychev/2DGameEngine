@@ -1,0 +1,19 @@
+Prefab:
+  Name: assets/prefabs/temp.prefab
+  Id: 8221087407442225026
+Prefabs:
+  - Prefab: 96
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [110.449997, 10.25]
+      Rotation: [1, 0]
+      Scale: [0.600000024, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 95
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+Entities:
+  []

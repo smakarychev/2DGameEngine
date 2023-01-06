@@ -1,0 +1,31 @@
+Prefab:
+  Name: assets/prefabs/Brick.prefab
+  Id: 12230009874041515633
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: level bricks
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+    MarioLevelTag:
+      {}

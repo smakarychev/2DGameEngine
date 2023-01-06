@@ -47,20 +47,37 @@ namespace Engine
 
     void SceneUtils::DeleteEntity(Scene& scene, Entity entity)
     {
-        // Before deleting entity, detach it from parent (if any) and delete it's children (if any).
+        DeleteEntity(scene, entity, true);
+        scene.GetScenePanels().ResetActiveEntity();
+    }
+
+    void SceneUtils::DeleteEntity(Scene& scene, Entity entity, bool checkForPrefabs)
+    {
         auto& registry = scene.GetRegistry();
+        // TODO: later `top entities` shall become prefabs, instead of prefab as a new entity, parenting `top` one.
+        // Until then, check that entity is not `top entity` of some prefab, and if it is, delete prefab instead,
+        // as it is most certainly the desired behavior.
+        if (checkForPrefabs &&
+            registry.Has<Component::ParentRel>(entity) &&
+            registry.Has<Component::Prefab>(registry.Get<Component::ParentRel>(entity).Parent))
+        {
+            DeleteEntity(scene, registry.Get<Component::ParentRel>(entity).Parent, true);
+            return;
+        }
+        
+        // Before deleting entity, detach it from parent (if any) and delete it's children (if any).
         if (registry.Has<Component::ChildRel>(entity))
         {
             auto& childRel = registry.Get<Component::ChildRel>(entity);
             Entity child = childRel.First;
-            for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+            while (child != NULL_ENTITY)
             {
                 Entity next = registry.Get<Component::ParentRel>(child).Next;
-                DeleteEntity(scene, child);
+                DeleteEntity(scene, child, false);
                 child = next;
             }
         }
-        if (registry.Has<Component::ParentRel>(entity)) RemoveChild(scene, entity);
+        if (registry.Has<Component::ParentRel>(entity)) RemoveChild(scene, entity, false);
         registry.DeleteEntity(entity);
     }
 
@@ -194,7 +211,7 @@ namespace Engine
         {
             auto& rb = registry.Get<Component::RigidBody2D>(entity);
             Physics::RigidBody2D* prb = rb.PhysicsBody.Get();
-            prb->RecalculateMass();
+            if (prb->GetAttachedCollider()) prb->RecalculateMass();
         }
     }
 
@@ -239,6 +256,17 @@ namespace Engine
         Entity parent = registry.Get<Component::ParentRel>(entity).Parent;
         auto& parentTf = registry.Get<Component::LocalToWorldTransform2D>(parent);
         registry.Get<Component::LocalToParentTransform2D>(entity) = tf.Concatenate(parentTf.Inverse());
+    }
+
+    void SceneUtils::SynchonizeCamerasWithTransforms(Scene& scene)
+    {
+        auto& registry = scene.GetRegistry();
+        for (auto e : View<Component::Camera>(registry))
+        {
+            auto& tf = registry.Get<Component::LocalToWorldTransform2D>(e);
+            auto& camera = registry.Get<Component::Camera>(e);
+            camera.CameraController->GetCamera()->SetPosition({tf.Position.x, tf.Position.y, camera.CameraController->GetCamera()->GetPosition().z});
+        }
     }
 
 
@@ -305,10 +333,15 @@ namespace Engine
 
     void SceneUtils::RemoveChild(Scene& scene, Entity child)
     {
+        RemoveChild(scene, child, true);
+    }
+
+    void SceneUtils::RemoveChild(Scene& scene, Entity child, bool usePrefabConstraints)
+    {
         auto& registry = scene.GetRegistry();
         ENGINE_CORE_ASSERT(registry.Has<Component::ParentRel>(child), "Entity has no parent.")
         // Check that child doesn't belong to prefab - prefabs shall stay untouched.
-        if (registry.Has<Component::BelongsToPrefab>(child)) return;
+        if (usePrefabConstraints && registry.Has<Component::BelongsToPrefab>(child)) return;
         
         auto& parentRel = registry.Get<Component::ParentRel>(child);
 
@@ -344,6 +377,11 @@ namespace Engine
                 child = registry.Get<Component::ParentRel>(child).Next;
             }
         }
+    }
+
+    bool SceneUtils::IsDescendant(Entity parent, Entity child, Registry& registry)
+    {
+        return BFS(parent, child, registry);
     }
 
     Entity SceneUtils::FindTopOfTree(Entity treeEntity, Registry& registry)

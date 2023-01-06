@@ -15,6 +15,9 @@
 #include "Engine/Memory/Handle/Handle.h"
 #include "Engine/Physics/RigidBodyEngine/Collision/Contacts.h"
 
+class FSMState;
+class FiniteStateMachine;
+
 namespace Engine
 {
     class CameraController;
@@ -51,7 +54,7 @@ namespace Engine
                                     {                                                                                                       \
                                     public:                                                                                                 \
                                         COMPONENT_UI_DESC_SIGNATURE(tag)                                                                    \
-                                        tag##UIDesc(Engine::Scene& scene) : ComponentUIDesc(GetStaticSignature(), true, scene){}   \
+                                        tag##UIDesc(Engine::Scene& scene) : ComponentUIDesc(GetStaticSignature(), true, scene){}            \
                                         void OnUIDraw(Engine::Entity e, tag& component) override {}                                         \
                                     };                                                                                                      \
 
@@ -233,8 +236,8 @@ namespace Engine::Component
     // it is merely showing that it is a part of the Mario game.
     struct MarioInput
     {
-        bool CanJump{false};
-        bool Jump{false};
+        bool JumpDown{false};
+        bool JumpUp{false};
         bool Left{false};
         bool Right{false};
         bool None{false};
@@ -242,8 +245,28 @@ namespace Engine::Component
 
     struct MarioState
     {
-        bool IsInMidAir{false};
-        bool IsInFreeFall{false};
+        bool IsGrounded{false};
+        bool IsFacingRight{false};
+        bool IsFacingLeft{false};
+        bool IsMovingLeft{false};
+        bool IsMovingRight{false};
+        bool HasBeenHit{false};
+        bool HasHitEnemy{false};
+    };
+
+    struct GoombaState
+    {
+        bool HasHitWall{false};
+        bool HasBeenHitByPlayer{false};
+        bool IsMovingLeft{false};
+        bool IsMovingRight{false};
+    };
+
+    struct KoopaState
+    {
+        U32 HitByPlayerCount{0};
+        bool HitByKoopa{false};
+        bool HasHitWall{false};
         bool IsMovingLeft{false};
         bool IsMovingRight{false};
     };
@@ -256,21 +279,18 @@ namespace Engine::Component
         Entity Right{NULL_ENTITY};
     };
 
-    struct CollisionCallback
+    struct FSMStateComp
     {
-        struct CollisionData
-        {
-            Entity Primary{NULL_ENTITY};
-            Entity Secondary{NULL_ENTITY};
-            Physics::ContactListener::ContactState ContactState{Physics::ContactListener::ContactState::Begin};
-        };
-        using SensorCallback = void (*)(Registry* registry, const CollisionData& collisionData,
-                                        [[maybe_unused]] const Physics::ContactInfo2D& contact);
-        I32 SensorCallbackIndex{-1};
-        U32 CollisionCount{0};
+        Ref<FSMState> CurrentState{nullptr};
     };
-
-
+    
+    // TODO: What is this name (I'm so bad at this).
+    struct KillComponent
+    {
+        // Is decremented by dt every frame, when is less then 0, entity is destroyed.
+        F64 LifeTime{1.0};
+    };
+    
     /************** MarioGame *************************************/
 
     struct GemWarsTransform2D

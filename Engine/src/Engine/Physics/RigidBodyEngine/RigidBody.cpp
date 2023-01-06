@@ -54,7 +54,7 @@ namespace Engine::Physics
 
 	void RigidBody2D::OrphanCollider()
 	{
-		m_AttachedCollider->SetAttachedRigidBody(nullptr);
+		if (m_AttachedCollider) m_AttachedCollider->SetAttachedRigidBody(nullptr);
 	}
 
 	void RigidBody2D::SetPosition(const glm::vec2& pos)	{ m_AttachedTransform->Position = pos; }
@@ -63,9 +63,10 @@ namespace Engine::Physics
 
 	void RigidBody2D::RecalculateMass()
 	{
+		if (m_Flags & RigidBodyDef2D::UseSyntheticMass) return;
 		m_InverseMass = m_InverseInertiaTensor = 0.0f;
 		m_CenterOfMass = glm::vec2{ 0.0f };
-		if (m_Type != RigidBodyType2D::Dynamic) return;;
+		if (m_Type != RigidBodyType2D::Dynamic) return;
 		
 		F32 mass = 0.0f;
 		F32 inertia = 0.0f;

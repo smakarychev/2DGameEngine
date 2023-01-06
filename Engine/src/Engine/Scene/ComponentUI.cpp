@@ -121,4 +121,14 @@ namespace Engine
         ImGuiCommon::DrawColor("Tint", component.Tint);
         ImGuiCommon::DrawFloat2("Tiling", component.Tiling, 0.05f, 0.0f, IMGUI_LIMITLESS);
     }
+
+    CameraUIDesc::CameraUIDesc(Scene& scene)
+        : ComponentUIDesc(GetStaticSignature(), true, scene)
+    {
+    }
+
+    void CameraUIDesc::OnUIDraw(Entity e, Component::Camera& component)
+    {
+        ImGui::Checkbox("Is primary", &component.IsPrimary);
+    }
 }

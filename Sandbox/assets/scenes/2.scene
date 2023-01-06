@@ -1,0 +1,143 @@
+Scene: Default
+Prefabs:
+  - Prefab: 16777236
+    Name:
+      Name: prefab-Bush
+    LocalToWorldTransform:
+      Position: [-9, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16777237
+    PrefabDetails:
+      Name: assets/prefabs/Bush.prefab
+      Id: 6525907786650582177
+  - Prefab: 16777234
+    Name:
+      Name: prefab-Hill
+    LocalToWorldTransform:
+      Position: [-15.0500002, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16777235
+    PrefabDetails:
+      Name: assets/prefabs/Hill.prefab
+      Id: 4081077659273727437
+  - Prefab: 16777230
+    Name:
+      Name: prefab-Bush big
+    LocalToWorldTransform:
+      Position: [-18, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16777231
+    PrefabDetails:
+      Name: assets/prefabs/Bush big.prefab
+      Id: 11464321859709879631
+  - Prefab: 16777222
+    Name:
+      Name: prefab-Hill big
+    LocalToWorldTransform:
+      Position: [-28, 0.5]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16777223
+    PrefabDetails:
+      Name: assets/prefabs/Hill big.prefab
+      Id: 6530480523536854515
+  - Prefab: 13
+    Name:
+      Name: prefab-Mario
+    LocalToWorldTransform:
+      Position: [-22.5499992, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 8
+    PrefabDetails:
+      Name: assets/prefabs/Mario.prefab
+      Id: 10467714333349593156
+  - Prefab: 17
+    Name:
+      Name: prefab-Editor camera
+    LocalToWorldTransform:
+      Position: [283, 105]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16
+    PrefabDetails:
+      Name: assets/prefabs/Editor camera.prefab
+      Id: 16521654746514692074
+  - Prefab: 5
+    Name:
+      Name: prefab-Game camera
+    LocalToWorldTransform:
+      Position: [239, 142]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 4
+    PrefabDetails:
+      Name: assets/prefabs/Game camera.prefab
+      Id: 15852556120573279925
+  - Prefab: 3
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [-4, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 2
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+  - Prefab: 1
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [48, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 0
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+Entities:
+  - Entity: 80
+    Name:
+      Name: background
+    LocalToWorldTransform:
+      Position: [50, 0]
+      Rotation: [1, 0]
+      Scale: [160, 17.5]
+    SpriteRenderer:
+      Texture: "NULL"
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [0.519031167, 0.681864381, 0.980392158, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Background
+        Id: 1
+        Priority: 0
+      OrderInLayer: -1
+      FlipX: false
+      FlipY: false

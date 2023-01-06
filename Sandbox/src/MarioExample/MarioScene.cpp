@@ -1,24 +1,48 @@
 ﻿#include "MarioScene.h"
 
-#include "MarioActions.h"
+#include "Controllers/MarioCameraController.h"
 #include "MarioComponentSerializers.h"
+#include "Controllers/ControllersCommon.h"
 #include "Engine/ECS/View.h"
 #include "Engine/Scene/SceneUtils.h"
 
+MarioScene::MarioScene()
+    : m_PlayerController(*this), m_PlayerAnimator(*this),
+    m_GoombaController(*this), m_GoombaAnimator(*this),
+    m_PiranhaPlantController(*this), m_PiranhaPlantAnimator(*this),
+    m_KoopaController(*this), m_KoopaAnimator(*this),
+    m_PlayerFsm(*this)
+{
+}
+
 void MarioScene::OnInit()
 {
+    m_PlayerController.ReadConfig("assets/configs/PlayerController.yaml");
+    m_GoombaController.ReadConfig("assets/configs/GoombaController.yaml");
+    m_PiranhaPlantController.ReadConfig("assets/configs/PiranhaPlantController.yaml");
+    m_KoopaController.ReadConfig("assets/configs/KoopaController.yaml");
+    m_PlayerAnimator.LoadAnimations("assets/configs/PlayerAnimator.yaml");
+    m_GoombaAnimator.LoadAnimations("assets/configs/GoombaAnimator.yaml");
+    m_PiranhaPlantAnimator.LoadAnimations("assets/configs/PiranhaPlantAnimator.yaml");
+    m_KoopaAnimator.LoadAnimations("assets/configs/KoopaAnimator.yaml");
+
+    m_PlayerFsm.ReadConfig("assets/configs/PlayerFSM.yaml");
+    
     InitSensorCallbacks();
     m_SceneSerializer.AddComponentSerializer<SensorsSerializer>();
-    m_SceneSerializer.AddComponentSerializer<MarioInputSerializer>();
-    m_SceneSerializer.AddComponentSerializer<MarioStateSerializer>();
-    m_SceneSerializer.AddComponentSerializer<CollisionCallbackSerializer>();
     m_SceneSerializer.AddComponentSerializer<MarioPlayerTagSerializer>();
     m_SceneSerializer.AddComponentSerializer<MarioLevelTagSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioEnemyTagSerializer>();
     m_SceneSerializer.AddComponentSerializer<MarioGoombaTagSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioPiranhaPlantTagSerializer>();
+    m_SceneSerializer.AddComponentSerializer<MarioKoopaTagSerializer>();
 
     m_ScenePanels.AddComponentUiDesc<MarioPlayerTagUIDesc>();
     m_ScenePanels.AddComponentUiDesc<MarioLevelTagUIDesc>();
     m_ScenePanels.AddComponentUiDesc<MarioGoombaTagUIDesc>();
+    m_ScenePanels.AddComponentUiDesc<MarioEnemyTagUIDesc>();
+    m_ScenePanels.AddComponentUiDesc<MarioPiranhaPlantTagUIDesc>();
+    m_ScenePanels.AddComponentUiDesc<MarioKoopaTagUIDesc>();
     
     // Create sorting layer for correct render order.
     // The structure is Background->Middleground->Default.
@@ -27,13 +51,8 @@ void MarioScene::OnInit()
     m_SortingLayer.PlaceBefore(m_SortingLayer.GetLayer("Middleground"), m_SortingLayer.GetLayer("Default"));
     m_SortingLayer.PlaceBefore(m_SortingLayer.GetLayer("Background"), m_SortingLayer.GetLayer("Middleground"));
 
-    // Set actions.
-    RegisterAction(Key::A, CreateRef<MoveLeftAction>(m_Registry));
-    RegisterAction(Key::D, CreateRef<MoveRightAction>(m_Registry));
-    RegisterAction(Key::Space, CreateRef<JumpAction>(m_Registry));
-
     // Adjust gravity for better feel.
-    m_RigidBodyWorld2D.SetGravity({0.0f, -25.0f});
+    m_RigidBodyWorld2D.SetGravity({0.0f, -50.0f});
     // Set custom contact listener.
     m_RigidBodyWorld2D.SetContactListener(&m_ContactListener);
     m_ContactListener.SetRegistry(&m_Registry);
@@ -41,45 +60,37 @@ void MarioScene::OnInit()
 
     // Load assets.
     m_Font = Font::ReadFontFromFile("assets/fonts/Roboto-Thin.ttf");
-    m_BrickTexture = Texture::LoadTextureFromFile("assets/textures/mario/bricks.png");
-    m_MarioSprites = Texture::LoadTextureFromFile("assets/textures/mario/mario_sprites.png");
-    Ref<SpriteAnimation> walkRight = CreateRef<SpriteAnimation>(
-        m_MarioSprites.get(),
-        glm::uvec2{235, 410}, glm::uvec2{30, 28}, 3, 10
-    );
-    Ref<SpriteAnimation> walkLeft = CreateRef<SpriteAnimation>(
-        m_MarioSprites.get(),
-        glm::uvec2{85, 410}, glm::uvec2{30, 28}, 3, 10
-    );
-    Ref<SpriteAnimation> jumpRight = CreateRef<SpriteAnimation>(
-        m_MarioSprites.get(),
-        glm::uvec2{295, 410}, glm::uvec2{30, 28}, 1, 0
-    );
-    Ref<SpriteAnimation> jumpLeft = CreateRef<SpriteAnimation>(
-        m_MarioSprites.get(),
-        glm::uvec2{25, 410}, glm::uvec2{30, 28}, 1, 0
-    );
-    Ref<SpriteAnimation> stand = CreateRef<SpriteAnimation>(
-        m_MarioSprites.get(),
-        glm::uvec2{205, 410}, glm::uvec2{30, 28}, 1, 0
-    );
-    m_AnimationsMap["wRight"] = walkRight;
-    m_AnimationsMap["wLeft"] = walkLeft;
-    m_AnimationsMap["jRight"] = jumpRight;
-    m_AnimationsMap["jLeft"] = jumpLeft;
-    m_AnimationsMap["stand"] = stand;
+}
+
+void MarioScene::OnScenePlay()
+{
+    m_IsPlaying = true;
+}
+
+void MarioScene::OnSceneStop()
+{
+    m_IsPlaying = false;
 }
 
 void MarioScene::OnUpdate(F32 dt)
 {
     if (!m_IsSceneReady) return;
-    
-    // Call systems.
-    SMove();
-    SGoomba(dt);
-    SPhysics(dt);
-    SState();
-    SAnimation(dt);
+
+    if (m_IsPlaying)
+    {
+        //m_PlayerController.OnUpdate(dt);
+        m_PlayerFsm.OnUpdate(dt);
+        m_GoombaController.OnUpdate(dt);
+        m_PiranhaPlantController.OnUpdate(dt);
+        m_KoopaController.OnUpdate(dt);
+        ControllerUtils::KillSystem(dt, *this);
+        
+        // Call systems.
+        SPhysics(dt);
+        SState();
+        SAnimation(dt);
+
+    }
 
     auto* camera = GetMainCamera();
     if (!camera) return;
@@ -88,7 +99,7 @@ void MarioScene::OnUpdate(F32 dt)
     m_SceneSerializer.OnCopyPaste();
     m_ScenePanels.OnUpdate();
     m_SceneGraph.OnUpdate();
-    camera->CameraFrameBuffer->Unbind();
+    if (GetMainCamera()) camera->CameraFrameBuffer->Unbind();
     SCamera();
 }
 
@@ -145,6 +156,12 @@ void MarioScene::OnImguiUpdate()
 
 void MarioScene::OnSceneGlobalUpdate()
 {
+    InitPlayer();
+    InitGoomba();
+    InitPiranhaPlant();
+    InitKoopa();
+    InitCameraController();
+    m_PlayerFsm.RegisterEntity(*View<MarioPlayerTag>(m_Registry).begin());
     m_SceneGraph.OnUpdate();
     SceneUtils::SynchronizePhysics(*this);
     m_ScenePanels.ResetActiveEntity();
@@ -156,8 +173,8 @@ void MarioScene::Open(const std::string& filename)
     Clear();
     // Open (deserialize new scene).
     m_SceneSerializer.Deserialize("assets/scenes/" + filename + ".scene");
-
     OnSceneGlobalUpdate();
+    SceneUtils::SynchonizeCamerasWithTransforms(*this);
     m_IsSceneReady = true;
 }
 
@@ -220,57 +237,6 @@ void MarioScene::SRender()
     ValidateViewport();
 }
 
-void MarioScene::SMove()
-{
-    static constexpr auto MAX_HORIZONTAL_SPEED = 6.0f;
-    for (auto e : View<Component::MarioInput, Component::RigidBody2D>(m_Registry))
-    {
-        // Update player position.
-        auto& input = m_Registry.Get<Component::MarioInput>(e);
-        auto& state = m_Registry.Get<Component::MarioState>(e);
-        auto& rb = m_Registry.Get<Component::RigidBody2D>(e);
-        if (input.Jump && input.CanJump)
-            rb.PhysicsBody->AddForce(glm::vec2{0.0f, 10.0f},
-                                     Physics::ForceMode::Impulse);
-        if (input.Left) rb.PhysicsBody->AddForce(glm::vec2{-90.0f, 0.0f});
-        if (input.Right) rb.PhysicsBody->AddForce(glm::vec2{90.0f, 0.0f});
-        glm::vec2 vel = rb.PhysicsBody->GetLinearVelocity();
-        vel.x = Math::Clamp(vel.x, -MAX_HORIZONTAL_SPEED, MAX_HORIZONTAL_SPEED);
-        if (input.Jump == false && input.CanJump == false && vel.y > 0.0f)
-        {
-            vel.y *= 0.9f;
-        }
-        if (input.None)
-        {
-            if (input.CanJump)
-            {
-                vel *= 0.9f;
-            }
-            else
-            {
-                vel.x *= 0.95f;
-            }
-        }
-        if (input.Left && state.IsMovingRight || input.Right && state.IsMovingLeft)
-        {
-            vel.x *= 0.9f;
-        }
-
-        rb.PhysicsBody->SetLinearVelocity({vel.x, vel.y});
-        input.None = true;
-    }
-}
-
-void MarioScene::SGoomba(F32 dt)
-{
-    for (auto e : View<MarioGoombaTag>(m_Registry))
-    {
-        F32 goombaHorizonalVelocity = 2.0f * sin((Time::Get() + e.GetIndex()) * dt);
-        auto& rb = m_Registry.Get<Component::RigidBody2D>(e);
-        rb.PhysicsBody->SetLinearVelocity(glm::vec2{goombaHorizonalVelocity, rb.PhysicsBody->GetLinearVelocity().y});
-    }
-}
-
 void MarioScene::SAnimation(F32 dt)
 {
     for (auto e : View<Component::Animation, Component::SpriteRenderer>(m_Registry))
@@ -284,39 +250,11 @@ void MarioScene::SAnimation(F32 dt)
         // Update entity's sprite.
         auto& sr = m_Registry.Get<Component::SpriteRenderer>(e);
         sr.UV = animation.SpriteAnimation->GetCurrentFrameUV();
+        sr.Texture = animation.SpriteAnimation->GetSpriteSheet();
     }
-
-    for (auto e : View<Component::Animation, Component::MarioState>(m_Registry))
-    {
-        auto& animation = m_Registry.Get<Component::Animation>(e);
-        const auto& state = m_Registry.Get<Component::MarioState>(e);
-        if (state.IsMovingLeft)
-        {
-            if (state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["jLeft"]->GetUUID())
-            {
-                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["jLeft"]);
-            }
-            else if (!state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["wLeft"]->GetUUID())
-            {
-                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["wLeft"]);
-            }
-        }
-        else if (state.IsMovingRight)
-        {
-            if (state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["jRight"]->GetUUID())
-            {
-                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["jRight"]);
-            }
-            else if (!state.IsInMidAir && animation.SpriteAnimation->GetUUID() != m_AnimationsMap["wRight"]->GetUUID())
-            {
-                animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["wRight"]);
-            }
-        }
-        else
-        {
-            animation.SpriteAnimation = CreateRef<SpriteAnimation>(*m_AnimationsMap["stand"]);
-        }
-    }
+    m_GoombaAnimator.OnUpdate();
+    m_PiranhaPlantAnimator.OnUpdate();
+    m_KoopaAnimator.OnUpdate();
 }
 
 void MarioScene::SState()
@@ -327,10 +265,20 @@ void MarioScene::SState()
         const auto& rb = m_Registry.Get<Component::RigidBody2D>(e);
         auto& state = m_Registry.Get<Component::MarioState>(e);
         const auto& vel = rb.PhysicsBody->GetLinearVelocity();
+        
+        bool wasFacingLeft = state.IsFacingLeft;
+        
+        state.IsFacingLeft = vel.x < -0.01f;
+        state.IsFacingRight = vel.x > 0.01f;
+
+        if (!state.IsFacingLeft && !state.IsFacingRight)
+        {
+            if (wasFacingLeft) state.IsFacingLeft = true;
+            else state.IsFacingRight = true;
+        }
+        
         state.IsMovingLeft = vel.x < -0.01f;
         state.IsMovingRight = vel.x > 0.01f;
-        state.IsInFreeFall = vel.y < -0.01f;
-        state.IsInMidAir = state.IsInFreeFall || vel.y > 0.01f;
     }
 }
 
@@ -346,26 +294,6 @@ void MarioScene::SCamera()
 
 void MarioScene::InitSensorCallbacks()
 {
-    Component::CollisionCallback::SensorCallback jumpCallback = [](
-        Registry* registry, const Component::CollisionCallback::CollisionData& collisionData,
-        [[maybe_unused]] const Physics::ContactInfo2D& contact)
-    {
-        auto& collisionCallback = registry->Get<Component::CollisionCallback>(collisionData.Primary);
-        Entity parent = registry->Get<Component::ParentRel>(collisionData.Primary).Parent;
-        switch (collisionData.ContactState)
-        {
-        case Physics::ContactListener::ContactState::Begin:
-            collisionCallback.CollisionCount++;
-            registry->Get<Component::MarioInput>(parent).CanJump = true;
-            break;
-        case Physics::ContactListener::ContactState::End:
-            collisionCallback.CollisionCount--;
-            if (collisionCallback.CollisionCount == 0)
-                registry->Get<Component::MarioInput>(parent).CanJump = false;
-            break;
-        }
-    };
-    m_SensorCallbacks.push_back(jumpCallback);
 }
 
 void MarioScene::ValidateViewport()
@@ -397,6 +325,84 @@ FrameBuffer* MarioScene::GetMainFrameBuffer()
     auto* camera = GetMainCamera();
     if (!camera) return nullptr;
     return GetMainCamera()->CameraFrameBuffer.get();
+}
+
+void MarioScene::AddSensorCallback(const std::string& indexMajor, const std::string& indexMinor,
+    CollisionCallback::SensorCallback callback)
+{
+    m_SensorCallbacks[indexMajor][indexMinor] = callback;
+}
+
+void MarioScene::InitPlayer()
+{
+    // We serialize the minimum amount of components, and instead fill the rest in functions like that.
+    for (auto e : View<MarioPlayerTag>(m_Registry))
+    {
+        m_Registry.AddOrGet<Component::MarioState>(e);
+        m_Registry.AddOrGet<Component::MarioInput>(e);
+        auto& sensors = m_Registry.Get<Component::Sensors>(e);
+        auto& bottomCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Bottom);
+        auto& leftCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Left);
+        auto& rightCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Right);
+        bottomCallback.IndexMajor = leftCallback.IndexMajor = rightCallback.IndexMajor = "Player";
+        bottomCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Bottom).EntityName;
+        leftCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Left).EntityName;
+        rightCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Right).EntityName;
+    }
+}
+
+void MarioScene::InitGoomba()
+{
+    for (auto e : View<MarioGoombaTag>(m_Registry))
+    {
+        m_Registry.AddOrGet<Component::GoombaState>(e);
+        auto& sensors = m_Registry.Get<Component::Sensors>(e);
+        auto& leftCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Left);
+        auto& rightCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Right);
+        leftCallback.IndexMajor = rightCallback.IndexMajor = "Goomba";
+        leftCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Left).EntityName;
+        rightCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Right).EntityName;
+    }
+    m_GoombaController.OnInit();
+}
+
+void MarioScene::InitPiranhaPlant()
+{
+    for (auto e : View<MarioPiranhaPlantTag>(m_Registry))
+    {
+        auto& sensors = m_Registry.Get<Component::Sensors>(e);
+        auto& topCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Top);
+        topCallback.IndexMajor = "PiranhaPlant";
+        topCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Top).EntityName;
+    }
+}
+
+void MarioScene::InitKoopa()
+{
+    for (auto e : View<MarioKoopaTag>(m_Registry))
+    {
+        m_Registry.AddOrGet<Component::KoopaState>(e);
+        auto& sensors = m_Registry.Get<Component::Sensors>(e);
+        auto& leftCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Left);
+        auto& rightCallback = m_Registry.AddOrGet<CollisionCallback>(sensors.Right);
+        leftCallback.IndexMajor = rightCallback.IndexMajor = "Koopa";
+        leftCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Left).EntityName;
+        rightCallback.IndexMinor = m_Registry.Get<Component::Name>(sensors.Right).EntityName;
+    }
+    m_KoopaController.OnInit();
+}
+
+void MarioScene::InitCameraController()
+{
+    auto* camera = GetMainCamera();
+    if (!camera) return;
+    if (camera->CameraController->GetControllerType() != CameraController::ControllerType::Custom) return;
+    glm::vec3 cameraPos = camera->CameraController->GetCamera()->GetPosition();
+    Ref<MarioCameraController> controller = CreateRef<MarioCameraController>(camera->CameraController->GetCamera(), *this);
+    controller->ReadConfig("assets/configs/CameraController.yaml");
+    controller->SetTarget(*View<MarioPlayerTag>(m_Registry).begin());
+    camera->CameraController = controller;
+    camera->CameraController->GetCamera()->SetPosition(cameraPos);
 }
 
 

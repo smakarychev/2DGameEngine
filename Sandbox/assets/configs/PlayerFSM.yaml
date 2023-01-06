@@ -1,0 +1,56 @@
+Animations:
+  - Name : Walk
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 386]
+    SpriteSize : [16, 16]
+    FrameCount : 3
+    FpsSpeed : 10
+    MaxDuration : 0 
+
+  - Name : Jump
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 350]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : Fall
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 350]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : Idle
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 314]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : Death
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 280]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+   
+
+JumpImpulse : 22
+MaxHorizontalSpeed : 5
+MaxFallSpeed : -15
+VerticalVelocityDrop : 0.5
+HorizontalVelocityDrop : 0.8
+CoyoteTime : 0.15
+JumpBuffer : 0.15
+DeathTime : 2.5
+DeathSensors :
+  - Name : Left sensor
+  - Name : Right sensor
+GroundSensors :
+  - Name : Bottom sensor

@@ -1,0 +1,29 @@
+Prefab:
+  Name: assets/prefabs/cloud.prefab
+  Id: 4810176426212982369
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: cloud
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [3, 2]
+    SpriteRenderer:
+      Texture: assets/textures/mario/cloud.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Background
+        Id: 2
+        Priority: 0
+      OrderInLayer: 1
+      FlipX: false
+      FlipY: false

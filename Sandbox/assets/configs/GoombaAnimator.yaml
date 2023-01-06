@@ -1,0 +1,19 @@
+Animations:
+  - Name : walk
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 262]
+    SpriteSize : [16, 16]
+    FrameCount : 2
+    FpsSpeed : 5
+    MaxDuration : 0 
+
+  - Name : hit
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 244]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+   
+    

@@ -1,0 +1,42 @@
+Animations:
+  - Name : wLeft
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 192]
+    SpriteSize : [16, 24]
+    FrameCount : 2
+    FpsSpeed : 4
+    MaxDuration : 0
+  
+  - Name : wRight
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 166]
+    SpriteSize : [16, 24]
+    FrameCount : 2
+    FpsSpeed : 4
+    MaxDuration : 0
+
+  - Name : hOnce
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 150]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0
+  
+  - Name : hTwice
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 150]
+    SpriteSize : [16, 16]
+    FrameCount : 2
+    FpsSpeed : 6
+    MaxDuration : 0
+  
+  - Name : hit
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 132]
+    SpriteSize : [16, 16]
+    FrameCount : 2
+    FpsSpeed : 6
+    MaxDuration : 0
+   
+    

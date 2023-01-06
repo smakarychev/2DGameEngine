@@ -1,0 +1,420 @@
+Scene: Default
+Prefabs:
+  - Prefab: 44
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [5, 1]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 43
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+  - Prefab: 42
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [-8, -1]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 41
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+  - Prefab: 40
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [8, 5]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 39
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+  - Prefab: 38
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [2, 4]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 37
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+  - Prefab: 36
+    Name:
+      Name: prefab-cloud
+    LocalToWorldTransform:
+      Position: [-7, 4]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 35
+    PrefabDetails:
+      Name: assets/prefabs/cloud.prefab
+      Id: 4810176426212982369
+  - Prefab: 29
+    Name:
+      Name: prefab-Level box collider
+    LocalToWorldTransform:
+      Position: [3, -2.5]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    LocalToParentTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 28
+    ParentRel:
+      Depth: 1
+      Parent: 34
+      Next: 16777215
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Level box collider.prefab
+      Id: 10557559077809969971
+  - Prefab: 27
+    Name:
+      Name: prefab-Level box collider
+    LocalToWorldTransform:
+      Position: [0.0500000007, 1.75]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    LocalToParentTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 26
+    ParentRel:
+      Depth: 1
+      Parent: 32
+      Next: 16777215
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Level box collider.prefab
+      Id: 10557559077809969971
+  - Prefab: 25
+    Name:
+      Name: prefab-Level box collider
+    LocalToWorldTransform:
+      Position: [-3.6500001, -2]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    LocalToParentTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 24
+    ParentRel:
+      Depth: 1
+      Parent: 31
+      Next: 16777215
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Level box collider.prefab
+      Id: 10557559077809969971
+  - Prefab: 23
+    Name:
+      Name: prefab-Level box collider
+    LocalToWorldTransform:
+      Position: [0.5, -7]
+      Rotation: [1, 0]
+      Scale: [42.5, 5]
+    LocalToParentTransform:
+      Position: [0.5, -7]
+      Rotation: [1, 0]
+      Scale: [42.5, 5]
+    ChildRel:
+      ChildrenCount: 1
+      First: 22
+    ParentRel:
+      Depth: 1
+      Parent: 30
+      Next: 9
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Level box collider.prefab
+      Id: 10557559077809969971
+  - Prefab: 21
+    Name:
+      Name: prefab-Pipe
+    LocalToWorldTransform:
+      Position: [8, -0.150000006]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 20
+    PrefabDetails:
+      Name: assets/prefabs/Pipe.prefab
+      Id: 17340543761886009539
+  - Prefab: 19
+    Name:
+      Name: prefab-Game camera
+    LocalToWorldTransform:
+      Position: [239, 142]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 18
+    PrefabDetails:
+      Name: assets/prefabs/Game camera.prefab
+      Id: 15852556120573279925
+  - Prefab: 17
+    Name:
+      Name: prefab-Editor camera
+    LocalToWorldTransform:
+      Position: [283, 105]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 16
+    PrefabDetails:
+      Name: assets/prefabs/Editor camera.prefab
+      Id: 16521654746514692074
+  - Prefab: 15
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [-14, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-14, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 14
+    ParentRel:
+      Depth: 1
+      Parent: 30
+      Next: 16777215
+      Prev: 13
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+  - Prefab: 13
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [16, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [16, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 12
+    ParentRel:
+      Depth: 1
+      Parent: 30
+      Next: 15
+      Prev: 11
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+  - Prefab: 11
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [6, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [6, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 10
+    ParentRel:
+      Depth: 1
+      Parent: 30
+      Next: 13
+      Prev: 9
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+  - Prefab: 9
+    Name:
+      Name: prefab-Ground
+    LocalToWorldTransform:
+      Position: [-4, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-4, -7]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 8
+    ParentRel:
+      Depth: 1
+      Parent: 30
+      Next: 11
+      Prev: 23
+    PrefabDetails:
+      Name: assets/prefabs/Ground.prefab
+      Id: 6507089723556643614
+  - Prefab: 7
+    Name:
+      Name: prefab-Pipe
+    LocalToWorldTransform:
+      Position: [0, -4.19999981]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 6
+    PrefabDetails:
+      Name: assets/prefabs/Pipe.prefab
+      Id: 17340543761886009539
+  - Prefab: 5
+    Name:
+      Name: prefab-Mario
+    LocalToWorldTransform:
+      Position: [-4, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 0
+    PrefabDetails:
+      Name: assets/prefabs/Mario.prefab
+      Id: 10467714333349593156
+Entities:
+  - Entity: 34
+    Name:
+      Name: level
+    LocalToWorldTransform:
+      Position: [3, -2.5]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 29
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [2, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+  - Entity: 33
+    Name:
+      Name: background
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [80, 15]
+    SpriteRenderer:
+      Texture: "NULL"
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [0.519999981, 0.800000012, 0.920000017, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Background
+        Id: 1
+        Priority: 0
+      OrderInLayer: -1
+      FlipX: false
+      FlipY: false
+  - Entity: 32
+    Name:
+      Name: level
+    LocalToWorldTransform:
+      Position: [0.0500000007, 1.75]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 27
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [2, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+  - Entity: 31
+    Name:
+      Name: level
+    LocalToWorldTransform:
+      Position: [-3.6500001, -2]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 25
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [2, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+  - Entity: 30
+    Name:
+      Name: Floor
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 5
+      First: 23

@@ -1,0 +1,183 @@
+Prefab:
+  Name: assets/prefabs/Mario.prefab
+  Id: 10467714333349593156
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: Player
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 4
+      First: 5
+    RigidBody2D:
+      Type: Dynamic
+      Flags:
+        - Restrict Rotation
+        - Use synthetic mass
+      Mass: 1
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 2
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.35, 0.5]
+      IsSensor: false
+    SpriteRenderer:
+      Texture: assets/textures/mario/Mario.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 99
+      FlipX: false
+      FlipY: false
+    Animation:
+      Texture: assets/textures/mario/mario_sprites.png
+      StartPosition: [205, 410]
+      SpriteSize: [30, 28]
+      FrameCount: 1
+      FPSSpeed: 0
+      CurrentFrame: 0
+      TotalDuration: 0
+      MaxDuration: 0
+      CurrentFrameUV:
+        - [0.488095224, 0.933940768]
+        - [0.559523821, 0.933940768]
+        - [0.559523821, 0.997722089]
+        - [0.488095224, 0.997722089]
+    Sensors:
+      Top: 3
+      Bottom: 5
+      Left: 4
+      Right: 2
+    MarioPlayerTag:
+      {}
+  - Entity: 5
+    Name:
+      Name: Bottom sensor
+    LocalToWorldTransform:
+      Position: [0, -0.5]
+      Rotation: [1, 0]
+      Scale: [0.699999988, 0.300000012]
+    LocalToParentTransform:
+      Position: [0, -0.5]
+      Rotation: [1, 0]
+      Scale: [0.65, 0.300000012]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 4
+      Prev: 16777215
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 4
+    Name:
+      Name: Left sensor
+    LocalToWorldTransform:
+      Position: [-0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    LocalToParentTransform:
+      Position: [-0.25, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 3
+      Prev: 5
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 3
+    Name:
+      Name: Top sensor
+    LocalToWorldTransform:
+      Position: [0, 0.5]
+      Rotation: [1, 0]
+      Scale: [0.699999988, 0.300000012]
+    LocalToParentTransform:
+      Position: [0, 0.5]
+      Rotation: [1, 0]
+      Scale: [0.699999988, 0.300000012]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 2
+      Prev: 4
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 2
+    Name:
+      Name: Right sensor
+    LocalToWorldTransform:
+      Position: [0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    LocalToParentTransform:
+      Position: [0.25, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 16777215
+      Prev: 3
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true

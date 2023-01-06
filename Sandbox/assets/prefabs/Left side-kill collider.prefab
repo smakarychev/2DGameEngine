@@ -1,0 +1,25 @@
+Prefab:
+  Name: assets/prefabs/Left side-kill collider.prefab
+  Id: 917495402555640966
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: Left side-kill collider
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 50]
+      IsSensor: true

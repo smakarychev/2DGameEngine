@@ -1,0 +1,29 @@
+Prefab:
+  Name: assets/prefabs/Ground.prefab
+  Id: 6507089723556643614
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: Ground
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [52, 3]
+    SpriteRenderer:
+      Texture: assets\textures\mario\ground.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [0.75, 0.75, 0.75, 1]
+      Tiling: [4, 3]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 3
+      FlipX: false
+      FlipY: false

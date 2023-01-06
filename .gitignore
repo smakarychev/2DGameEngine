@@ -351,3 +351,5 @@ FodyWeavers.xsd
 
 roadmap.md
 *.sln
+*.filters
+*.vcxproj

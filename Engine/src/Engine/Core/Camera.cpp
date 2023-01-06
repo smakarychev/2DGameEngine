@@ -61,12 +61,22 @@ namespace Engine
 
 	void Camera::SetPosition(const glm::vec3& position)
 	{
-		m_Position = position;
+		if (m_Position != position)
+		{
+			m_Position = position;
+			UpdateViewMatrix();
+			UpdateViewProjection();
+		}
 	}
 
 	void Camera::SetOrientation(const glm::quat& orientation)
 	{
-		m_Orientation = orientation;
+		if (m_Orientation != orientation)
+		{
+			m_Orientation = orientation;
+			UpdateViewMatrix();
+			UpdateViewProjection();
+		}
 	}
 
 	void Camera::SetZoom(F32 zoom)
@@ -182,6 +192,7 @@ namespace Engine
 		case Engine::CameraController::ControllerType::FPS: newCam = CreateRef<FPSCameraController>(camera); break;
 		case Engine::CameraController::ControllerType::Editor: newCam = CreateRef<EditorCameraController>(camera); break;
 		case Engine::CameraController::ControllerType::Editor2D: newCam = CreateRef<Editor2DCameraController>(camera); break;
+		case Engine::CameraController::ControllerType::Custom: newCam = CreateRef<Editor2DCameraController>(camera); break;
 		}
 		newCam->SetControllerType(type);
 		return newCam;

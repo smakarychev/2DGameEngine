@@ -1,0 +1,29 @@
+Prefab:
+  Name: assets/prefabs/Bush big.prefab
+  Id: 11464321859709879631
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: BishBig
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [3, 1]
+    SpriteRenderer:
+      Texture: assets\textures\mario\BushBig.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false

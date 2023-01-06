@@ -18,6 +18,7 @@ namespace Engine
         bool HasEnded() const { return m_MaxDuration != 0.0f && m_TotalDuration >= m_MaxDuration; }
 
         UUID GetUUID() const { return m_UUID; }
+        Texture* GetSpriteSheet() { return m_SpriteSheet; }
         
     private:
         UUID m_UUID{};

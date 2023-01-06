@@ -36,6 +36,16 @@ namespace Engine
             };
             Icons Icons;
         };
+        struct SceneControlsInfo
+        {
+            F32 IconsWidth = 25.0f;
+            struct Icons
+            {
+                Ref<Texture> PauseIcon{Texture::LoadTextureFromFile("assets/textures/editor/pause.png")};
+                Ref<Texture> PlayIcon{Texture::LoadTextureFromFile("assets/textures/editor/play.png")};
+            };
+            Icons Icons;
+        };
     public:
         ScenePanels(Scene& scene);
         void OnEvent(Event& event);
@@ -62,6 +72,8 @@ namespace Engine
         void DrawDialogs();
 
         void DrawAssetsPanel();
+
+        void DrawPlayPauseButtons();
         
         std::vector<Entity> FindTopLevelEntities();
         
@@ -81,6 +93,7 @@ namespace Engine
         PrefabDialogInfo m_PrefabDialog{};
         
         AssetsPanelInfo m_AssetsPanelInfo{};
+        SceneControlsInfo m_SceneControlsInfo{};
         
         std::unordered_map<Entity, bool> m_TraversalMap;
         std::vector<Ref<ComponentUIDescBase>> m_ComponentUIDescriptions;

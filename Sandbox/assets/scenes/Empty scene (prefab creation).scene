@@ -1,0 +1,15 @@
+Scene: Default
+Prefabs:
+  []
+Entities:
+  - Entity: 0
+    Name:
+      Name: camera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    Camera:
+      CameraController:
+        Type: Editor2D
+      IsPrimary: true

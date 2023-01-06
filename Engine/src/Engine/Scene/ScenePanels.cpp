@@ -19,6 +19,7 @@ namespace Engine
         m_ComponentUIDescriptions.push_back(CreateRef<BoxCollider2DUIDesc>(m_Scene));
         m_ComponentUIDescriptions.push_back(CreateRef<RigidBody2DUIDesc>(m_Scene));
         m_ComponentUIDescriptions.push_back(CreateRef<SpriteRendererUIDesc>(m_Scene));
+        m_ComponentUIDescriptions.push_back(CreateRef<CameraUIDesc>(m_Scene));
     }
 
     void ScenePanels::OnEvent(Event& event)
@@ -54,6 +55,7 @@ namespace Engine
                 if (ImGui::MenuItem("Open", nullptr, false)) m_OpenDialog.IsActive = true;
                 ImGui::EndMenu();
             }
+            DrawPlayPauseButtons();
             ImGui::EndMainMenuBar();
         }
         // TODO: find a better place for it.
@@ -140,10 +142,11 @@ namespace Engine
         auto& registry = m_Scene.GetRegistry();
 
         bool hasChildren = registry.Has<Component::ChildRel>(entity);
+        bool isPrefab = registry.Has<Component::Prefab>(entity);
         auto& name = registry.Get<Component::Name>(entity);
         ImGuiTreeNodeFlags flags = ((m_ActiveEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
             ImGuiTreeNodeFlags_OpenOnArrow;
-        flags |= ImGuiTreeNodeFlags_SpanAvailWidth | (hasChildren ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+        flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ((hasChildren && !isPrefab) ? ImGuiTreeNodeFlags_DefaultOpen : 0);
         bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags,
                                         (name.EntityName + " (" + std::to_string(entity.Id) + ")").c_str());
 
@@ -446,6 +449,34 @@ namespace Engine
         ImGui::Columns(1);
 
 
+        ImGui::End();
+    }
+
+    void ScenePanels::DrawPlayPauseButtons()
+    {
+        if (!m_Scene.IsReady()) return; 
+        ImGui::Begin("##PlayAndPause", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse);
+        
+        ImGuiStyle& style = ImGui::GetStyle();
+        F32 size = m_SceneControlsInfo.IconsWidth + style.FramePadding.x * 2.0f;
+        F32 availWidth = ImGui::GetContentRegionAvail().x;
+        F32 off = (availWidth - size) * 0.5f;
+        if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+        size = m_SceneControlsInfo.IconsWidth;
+        
+        auto playIcon = m_SceneControlsInfo.Icons.PlayIcon;
+        auto pauseIcon = m_SceneControlsInfo.Icons.PauseIcon;
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(playIcon->GetId()), {size, size},
+                         {0, 1}, {1, 0}))
+        {
+            m_Scene.OnScenePlay();
+        }
+        ImGui::SameLine();
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(pauseIcon->GetId()), {size, size},
+                         {0, 1}, {1, 0}))
+        {
+            m_Scene.OnSceneStop();
+        }
         ImGui::End();
     }
 

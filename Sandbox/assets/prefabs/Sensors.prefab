@@ -1,0 +1,136 @@
+Prefab:
+  Name: assets/prefabs/Sensors.prefab
+  Id: 14073764088008155143
+Prefabs:
+  []
+Entities:
+  - Entity: 11
+    Name:
+      Name: Sensors
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 4
+      First: 7
+  - Entity: 7
+    Tag:
+      Tag: Sensor
+    Name:
+      Name: Left sensor
+    LocalToWorldTransform:
+      Position: [-0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.25, 0.850000024]
+    LocalToParentTransform:
+      Position: [-0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.25, 0.850000024]
+    ParentRel:
+      Depth: 1
+      Parent: 11
+      Next: 8
+      Prev: 16777215
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 8
+    Tag:
+      Tag: Sensor
+    Name:
+      Name: Right sensor
+    LocalToWorldTransform:
+      Position: [0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.25, 0.850000024]
+    LocalToParentTransform:
+      Position: [0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.25, 0.850000024]
+    ParentRel:
+      Depth: 1
+      Parent: 11
+      Next: 9
+      Prev: 7
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 9
+    Tag:
+      Tag: Sensor
+    Name:
+      Name: Top sensor
+    LocalToWorldTransform:
+      Position: [0, 0.5]
+      Rotation: [1, 0]
+      Scale: [0.850000024, 0.25]
+    LocalToParentTransform:
+      Position: [0, 0.5]
+      Rotation: [1, 0]
+      Scale: [0.850000024, 0.25]
+    ParentRel:
+      Depth: 1
+      Parent: 11
+      Next: 10
+      Prev: 8
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 10
+    Tag:
+      Tag: Sensor
+    Name:
+      Name: Bottom sensor
+    LocalToWorldTransform:
+      Position: [0, -0.5]
+      Rotation: [1, 0]
+      Scale: [0.850000024, 0.25]
+    LocalToParentTransform:
+      Position: [0, -0.5]
+      Rotation: [1, 0]
+      Scale: [0.850000024, 0.25]
+    ParentRel:
+      Depth: 1
+      Parent: 11
+      Next: 16777215
+      Prev: 9
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true

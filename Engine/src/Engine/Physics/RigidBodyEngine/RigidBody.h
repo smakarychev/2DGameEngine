@@ -74,6 +74,7 @@ namespace Engine::Physics
 
 		void SetLinearVelocity(const glm::vec2& vel) { m_LinearVelocity = vel; }
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
+		glm::vec2& GetLinearVelocity() { return m_LinearVelocity; }
 
 		void RecalculateMass();
 		void SetMass(F32 mass) { m_InverseMass = 1.0f / mass; }

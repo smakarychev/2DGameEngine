@@ -106,7 +106,7 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadCall(transform, spriteRenderer, depth, primitiveType);
+        DrawQuadCall(FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawQuad(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
@@ -114,7 +114,7 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadCall(transform, spriteRenderer, depth, primitiveType);
+        DrawQuadCall(FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawPolygon(const Component::LocalToWorldTransform2D& transform,
@@ -155,7 +155,7 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadEditorCall(entityId, transform, spriteRenderer, depth, primitiveType);
+        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawQuadEditor(U32 entityId, const glm::mat3& transform,
@@ -164,7 +164,7 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadEditorCall(entityId, transform, spriteRenderer, depth, primitiveType);
+        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawPolygonEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
@@ -492,6 +492,30 @@ namespace Engine
         DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint);
         DrawLine(vertices[2].Position, vertices[3].Position, spriteRenderer.Tint);
         DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint);
+    }
+
+    Component::LocalToWorldTransform2D Renderer2D::FlipTransformIfNeeded(
+        const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer)
+    {
+        auto flipped = transform;
+        if (spriteRenderer.FlipX) flipped.Scale.x *= -1.0f;
+        if (spriteRenderer.FlipY) flipped.Scale.y *= -1.0f;
+        return flipped;
+    }
+
+    glm::mat3 Renderer2D::FlipTransformIfNeeded(const glm::mat3& transform,
+        const Component::SpriteRenderer& spriteRenderer)
+    {
+        auto flipped = transform;
+        if (spriteRenderer.FlipX)
+        {
+            flipped[0][0] *= -1; flipped[1][0] *= -1;
+        }
+        if (spriteRenderer.FlipY)
+        {
+            flipped[0][1] *= -1; flipped[1][1] *= -1;
+        }
+        return flipped;
     }
 
     void Renderer2D::ShutDown()

@@ -1,0 +1,17 @@
+Prefab:
+  Name: assets/prefabs/Editor camera.prefab
+  Id: 16521654746514692074
+Prefabs:
+  []
+Entities:
+  - Entity: 0
+    Name:
+      Name: Editor camera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    Camera:
+      CameraController:
+        Type: Editor2D
+      IsPrimary: false

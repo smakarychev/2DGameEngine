@@ -4,14 +4,12 @@
 void MarioContactListener::OnContactBegin(const Physics::ContactInfo2D& contact)
 {
 	PropagateToCallback(contact, ContactState::Begin);
-	ENGINE_TRACE("On contact begin");
 }
 
 
 void MarioContactListener::OnContactEnd(const Physics::ContactInfo2D& contact)
 {
 	PropagateToCallback(contact, ContactState::End);
-	ENGINE_TRACE("On contact end");
 }
 
 void MarioContactListener::PropagateToCallback(const Physics::ContactInfo2D& contact, ContactState state)
@@ -21,15 +19,17 @@ void MarioContactListener::PropagateToCallback(const Physics::ContactInfo2D& con
 
 	Entity eA = Entity(static_cast<U32>(reinterpret_cast<U64>(colA->GetUserData())));
 	Entity eB = Entity(static_cast<U32>(reinterpret_cast<U64>(colB->GetUserData())));
+
+	if (SceneUtils::IsDescendant(eA, eB, *m_Registry) || SceneUtils::IsDescendant(eB, eA, *m_Registry)) return;
 	
-	if (colA->IsSensor() && m_Registry->Has<Component::CollisionCallback>(eA))
+	if (colA->IsSensor() && m_Registry->Has<CollisionCallback>(eA))
 	{
-		auto& collisionCallback = m_Registry->Get<Component::CollisionCallback>(eA);
-		(*m_SensorCallbacks)[collisionCallback.SensorCallbackIndex](m_Registry, {eA, eB, state}, contact);
+		auto& collisionCallback = m_Registry->Get<CollisionCallback>(eA);
+		(*m_SensorCallbacks)[collisionCallback.IndexMajor][collisionCallback.IndexMinor](m_Registry, {eA, eB, state}, contact);
 	}
-	else if (colB->IsSensor() && m_Registry->Has<Component::CollisionCallback>(eB))
+	else if (colB->IsSensor() && m_Registry->Has<CollisionCallback>(eB))
 	{
-		auto& collisionCallback = m_Registry->Get<Component::CollisionCallback>(eB);
-		(*m_SensorCallbacks)[collisionCallback.SensorCallbackIndex](m_Registry, {eB, eA, state}, contact);
+		auto& collisionCallback = m_Registry->Get<CollisionCallback>(eB);
+		(*m_SensorCallbacks)[collisionCallback.IndexMajor][collisionCallback.IndexMinor](m_Registry, {eB, eA, state}, contact);
 	}
 }

@@ -1,0 +1,8 @@
+Animations:
+  - Name : bite
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 218]
+    SpriteSize : [16, 24]
+    FrameCount : 2
+    FpsSpeed : 10
+    MaxDuration : 0

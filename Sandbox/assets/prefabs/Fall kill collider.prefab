@@ -1,0 +1,25 @@
+Prefab:
+  Name: assets/prefabs/Fall kill collider.prefab
+  Id: 2994295805874251257
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: Fall kill collider
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 2
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [50, 0.5]
+      IsSensor: true

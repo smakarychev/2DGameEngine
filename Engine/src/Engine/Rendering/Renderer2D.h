@@ -658,6 +658,10 @@ namespace Engine
                                     const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f);
         static void DrawOutlineCall(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
                                     F32 depth = 0.0f);
+
+        static Component::LocalToWorldTransform2D FlipTransformIfNeeded(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer);
+        static glm::mat3 FlipTransformIfNeeded(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer);
+        
     private:
         static BatchRendererData s_BatchData;
     };

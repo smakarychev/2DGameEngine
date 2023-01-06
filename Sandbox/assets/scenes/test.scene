@@ -1,8 +1,101 @@
 Scene: Default
+Prefabs:
+  []
 Entities:
-  - Entity: 6
-    Tag:
-      Tag: level
+  - Entity: 4
+    Name:
+      Name: camera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    Camera:
+      CameraController:
+        Type: Editor2D
+      IsPrimary: true
+  - Entity: 3
+    Name:
+      Name: level
+    LocalToWorldTransform:
+      Position: [-3.6500001, -2]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    RigidBody2D:
+      Type: Static
+      Flags:
+        []
+      Mass: -1
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: false
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [2, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+  - Entity: 2
+    Name:
+      Name: level
+    LocalToWorldTransform:
+      Position: [0.0500000007, -0.550000012]
+      Rotation: [1, 0]
+      Scale: [2, 1]
+    RigidBody2D:
+      Type: Static
+      Flags:
+        []
+      Mass: -1
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: false
+    SpriteRenderer:
+      Texture: assets/textures/mario/bricks.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [2, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false
+  - Entity: 1
+    Name:
+      Name: level
     LocalToWorldTransform:
       Position: [3, -3]
       Rotation: [1, 0]
@@ -11,11 +104,16 @@ Entities:
       Type: Static
       Flags:
         []
+      Mass: -1
     BoxCollider2D:
       PhysicsMaterial:
         Restitution: 0
         Friction: 0.100000001
         Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
       Offset: [0, 0]
       HalfSize: [0.5, 0.5]
       IsSensor: false
@@ -36,78 +134,8 @@ Entities:
       FlipX: false
       FlipY: false
   - Entity: 5
-    Tag:
-      Tag: level
-    LocalToWorldTransform:
-      Position: [2, -2]
-      Rotation: [1, 0]
-      Scale: [2, 1]
-    RigidBody2D:
-      Type: Static
-      Flags:
-        []
-    BoxCollider2D:
-      PhysicsMaterial:
-        Restitution: 0
-        Friction: 0.100000001
-        Density: 1
-      Offset: [0, 0]
-      HalfSize: [0.5, 0.5]
-      IsSensor: false
-    SpriteRenderer:
-      Texture: assets/textures/mario/bricks.png
-      UV:
-        - [0, 0]
-        - [1, 0]
-        - [1, 1]
-        - [0, 1]
-      Tint: [1, 1, 1, 1]
-      Tiling: [2, 1]
-      SortingLayer:
-        Name: Middleground
-        Id: 2
-        Priority: 1
-      OrderInLayer: 0
-      FlipX: false
-      FlipY: false
-  - Entity: 4
-    Tag:
-      Tag: level
-    LocalToWorldTransform:
-      Position: [0, -6]
-      Rotation: [1, 0]
-      Scale: [20, 1]
-    RigidBody2D:
-      Type: Static
-      Flags:
-        []
-    BoxCollider2D:
-      PhysicsMaterial:
-        Restitution: 0
-        Friction: 0.100000001
-        Density: 1
-      Offset: [0, 0]
-      HalfSize: [0.5, 0.5]
-      IsSensor: false
-    SpriteRenderer:
-      Texture: assets/textures/mario/bricks.png
-      UV:
-        - [0, 0]
-        - [1, 0]
-        - [1, 1]
-        - [0, 1]
-      Tint: [1, 1, 1, 1]
-      Tiling: [20, 1]
-      SortingLayer:
-        Name: Middleground
-        Id: 2
-        Priority: 1
-      OrderInLayer: 0
-      FlipX: false
-      FlipY: false
-  - Entity: 3
-    Tag:
-      Tag: background
+    Name:
+      Name: background
     LocalToWorldTransform:
       Position: [0, 0]
       Rotation: [1, 0]
@@ -128,72 +156,3 @@ Entities:
       OrderInLayer: -1
       FlipX: false
       FlipY: false
-  - Entity: 2
-    Tag:
-      Tag: foot sensor
-    LocalToWorldTransform:
-      Position: [0, 0]
-      Rotation: [1, 0]
-      Scale: [0.850000024, 0.150000006]
-    LocalToParentTransform:
-      Position: [0, 0]
-      Rotation: [1, 0]
-      Scale: [0.850000024, 0.150000006]
-    ParentRel:
-      Depth: 1
-      Parent: 1
-      Next: 16777215
-      Prev: 16777215
-    BoxCollider2D:
-      PhysicsMaterial:
-        Restitution: 0
-        Friction: 0.100000001
-        Density: 1
-      Offset: [0, -0.5]
-      HalfSize: [0.5, 0.5]
-      IsSensor: true
-  - Entity: 1
-    Tag:
-      Tag: player
-    LocalToWorldTransform:
-      Position: [0, 0]
-      Rotation: [1, 0]
-      Scale: [1, 1]
-    ChildRel:
-      ChildrenCount: 1
-      First: 2
-    RigidBody2D:
-      Type: Dynamic
-      Flags:
-        - Restrict Rotation
-    BoxCollider2D:
-      PhysicsMaterial:
-        Restitution: 0
-        Friction: 0.100000001
-        Density: 1
-      Offset: [0, 0]
-      HalfSize: [0.5, 0.5]
-      IsSensor: false
-    SpriteRenderer:
-      Texture: assets/textures/mario/mario_sprites.png
-      UV:
-        - [0.514285743, 0.933940768]
-        - [0.550000012, 0.933940768]
-        - [0.550000012, 0.997722089]
-        - [0.514285743, 0.997722089]
-      Tint: [1, 1, 1, 1]
-      Tiling: [1, 1]
-      SortingLayer:
-        Name: Middleground
-        Id: 2
-        Priority: 1
-      OrderInLayer: 1
-      FlipX: false
-      FlipY: false
-  - Entity: 0
-    Tag:
-      Tag: camera
-    LocalToWorldTransform:
-      Position: [0, 0]
-      Rotation: [1, 0]
-      Scale: [1, 1]

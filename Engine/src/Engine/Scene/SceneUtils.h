@@ -35,6 +35,7 @@ namespace  Engine
     public:
         static EntityTransformPair AddDefaultEntity(Scene& scene, const std::string& tag);
         static void DeleteEntity(Scene& scene, Entity entity);
+        static void DeleteEntity(Scene& scene, Entity entity, bool checkForPrefabs);
         static void AddDefaultPhysicalRigidBody2D(Scene& scene, Entity entity);
         static void AddDefaultBoxCollider2D(Scene& scene, Entity entity);
         static Component::Camera& AddDefault2DCamera(Scene& scene, Entity entity, CameraController::ControllerType type = CameraController::ControllerType::Editor2D);
@@ -50,15 +51,21 @@ namespace  Engine
         static void SynchronizeWithPhysics(Scene& scene, Entity entity);
         static void SynchronizeWithPhysicsLocalTransforms(Scene& scene, Entity entity);
 
+        // To be called once OnInit(), so that initial cameras position corresponds to the deserialized transforms.
+        static void SynchonizeCamerasWithTransforms(Scene& scene);
+        
         static void AddChild(Scene& scene, Entity parent, Entity child, LocalTransformPolicy localTransformPolicy = LocalTransformPolicy::Default);
         static void AddChild(Scene& scene, Entity parent, Entity child, bool usePrefabConstraints, LocalTransformPolicy localTransformPolicy = LocalTransformPolicy::Default);
         static void RemoveChild(Scene& scene, Entity child);
+        static void RemoveChild(Scene& scene, Entity child, bool usePrefabConstraints);
 
         static void EnqueueImmediateChildren(Entity startNode, Registry& registry, std::queue<Entity>& entityQueue);
         template <typename Fn>
         static void TraverseTreeAndApply(Entity startNode, Registry& registry, Fn fn);
         template <typename Fn>
         static void TraverseExceptRootAndApply(Entity startNode, Registry& registry, Fn fn);
+
+        static bool IsDescendant(Entity parent, Entity child, Registry& registry);
         
         static Entity FindTopOfTree(Entity treeEntity, Registry& registry);
 

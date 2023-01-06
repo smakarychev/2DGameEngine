@@ -8,6 +8,8 @@ namespace Engine
 {
     using namespace Types;
 
+    // TODO: Currently unused!
+    
     // Action to be performed by Scene class,
     // adds a level of indirection between user's input and
     // action that shall correspond to it, allows for replays,

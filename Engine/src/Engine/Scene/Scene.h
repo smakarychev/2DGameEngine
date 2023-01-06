@@ -26,6 +26,8 @@ namespace Engine
 		virtual void Save(const std::string& filename) {}
 		virtual void Clear() {}
 		virtual void OnInit() = 0;
+		virtual void OnScenePlay() = 0;
+		virtual void OnSceneStop() = 0;
 		virtual void OnUpdate(F32 dt) = 0;
 		virtual void OnEvent(Event& event) = 0;
 		virtual void OnRender() = 0;
@@ -42,6 +44,7 @@ namespace Engine
 		bool HasAction(InputCode input) const { return m_RegisteredActions[input] != nullptr; }
 		Action& GetAction(InputCode input) const { return *m_RegisteredActions[input]; }
 		void RegisterAction(InputCode input, Ref<Action> action) { m_RegisteredActions[input] = std::move(action); }
+		bool IsReady() { return m_IsSceneReady; }
 		
 		Registry& GetRegistry() { return m_Registry; }
 		SceneGraph& GetSceneGraph() { return m_SceneGraph; }

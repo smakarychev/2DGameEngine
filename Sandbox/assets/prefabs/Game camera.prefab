@@ -1,0 +1,17 @@
+Prefab:
+  Name: assets/prefabs/Game camera.prefab
+  Id: 15852556120573279925
+Prefabs:
+  []
+Entities:
+  - Entity: 0
+    Name:
+      Name: Game camera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    Camera:
+      CameraController:
+        Type: Custom
+      IsPrimary: true
