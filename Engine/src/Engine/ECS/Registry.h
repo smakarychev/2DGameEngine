@@ -30,6 +30,7 @@ namespace Engine
 
         // Check if registry has such component.
         bool IsComponentExists(U64 componentId) const;
+        bool IsEntityExists(Entity entity) const;
 
         // Returns the entities component.
         template<typename T>

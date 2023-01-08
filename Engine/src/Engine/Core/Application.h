@@ -25,9 +25,11 @@ namespace Engine {
 		void PushLayer(Ref<Layer> layer);
 		void PushOverlay(Ref<Layer> overlay);
 
-		static const Application& Get() { return *s_Instance; }
+		static Application& Get() { return *s_Instance; }
 		Window& GetWindow() const { return *m_Window; }
 
+		void Exit() { m_IsRunning = false; }
+		
 	private:
 		void OnCreate();
 		void OnUpdate();

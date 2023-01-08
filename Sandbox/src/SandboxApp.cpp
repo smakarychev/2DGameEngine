@@ -1,7 +1,7 @@
 #include <Engine.h>
 #include <Engine/Core/EntryPoint.h>
 
-#include "GemWarsExample/GemWarsExample.h"
+//#include "GemWarsExample/GemWarsExample.h"
 #include "QuadTreeExample/QuadTreeExample.h"
 #include "ParticlePhysicsExample/ParticlePhysicsExample.h"
 #include "RigidBodyPhysicsExample/RigidBodyPhysicsExample.h"

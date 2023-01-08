@@ -57,8 +57,7 @@ namespace Engine
 
     void SceneSerializer::SerializeEntity(Entity entity, YAML::Emitter& emitter)
     {
-        ENGINE_CORE_TRACE("Serializing entity {} ({})", m_Scene.GetRegistry().Get<Component::Name>(entity).EntityName,
-                          entity.Id);
+        //ENGINE_CORE_TRACE("Serializing entity {} ({})", m_Scene.GetRegistry().Get<Component::Name>(entity).EntityName, entity.Id);
         emitter << YAML::BeginMap;
         emitter << YAML::Key << "Entity" << YAML::Value << entity.Id;
         for (auto& componentSerializer : m_ComponentSerializers)
@@ -102,7 +101,7 @@ namespace Engine
     void SceneSerializer::SerializePrefab(Entity prefab, YAML::Emitter& emitter)
     {
         auto& prefabComp = m_Scene.GetRegistry().Get<Component::Prefab>(prefab);
-        ENGINE_CORE_TRACE("Serializing prefab {} ({})", prefabComp.Name, prefabComp.Id);
+        //ENGINE_CORE_TRACE("Serializing prefab {} ({})", prefabComp.Name, prefabComp.Id);
         emitter << YAML::BeginMap;
         emitter << YAML::Key << "Prefab" << YAML::Value << prefab.Id;
         for (auto& componentSerializer : m_ComponentSerializers)
@@ -129,7 +128,7 @@ namespace Engine
         {
             Entity prefab = AddPrefabToScene(payloadFile);
             registry.Get<Component::LocalToWorldTransform2D>(prefab).Position = pai.MousePos;
-            m_Scene.OnSceneGlobalUpdate();
+            m_Scene.OnSceneGlobalUpdate(prefab);
             break;
         }
             
@@ -245,8 +244,7 @@ namespace Engine
 
         Entity deserealizedEntityId = entity[entityTag].as<Entity>();
         deserializedToTrue[deserealizedEntityId] = realE;
-        ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id,
-                          realE);
+        //ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id, realE);
         for (auto& componentSerializer : m_ComponentSerializers)
         {
             componentSerializer->DeserializeComponentOf(realE, entity);
@@ -267,8 +265,7 @@ namespace Engine
 
         Entity deserealizedEntityId = entity[entityTag].as<Entity>();
         deserializedToTrue[deserealizedEntityId] = realE;
-        ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id,
-                          realE);
+        //ENGINE_CORE_TRACE("Deserializing entity {} ({}, real id: {})", entityName, deserealizedEntityId.Id, realE);
         for (auto& componentSerializer : m_ComponentSerializers)
         {
             if (ShouldNotDeserialize(*componentSerializer, excludingSignatures)) continue;
@@ -343,7 +340,7 @@ namespace Engine
                 glm::vec2 mousePos = SceneUtils::GetMousePosition(m_Scene);
                 mousePos = Math::Align(mousePos, {1.0f,1.0f});
                 registry.Get<Component::LocalToWorldTransform2D>(prefab).Position = mousePos;
-                m_Scene.OnSceneGlobalUpdate();
+                m_Scene.OnSceneGlobalUpdate(prefab);
             }
         }
     }

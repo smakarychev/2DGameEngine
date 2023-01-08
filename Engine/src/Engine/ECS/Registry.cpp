@@ -45,4 +45,9 @@ namespace Engine
     {
         return componentId < m_ComponentManager.GetPoolCount() && m_ComponentManager.m_Pools[componentId] != nullptr;
     }
+
+    bool Registry::IsEntityExists(Entity entity) const
+    {
+        return m_EntityManager.m_EntitiesSparseSet.Has(entity);
+    }
 }

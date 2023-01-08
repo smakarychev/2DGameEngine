@@ -1,0 +1,59 @@
+Prefab:
+  Name: assets/prefabs/BlockEmpty.prefab
+  Id: 1157993758602421358
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: BlockEmpty
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+    SpriteRenderer:
+      Texture: assets\textures\mario\blocks.png
+      UV:
+        - [0, 0.26470589]
+        - [0.33333334, 0.26470589]
+        - [0.33333334, 0.5]
+        - [0, 0.5]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 1
+      FlipX: false
+      FlipY: false
+    Animation:
+      Texture: assets/textures/mario/mario_sprites.png
+      StartPosition: [205, 410]
+      SpriteSize: [30, 28]
+      FrameCount: 1
+      FPSSpeed: 0
+      CurrentFrame: 0
+      TotalDuration: 0
+      MaxDuration: 0
+      CurrentFrameUV:
+        - [0.488095224, 0.933940768]
+        - [0.559523821, 0.933940768]
+        - [0.559523821, 0.997722089]
+        - [0.488095224, 0.997722089]
+    MarioLevelTag:
+      {}
+    MarioEmptyBlockTag:
+      {}

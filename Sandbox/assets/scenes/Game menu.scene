@@ -1,0 +1,97 @@
+Scene: Default
+Prefabs:
+  []
+Entities:
+  - Entity: 5
+    Name:
+      Name: Background
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [50, 50]
+    SpriteRenderer:
+      Texture: "NULL"
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [0.289879203, 0.489795923, 0.209912524, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: -1
+      FlipX: false
+      FlipY: false
+  - Entity: 4
+    Name:
+      Name: Exit
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    MarioMenuItem:
+      Type: Exit
+      Order: 2
+      Info: ""
+      Title: Exit
+  - Entity: 3
+    Name:
+      Name: Load level 2
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    MarioMenuItem:
+      Type: Open
+      Order: 1
+      Info: level_2
+      Title: Level 2
+  - Entity: 2
+    Name:
+      Name: Load level 1
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    MarioMenuItem:
+      Type: Open
+      Order: 0
+      Info: level_1
+      Title: Level 1
+  - Entity: 1
+    Name:
+      Name: camera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    Camera:
+      CameraController:
+        Type: Editor2D
+      IsPrimary: true
+  - Entity: 0
+    Name:
+      Name: Black
+    LocalToWorldTransform:
+      Position: [-20.75, 5.3499999]
+      Rotation: [1, 0]
+      Scale: [8.89999962, 10.8500004]
+    SpriteRenderer:
+      Texture: "NULL"
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [0.552941203, 0.552941203, 0.552941203, 0.525490224]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: 2
+      FlipX: false
+      FlipY: false

@@ -22,8 +22,6 @@ public:
     void OnUpdate(F32 dt) override;
     void RegisterEntity(Entity e) override;
     void ReadConfig(const std::string& configPath) override;
-    I32 GetHorizontalMoveDir();
-    void FlipSpriteBasedOnMoveDir(Entity e, I32 moveDir);
     std::pair<Registry&, PlayerConfig&> GetRegistryConfigPair();
 private:
     CollisionCallback::SensorCallback m_SensorCallback{nullptr};
@@ -63,13 +61,14 @@ public:
     void OnEnter(FSMState* previousState) override;
     Ref<FSMState> OnCollision(const CollisionCallback::CollisionData& collision) override;
 protected:
-    bool m_HitGround{false};
+    U32 m_GroundCollisions{0};
 };
 
 class PlayerWalkState : public PlayerGroundMoveState
 {
 public:
     PlayerWalkState(Entity e, FiniteStateMachine& fsm);
+    PlayerWalkState(Entity e, FiniteStateMachine& fsm, U32 groundHitsCount);
     void OnEnter(FSMState* previousState) override;
     Ref<FSMState> OnUpdate(F32 dt) override;
 };
@@ -78,6 +77,7 @@ class PlayerIdleState : public PlayerGroundMoveState
 {
 public:
     PlayerIdleState(Entity e, FiniteStateMachine& fsm);
+    PlayerIdleState(Entity e, FiniteStateMachine& fsm, U32 groundHitsCount);
     void OnEnter(FSMState* previousState) override;
     Ref<FSMState> OnUpdate(F32 dt) override;
 };
@@ -87,10 +87,12 @@ class PlayerFallState : public PlayerAirMoveState
 public:
     PlayerFallState(Entity e, FiniteStateMachine& fsm);
     void OnEnter(FSMState* previousState) override;
+    Ref<FSMState> OnCollision(const CollisionCallback::CollisionData& collision) override;
     Ref<FSMState> OnUpdate(F32 dt) override;
 private:
     F64 m_CoyoteTimeCounter{0.0};
     F64 m_JumpBufferTimeCounter{0.0};
+    bool m_ShouldBounceOff{false};
 };
 
 class PlayerJumpState : public PlayerAirMoveState

@@ -1,0 +1,59 @@
+Prefab:
+  Name: assets/prefabs/Tp.prefab
+  Id: 11071959573857141885
+Prefabs:
+  - Prefab: 5
+    Name:
+      Name: prefab-Left side-block collider
+    LocalToWorldTransform:
+      Position: [-7, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-7, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 4
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 3
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Left side-block collider.prefab
+      Id: 13983543557894716821
+  - Prefab: 3
+    Name:
+      Name: prefab-Left side-kill collider
+    LocalToWorldTransform:
+      Position: [-9, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-9, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 2
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 16777215
+      Prev: 5
+    PrefabDetails:
+      Name: assets/prefabs/Left side-kill collider.prefab
+      Id: 917495402555640966
+Entities:
+  - Entity: 1
+    Name:
+      Name: TipoCamera
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 2
+      First: 5

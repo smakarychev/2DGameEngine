@@ -23,9 +23,9 @@ Entities:
         Category: 1
         Mask: 65535
         Group: 0
-      Offset: [0, 0]
-      HalfSize: [0.5, 0.5]
-      IsSensor: false
+      Offset: [0, 0.35]
+      HalfSize: [0.325, 0.15]
+      IsSensor: true
     SpriteRenderer:
       Texture: assets\textures\mario\PiranhaPlant.png
       UV:

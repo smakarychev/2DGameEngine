@@ -58,7 +58,8 @@ namespace Engine
                                         void OnUIDraw(Engine::Entity e, tag& component) override {}                                         \
                                     };                                                                                                      \
 
-
+#define REGISTER_TAG_COMPONENT(tag) GetSerializer().AddComponentSerializer<tag##Serializer>(); \
+                                    GetScenePanels().AddComponentUiDesc<tag##UIDesc>();
 
 namespace Engine::Component
 {
@@ -214,6 +215,7 @@ namespace Engine::Component
         F32 FontSize{32};
         Rect FontRect{};
         glm::vec4 Tint{glm::vec4{1.0f}};
+        F32 Zoom{1.0f};
         SortingLayer::Layer SortingLayer{DefaultSortingLayer.GetDefaultLayer()};
         I16 OrderInLayer{0};
 
@@ -232,45 +234,9 @@ namespace Engine::Component
     /************** App specific. *********************************/
 
     /************** MarioGame *************************************/
-    // NOTE: 'Mario' here is not indicating that this component belongs to the Mario himself,
+    // NOTE: 'Mario' prefix here is not indicating that this component belongs to the Mario himself,
     // it is merely showing that it is a part of the Mario game.
-    struct MarioInput
-    {
-        bool JumpDown{false};
-        bool JumpUp{false};
-        bool Left{false};
-        bool Right{false};
-        bool None{false};
-    };
-
-    struct MarioState
-    {
-        bool IsGrounded{false};
-        bool IsFacingRight{false};
-        bool IsFacingLeft{false};
-        bool IsMovingLeft{false};
-        bool IsMovingRight{false};
-        bool HasBeenHit{false};
-        bool HasHitEnemy{false};
-    };
-
-    struct GoombaState
-    {
-        bool HasHitWall{false};
-        bool HasBeenHitByPlayer{false};
-        bool IsMovingLeft{false};
-        bool IsMovingRight{false};
-    };
-
-    struct KoopaState
-    {
-        U32 HitByPlayerCount{0};
-        bool HitByKoopa{false};
-        bool HasHitWall{false};
-        bool IsMovingLeft{false};
-        bool IsMovingRight{false};
-    };
-
+    
     struct Sensors
     {
         Entity Top{NULL_ENTITY};
@@ -284,11 +250,16 @@ namespace Engine::Component
         Ref<FSMState> CurrentState{nullptr};
     };
     
-    // TODO: What is this name (I'm so bad at this).
-    struct KillComponent
+    struct LifeTimeComponent
     {
         // Is decremented by dt every frame, when is less then 0, entity is destroyed.
         F64 LifeTime{1.0};
+        F64 LifeTimeLeft{1.0};
+    };
+
+    struct ScoreComponent
+    {
+        U32 Score{0};
     };
     
     /************** MarioGame *************************************/

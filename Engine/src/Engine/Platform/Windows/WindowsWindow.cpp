@@ -36,7 +36,8 @@ namespace Engine
 		ENGINE_CORE_INFO("Initializing the GLFW: version {}", glfwGetVersionString());
 		auto status = glfwInit();
 		ENGINE_CORE_ASSERT(status != GLFW_FALSE, "Failed to initialize glfw.");
-
+		glfwWindowHint(GLFW_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_VERSION_MINOR, 6);
 
 		// Create an glfwwindow.
 		ENGINE_CORE_INFO("Creating a window \"{}\" ({} {}).", m_Data.Title, m_Data.Width, m_Data.Height);

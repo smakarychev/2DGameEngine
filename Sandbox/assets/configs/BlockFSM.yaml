@@ -1,0 +1,68 @@
+Animations:
+  - Name : BlockCoins
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [0, 0]
+    SpriteSize : [16, 16]
+    FrameCount : 3
+    FpsSpeed : 1
+    MaxDuration : 0 
+
+  - Name : BlockEmpty
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [0, 18]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+  
+  - Name : BumpedCoins
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [0, 36]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : BumpedEmpty
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [16, 18]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : EmptyBlockCoins
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [16, 36]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : EmptyBlockEmpty
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [16, 18]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : CoinDefault
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [0, 52]
+    SpriteSize : [8, 16]
+    FrameCount : 4
+    FpsSpeed : 6
+    MaxDuration : 0 
+
+  - Name : CoinLaunched
+    Sprites : assets/textures/mario/blocks.png
+    StartPoint : [0, 52]
+    SpriteSize : [8, 16]
+    FrameCount : 4
+    FpsSpeed : 10
+    MaxDuration : 0 
+
+SpawnedCoinScore : 100
+SpawnedCoinLifeTime : 1.0
+BlockVerticalSpeed : 7.0

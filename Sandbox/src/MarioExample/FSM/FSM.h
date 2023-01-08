@@ -39,6 +39,7 @@ public:
     Scene& GetScene();
     Config* GetConfig();
     AnimationsMap& GetAnimationsMap() { return m_AnimationsMap; }
+    static void SetDefaultCollisionResponse(CollisionCallback::SensorCallback& callback);
     template <typename T>
     T& As();
 protected:

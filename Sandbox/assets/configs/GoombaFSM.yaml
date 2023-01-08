@@ -1,0 +1,33 @@
+Animations:
+  - Name : Idle
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 262]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+
+  - Name : Walk
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 262]
+    SpriteSize : [16, 16]
+    FrameCount : 2
+    FpsSpeed : 5
+    MaxDuration : 0 
+
+  - Name : Death
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 244]
+    SpriteSize : [16, 16]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0 
+   
+HorizontalSpeed : 1.5
+DeathTime : 1.0
+Score : 100
+SwapSideSensors :
+  - Name : Left sensor
+  - Name : Right sensor
+DeathSensors :
+  - Name : Top sensor

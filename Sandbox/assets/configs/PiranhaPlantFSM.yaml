@@ -1,0 +1,29 @@
+Animations:
+  - Name : Idle
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 218]
+    SpriteSize : [16, 24]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0
+
+  - Name : Move
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 218]
+    SpriteSize : [16, 24]
+    FrameCount : 2
+    FpsSpeed : 10
+    MaxDuration : 0
+  
+  - Name : Death
+    Sprites : assets/textures/mario/characters.png
+    StartPoint : [0, 218]
+    SpriteSize : [16, 24]
+    FrameCount : 1
+    FpsSpeed : 0
+    MaxDuration : 0
+
+   
+Amplitude : 2
+VerticalSpeed : 0.05
+ApexDelay : 0.5

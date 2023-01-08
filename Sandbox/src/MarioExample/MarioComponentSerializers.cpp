@@ -37,3 +37,29 @@ void SensorsSerializer::FillEntityRelationsMap(Entity e, std::unordered_map<Enti
         if (sensorsComponent.Right != NULL_ENTITY) map[sensorsComponent.Right].push_back(&sensorsComponent.Right);
     }
 }
+
+MarioMenuItemSerializer::MarioMenuItemSerializer(Scene& scene)
+    : ComponentSerializer<MarioMenuItem>(GetStaticSignature(), scene)
+{
+}
+
+void MarioMenuItemSerializer::SerializeComponent(const MarioMenuItem& component, YAML::Emitter& emitter)
+{
+    emitter << YAML::Key << m_ComponentSignature;
+    emitter << YAML::BeginMap;
+    emitter << YAML::Key << "Type" << YAML::Value << (component.Type == MarioMenuItem::Type::Exit ? "Exit" : "Open");
+    emitter << YAML::Key << "Order" << YAML::Value << component.Order;
+    emitter << YAML::Key << "Info" << YAML::Value << component.Info;
+    emitter << YAML::Key << "Title" << YAML::Value << component.Title;
+    emitter << YAML::EndMap;
+}
+
+void MarioMenuItemSerializer::DeserializeComponent(Entity e, YAML::Node& node)
+{
+    auto menuItem = node[m_ComponentSignature];
+    auto& menuItemComponent = m_Registry.AddOrGet<MarioMenuItem>(e);
+    menuItemComponent.Type = (menuItem["Type"].as<std::string>() == "Exit" ? MarioMenuItem::Type::Exit : MarioMenuItem::Type::Open);
+    menuItemComponent.Order = menuItem["Order"].as<U32>();
+    menuItemComponent.Title = menuItem["Title"].as<std::string>();
+    menuItemComponent.Info = menuItem["Info"].as<std::string>();
+}

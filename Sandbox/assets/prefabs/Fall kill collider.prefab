@@ -18,8 +18,12 @@ Entities:
         Density: 1
       Filter:
         Category: 1
-        Mask: 2
+        Mask: 65535
         Group: 0
       Offset: [0, 0]
       HalfSize: [50, 0.5]
       IsSensor: true
+    MarioLevelTag:
+      {}
+    MarioKillTag:
+      {}

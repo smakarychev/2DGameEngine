@@ -12,7 +12,7 @@ Entities:
       Rotation: [1, 0]
       Scale: [1, 1]
     ChildRel:
-      ChildrenCount: 2
+      ChildrenCount: 3
       First: 2
     RigidBody2D:
       Type: Dynamic
@@ -62,7 +62,7 @@ Entities:
         - [0.559523821, 0.997722089]
         - [0.488095224, 0.997722089]
     Sensors:
-      Top: 16777215
+      Top: 4
       Bottom: 16777215
       Left: 2
       Right: 3
@@ -80,7 +80,7 @@ Entities:
     LocalToParentTransform:
       Position: [-0.4, 0]
       Rotation: [1, 0]
-      Scale: [0.300000012, 0.4]
+      Scale: [0.300000012, 0.2]
     ParentRel:
       Depth: 1
       Parent: 1
@@ -108,12 +108,40 @@ Entities:
     LocalToParentTransform:
       Position: [0.4, 0]
       Rotation: [1, 0]
-      Scale: [0.300000012, 0.4]
+      Scale: [0.300000012, 0.2]
+    ParentRel:
+      Depth: 1
+      Parent: 1
+      Next: 4
+      Prev: 2
+    BoxCollider2D:
+      PhysicsMaterial:
+        Restitution: 0
+        Friction: 0.100000001
+        Density: 1
+      Filter:
+        Category: 1
+        Mask: 65535
+        Group: 0
+      Offset: [0, 0]
+      HalfSize: [0.5, 0.5]
+      IsSensor: true
+  - Entity: 4
+    Name:
+      Name: Top sensor
+    LocalToWorldTransform:
+      Position: [0.5, 0]
+      Rotation: [1, 0]
+      Scale: [0.300000012, 0.699999988]
+    LocalToParentTransform:
+      Position: [0.0, 0.4]
+      Rotation: [1, 0]
+      Scale: [0.8, 0.3]
     ParentRel:
       Depth: 1
       Parent: 1
       Next: 16777215
-      Prev: 2
+      Prev: 3
     BoxCollider2D:
       PhysicsMaterial:
         Restitution: 0

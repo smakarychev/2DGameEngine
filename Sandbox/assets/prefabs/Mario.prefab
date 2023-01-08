@@ -28,7 +28,7 @@ Entities:
       Filter:
         Category: 2
         Mask: 65535
-        Group: 0
+        Group: 1
       Offset: [0, 0]
       HalfSize: [0.35, 0.5]
       IsSensor: false
@@ -79,7 +79,7 @@ Entities:
     LocalToParentTransform:
       Position: [0, -0.5]
       Rotation: [1, 0]
-      Scale: [0.65, 0.300000012]
+      Scale: [0.5, 0.25]
     ParentRel:
       Depth: 1
       Parent: 1
@@ -107,7 +107,7 @@ Entities:
     LocalToParentTransform:
       Position: [-0.25, 0]
       Rotation: [1, 0]
-      Scale: [0.300000012, 0.699999988]
+      Scale: [0.300000012, 0.3]
     ParentRel:
       Depth: 1
       Parent: 1
@@ -135,7 +135,7 @@ Entities:
     LocalToParentTransform:
       Position: [0, 0.5]
       Rotation: [1, 0]
-      Scale: [0.699999988, 0.300000012]
+      Scale: [0.1, 0.15]
     ParentRel:
       Depth: 1
       Parent: 1
@@ -163,7 +163,7 @@ Entities:
     LocalToParentTransform:
       Position: [0.25, 0]
       Rotation: [1, 0]
-      Scale: [0.300000012, 0.699999988]
+      Scale: [0.300000012, 0.3]
     ParentRel:
       Depth: 1
       Parent: 1

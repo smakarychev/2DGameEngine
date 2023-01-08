@@ -1,0 +1,31 @@
+Prefab:
+  Name: assets/prefabs/BlockStair.prefab
+  Id: 15811973103182307521
+Prefabs:
+  []
+Entities:
+  - Entity: 19
+    Name:
+      Name: BlockStair
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    SpriteRenderer:
+      Texture: assets\textures\mario\stair.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Middleground
+        Id: 2
+        Priority: 1
+      OrderInLayer: 1
+      FlipX: false
+      FlipY: false
+    MarioLevelTag:
+      {}

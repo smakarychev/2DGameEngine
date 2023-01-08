@@ -25,7 +25,7 @@ void MarioCameraController::OnUpdate(F32 dt)
 {
     auto& registry = m_Scene.GetRegistry();
     if (m_Target == NULL_ENTITY || !registry.Has<Component::LocalToWorldTransform2D>(m_Target)) return;
-    if (registry.Has<Component::KillComponent>(m_Target)) return;
+    if (registry.Has<Component::LifeTimeComponent>(m_Target)) return;
 
     auto followSpeed = m_Config.FollowSpeed;
     auto distanceThresholdX = m_Config.DistanceThresholdX;

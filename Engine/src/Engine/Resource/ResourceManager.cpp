@@ -91,7 +91,7 @@ namespace Engine
 
 	void ExtractCharacters(Font& font, const std::vector<msdf_atlas::GlyphGeometry>& glyphs);
 
-	Ref<Font> FontLoader::LoadFontFromFile(const std::filesystem::path& path)
+	Ref<Font> FontLoader::LoadFontFromFile(const std::filesystem::path& path, Texture::TextureData data)
 	{
 		using namespace msdf_atlas;
 		std::string pathString = path.string();
@@ -127,12 +127,10 @@ namespace Engine
 				generator.generate(glyphs.data(), (I32)glyphs.size());
 				
 				msdfgen::BitmapConstRef<msdfgen::byte, 3> bitmap = generator.atlasStorage();
-				Texture::TextureData data;
+				
 				data.PixelFormat = Texture::PixelFormat::RGB;
 				data.Width = U32(bitmap.width); data.Height = U32(bitmap.height);
 				data.Data = const_cast<U8*>(bitmap.pixels);
-				data.Minification = Texture::Filter::Linear;
-				data.Magnification = Texture::Filter::Linear;
 				Ref<Texture> fontAtlas = Texture::Create(data);
 
 				Ref<Font> newFont = CreateRef<Font>(fontName, fontAtlas, 48.0f / 2.0f);

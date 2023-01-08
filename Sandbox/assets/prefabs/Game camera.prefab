@@ -2,7 +2,72 @@ Prefab:
   Name: assets/prefabs/Game camera.prefab
   Id: 15852556120573279925
 Prefabs:
-  []
+  - Prefab: 1
+    Name:
+      Name: prefab-Awake collider
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 3
+    ParentRel:
+      Depth: 1
+      Parent: 0
+      Next: 2
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Awake collider.prefab
+      Id: 3802983273097665659
+  - Prefab: 2
+    Name:
+      Name: prefab-Left side-block collider
+    LocalToWorldTransform:
+      Position: [-7, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-15, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 4
+    ParentRel:
+      Depth: 1
+      Parent: 0
+      Next: 3
+      Prev: 1
+    PrefabDetails:
+      Name: assets/prefabs/Left side-block collider.prefab
+      Id: 13983543557894716821
+  - Prefab: 3
+    Name:
+      Name: prefab-Left side-kill collider
+    LocalToWorldTransform:
+      Position: [-9, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [-18, -2]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 2
+    ParentRel:
+      Depth: 1
+      Parent: 0
+      Next: 16777215
+      Prev: 2
+    PrefabDetails:
+      Name: assets/prefabs/Left side-kill collider.prefab
+      Id: 917495402555640966
 Entities:
   - Entity: 0
     Name:
@@ -11,6 +76,9 @@ Entities:
       Position: [0, 0]
       Rotation: [1, 0]
       Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 3
+      First: 1
     Camera:
       CameraController:
         Type: Custom

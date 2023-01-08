@@ -1,0 +1,53 @@
+Prefab:
+  Name: assets/prefabs/test.prefab
+  Id: 7558761581285956222
+Prefabs:
+  - Prefab: 4
+    Name:
+      Name: prefab-Awake collider
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    LocalToParentTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 3
+    ParentRel:
+      Depth: 1
+      Parent: 5
+      Next: 16777215
+      Prev: 16777215
+    PrefabDetails:
+      Name: assets/prefabs/Awake collider.prefab
+      Id: 3802983273097665659
+Entities:
+  - Entity: 5
+    Name:
+      Name: t
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 1]
+    ChildRel:
+      ChildrenCount: 1
+      First: 4
+    SpriteRenderer:
+      Texture: "NULL"
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false

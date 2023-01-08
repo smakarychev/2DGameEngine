@@ -40,7 +40,7 @@ namespace Engine
 	class FontLoader
 	{
 	public:
-		static Ref<Font> LoadFontFromFile(const std::filesystem::path& path);
+		static Ref<Font> LoadFontFromFile(const std::filesystem::path& path, Texture::TextureData data);
 		static void ShutDown();
 	private:
 		static std::unordered_map<std::string, Ref<Font>> s_LoadedFonts;

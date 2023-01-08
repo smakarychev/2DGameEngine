@@ -62,7 +62,7 @@ namespace Engine
     {
         if (m_Registry.Has<T>(e))
         {
-            ENGINE_CORE_TRACE("\t\t\tSerializing {} component", m_ComponentSignature);
+            //ENGINE_CORE_TRACE("\t\t\tSerializing {} component", m_ComponentSignature);
             SerializeComponent(m_Registry.Get<T>(e), emitter);
         }
     }
@@ -72,7 +72,7 @@ namespace Engine
     {
         if (node[m_ComponentSignature])
         {
-            ENGINE_CORE_TRACE("\t\t\tDeserializing {} component", m_ComponentSignature);
+            //ENGINE_CORE_TRACE("\t\t\tDeserializing {} component", m_ComponentSignature);
             DeserializeComponent(e, node);
         }
     }

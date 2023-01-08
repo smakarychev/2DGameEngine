@@ -10,7 +10,7 @@ Entities:
     LocalToWorldTransform:
       Position: [0, 0]
       Rotation: [1, 0]
-      Scale: [52, 3]
+      Scale: [13, 3]
     SpriteRenderer:
       Texture: assets\textures\mario\ground.png
       UV:
@@ -19,7 +19,7 @@ Entities:
         - [1, 1]
         - [0, 1]
       Tint: [0.75, 0.75, 0.75, 1]
-      Tiling: [4, 3]
+      Tiling: [1, 3]
       SortingLayer:
         Name: Middleground
         Id: 2

@@ -23,3 +23,7 @@ Entities:
       Offset: [0, 0]
       HalfSize: [0.5, 50]
       IsSensor: true
+    MarioLevelTag:
+      {}
+    MarioKillTag:
+      {}

@@ -1,8 +1,0 @@
-JumpImpulse : 22
-MaxHorizontalSpeed : 5
-MaxFallSpeed : -15
-VerticalVelocityDrop : 0.5
-HorizontalVelocityDrop : 0.8
-CoyoteTime : 0.15
-JumpBuffer : 0.15
-DeathTime : 2.5

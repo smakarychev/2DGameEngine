@@ -69,10 +69,10 @@ namespace Engine
 		template <typename Fn>
 		decltype(auto) Draw2Columns(const std::string& label, Fn fn, bool delayEnd = false)
 		{
-			static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_ContextMenuInBody;
+			static ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_ContextMenuInBody;
 			if (ImGui::BeginTable(label.c_str(), 2, flags))
 			{
-				ImGui::TableNextColumn();
+				ImGui::TableNextColumn();	
 				ImGui::TextWrapped(label.c_str());
 				ImGui::TableNextColumn();
 				auto retVal = fn();

@@ -147,5 +147,15 @@ namespace Engine
 		{
 			return SnapToGrid(val, size);
 		}
+
+		constexpr std::floating_point auto Lerp(std::floating_point auto a, std::floating_point auto b, std::floating_point auto t)
+		{
+			return a + (b - a) * t;
+		}
+
+		constexpr std::floating_point auto ILerp(std::floating_point auto a, std::floating_point auto b, std::floating_point auto t)
+		{
+			return (t - a) / (b - a);
+		}
 	}
 }

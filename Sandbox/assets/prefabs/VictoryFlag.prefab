@@ -1,0 +1,29 @@
+Prefab:
+  Name: assets/prefabs/VictoryFlag.prefab
+  Id: 9848384053200011854
+Prefabs:
+  []
+Entities:
+  - Entity: 1
+    Name:
+      Name: VictoryFlag
+    LocalToWorldTransform:
+      Position: [0, 0]
+      Rotation: [1, 0]
+      Scale: [1, 5]
+    SpriteRenderer:
+      Texture: assets\textures\mario\flag.png
+      UV:
+        - [0, 0]
+        - [1, 0]
+        - [1, 1]
+        - [0, 1]
+      Tint: [1, 1, 1, 1]
+      Tiling: [1, 1]
+      SortingLayer:
+        Name: Default
+        Id: 0
+        Priority: 0
+      OrderInLayer: 0
+      FlipX: false
+      FlipY: false

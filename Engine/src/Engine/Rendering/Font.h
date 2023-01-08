@@ -8,6 +8,7 @@ namespace Engine
 {
     using namespace Types;
     
+    static Texture::TextureData DEFAULT_FONT_ATLAS_DATA{.Minification = Texture::Filter::Linear, .Magnification = Texture::Filter::Linear};
     class Font
     {
     public:
@@ -19,7 +20,7 @@ namespace Engine
             F32 Advance = 0.0f;
         };
     public:
-        static Ref<Font> ReadFontFromFile(const std::filesystem::path& path);
+        static Ref<Font> ReadFontFromFile(const std::filesystem::path& path, Texture::TextureData data = DEFAULT_FONT_ATLAS_DATA);
         Font(const std::string name, Ref<Texture> atlas, F32 fontSize);
 
         Texture& GetAtlas() const { return *m_Atlas; }
@@ -41,4 +42,5 @@ namespace Engine
         F32 m_GeometryScale = 0.0f;
         F32 m_BaseFontSize = 0.0f;
     };
+
 }

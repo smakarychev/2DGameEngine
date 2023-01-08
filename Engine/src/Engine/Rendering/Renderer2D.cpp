@@ -18,7 +18,7 @@ namespace Engine
         s_BatchData.LineBatch.SetPrimitiveType(RendererAPI::PrimitiveType::Line);
         
         s_BatchData.TextBatch.InitData("assets/shaders/textShader.glsl");
-
+        s_BatchData.TextBatchEditor.InitData("assets/shaders/textShaderEditor.glsl");
         
         s_BatchData.ReferenceQuad.Position = {
             glm::vec2{-0.5f, -0.5f}, glm::vec2{0.5f, -0.5f}, glm::vec2{0.5f, 0.5f}, glm::vec2{-0.5f, 0.5f}
@@ -246,7 +246,7 @@ namespace Engine
     {
         const Font& font = *fontRenderer.Font;
         const F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() *
-            s_BatchData.Camera->GetPixelCoefficient(1.0f);
+            s_BatchData.Camera->GetPixelCoefficient(fontRenderer.Zoom);
         F32 x = fontRenderer.FontRect.Min.x;
         F32 y = fontRenderer.FontRect.Min.y;
 
@@ -258,7 +258,7 @@ namespace Engine
                 continue;
             }
 
-            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > fontRenderer.FontRect.Min.x)
+            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > fontRenderer.FontRect.Max.x)
             {
                 y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
                 x = fontRenderer.FontRect.Min.x;
@@ -371,7 +371,7 @@ namespace Engine
     {
         const Font& font = *fontRenderer.Font;
         const F32 fontSizeCoeff = fontRenderer.FontSize / font.GetBaseFontSize() *
-            s_BatchData.Camera->GetPixelCoefficient(1.0f);
+            s_BatchData.Camera->GetPixelCoefficient(fontRenderer.Zoom);
         F32 x = fontRenderer.FontRect.Min.x;
         F32 y = fontRenderer.FontRect.Min.y;
 
@@ -383,7 +383,7 @@ namespace Engine
                 continue;
             }
 
-            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > fontRenderer.FontRect.Min.x)
+            if (x + font.GetCharacters()[ch].Size.x * fontSizeCoeff > fontRenderer.FontRect.Max.x)
             {
                 y -= fontRenderer.Font->GetLineHeight() * fontSizeCoeff;
                 x = fontRenderer.FontRect.Min.x;

@@ -38,8 +38,8 @@ namespace Engine
 		// This is not pure virtual, since it is unnecessary.
 		virtual void OnImguiUpdate() {}
 		// TODO: very questionable name, basically the purpose of this function is
-		// to update internal structures upon introducing new prefabs, etc.
-		virtual void OnSceneGlobalUpdate() {}
+		// To update internal structures upon introducing new prefabs, etc.
+		virtual void OnSceneGlobalUpdate(Entity addedEntity) {}
 		
 		bool HasAction(InputCode input) const { return m_RegisteredActions[input] != nullptr; }
 		Action& GetAction(InputCode input) const { return *m_RegisteredActions[input]; }

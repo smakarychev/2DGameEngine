@@ -1,19 +1,19 @@
 Prefab:
   Name: assets/prefabs/temp.prefab
-  Id: 8221087407442225026
+  Id: 10448148178942132008
 Prefabs:
-  - Prefab: 96
+  - Prefab: 286
     Name:
-      Name: prefab-cloud
+      Name: prefab-Level box collider
     LocalToWorldTransform:
-      Position: [110.449997, 10.25]
+      Position: [92, -6]
       Rotation: [1, 0]
-      Scale: [0.600000024, 1]
+      Scale: [1, 1]
     ChildRel:
       ChildrenCount: 1
-      First: 95
+      First: 285
     PrefabDetails:
-      Name: assets/prefabs/cloud.prefab
-      Id: 4810176426212982369
+      Name: assets/prefabs/Level box collider.prefab
+      Id: 10557559077809969971
 Entities:
   []
