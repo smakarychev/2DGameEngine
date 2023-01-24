@@ -27,11 +27,11 @@ namespace Engine::Physics
 	struct ContactInfo2D
 	{
 		ContactManifold2D* Manifold = nullptr;
-		std::array<Collider2D*, 2> Colliders;
+		std::array<Collider2D*, 2> Colliders{};
 		std::array<F32, 2> AccumulatedNormalImpulses { 0.0f };
 		std::array<F32, 2> AccumulatedTangentImpulses { 0.0f };
 		// Ids of the nodes in bvh tree (broad phase).
-		std::array<I32, 2> NodeIds;
+		std::array<I32, 2> NodeIds{};
 		void SetTouch(bool isTouching)
 		{
 			if (isTouching) Flags |= TOUCH_FLAG;
@@ -40,7 +40,7 @@ namespace Engine::Physics
 		bool IsTouching() const { return static_cast<bool>(Flags & TOUCH_FLAG); }
 		void SetSensors()
 		{
-			ENGINE_CORE_ASSERT(Colliders[0] != nullptr && Colliders[1] != nullptr, "Colliders are unset");
+			ENGINE_CORE_ASSERT(Colliders[0] != nullptr && Colliders[1] != nullptr, "Colliders are unset")
 			if (Colliders[0]->IsSensor() || Colliders[1]->IsSensor())
 			{
 				Flags |= SENSOR_FLAG;
@@ -237,7 +237,6 @@ namespace Engine::Physics
 	private:
 		static void ResolveTangentVelocity(const ContactConstraint2D& constraint);
 		static void ResolveNormalVelocity(const ContactConstraint2D& constraint);
-		static F32 GetDeltaImpulse(const ContactInfo2D& info,  U32 contactIndex);
 	private:
 		static std::vector<ContactConstraint2D> s_ContactConstraints;
 		static std::vector<glm::vec2> s_ContactPoints;

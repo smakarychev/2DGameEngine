@@ -67,18 +67,19 @@ namespace Engine
 	namespace ImGuiCommon
 	{
 		template <typename Fn>
-		decltype(auto) Draw2Columns(const std::string& label, Fn fn, bool delayEnd = false)
+		bool Draw2Columns(const std::string& label, Fn fn, bool delayEnd = false)
 		{
+			bool retVal = false;
 			static ImGuiTableFlags flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_ContextMenuInBody;
 			if (ImGui::BeginTable(label.c_str(), 2, flags))
 			{
 				ImGui::TableNextColumn();	
 				ImGui::TextWrapped(label.c_str());
 				ImGui::TableNextColumn();
-				auto retVal = fn();
+				retVal = fn();
 				if (!delayEnd || !retVal) ImGui::EndTable();
-				return retVal;
 			}
+			return retVal;
 		}
 		
 		
@@ -121,6 +122,5 @@ namespace Engine
 			ImGui::EndCombo();
 			ImGui::EndTable();
 		}
-	
 	}
 }

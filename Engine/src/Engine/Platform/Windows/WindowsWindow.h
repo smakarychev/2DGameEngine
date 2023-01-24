@@ -12,7 +12,7 @@ namespace Engine
 	{
 	public:
 		WindowsWindow(const WindowProps& props);
-		~WindowsWindow();
+		~WindowsWindow() override;
 
 		void OnUpdate() override;
 		U32 GetWidth() const override { return m_Data.Width; }
@@ -30,18 +30,17 @@ namespace Engine
 	private:
 		struct WindowData
 		{
-			U32 Width = 1600, Height = 900;
-			std::string Title;
-			bool VSync = true;
-
-			EventCallbackFn EventCallbackFn;
+			U32 Width{1600}, Height{900};
+			std::string Title{};
+			bool VSync{true};
+			EventCallbackFn EventCallbackFn{};
 		};
 
-		WindowData m_Data;
+		WindowData m_Data{};
 
 		// Would be better to use unique_ptr, but need to supply deleter
-		GLFWwindow* m_Window;
+		GLFWwindow* m_Window{nullptr};
 
-		Ref<GraphicsContext> m_Context;
+		Ref<GraphicsContext> m_Context{};
 	};
 }

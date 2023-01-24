@@ -16,10 +16,10 @@ namespace Engine
 
         s_BatchData.LineBatch.InitData("assets/shaders/lineShader.glsl");
         s_BatchData.LineBatch.SetPrimitiveType(RendererAPI::PrimitiveType::Line);
-        
+
         s_BatchData.TextBatch.InitData("assets/shaders/textShader.glsl");
         s_BatchData.TextBatchEditor.InitData("assets/shaders/textShaderEditor.glsl");
-        
+
         s_BatchData.ReferenceQuad.Position = {
             glm::vec2{-0.5f, -0.5f}, glm::vec2{0.5f, -0.5f}, glm::vec2{0.5f, 0.5f}, glm::vec2{-0.5f, 0.5f}
         };
@@ -32,7 +32,7 @@ namespace Engine
         s_BatchData.SortingLayer = sortingLayer;
         s_BatchData.Camera = camera;
         s_BatchData.RenderQueue.Clear();
-        
+
         s_BatchData.TriangleBatch.SetCamera(camera);
         s_BatchData.LineBatch.SetCamera(camera);
         s_BatchData.TextBatch.SetCamera(camera);
@@ -63,14 +63,14 @@ namespace Engine
             s_BatchData.TextBatch.Reset();
             RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
         }
-        
+
 
         if (s_BatchData.TriangleBatchEditor.ShouldFlush())
         {
             s_BatchData.TriangleBatchEditor.Flush();
             s_BatchData.TriangleBatchEditor.Reset();
         }
-        
+
         if (s_BatchData.LineBatchEditor.ShouldFlush())
         {
             s_BatchData.LineBatchEditor.Flush();
@@ -84,8 +84,8 @@ namespace Engine
             s_BatchData.TextBatchEditor.Reset();
             RenderCommand::SetDepthTestMode(RendererAPI::Mode::ReadWrite);
         }
-        
-        
+
+
         //ENGINE_INFO("Renderer2D total draw calls: {}", s_BatchData.DrawCalls);
         s_BatchData.DrawCalls = 0;
     }
@@ -101,7 +101,8 @@ namespace Engine
         s_BatchData.DrawCalls = 0;
     }
 
-    void Renderer2D::DrawQuad(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer,
+    void Renderer2D::DrawQuad(const Component::LocalToWorldTransform2D& transform,
+                              const Component::SpriteRenderer& spriteRenderer,
                               RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
@@ -118,18 +119,20 @@ namespace Engine
     }
 
     void Renderer2D::DrawPolygon(const Component::LocalToWorldTransform2D& transform,
-                                 const Component::PolygonRenderer& polygonRenderer)
+                                 const Component::PolygonRenderer& polygonRenderer,
+                                 RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
                                                                         polygonRenderer.OrderInLayer);
-        DrawPolygonCall(transform, polygonRenderer, depth);
+        DrawPolygonCall(transform, polygonRenderer, depth, primitiveType);
     }
 
-    void Renderer2D::DrawPolygon(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer)
+    void Renderer2D::DrawPolygon(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer,
+                                 RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
                                                                         polygonRenderer.OrderInLayer);
-        DrawPolygonCall(transform, polygonRenderer, depth);
+        DrawPolygonCall(transform, polygonRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawFont(const Component::FontRenderer& fontRenderer, const std::string& text)
@@ -144,9 +147,9 @@ namespace Engine
         DrawFontFixedCall(fontRenderer, text);
     }
 
-    void Renderer2D::DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
+    void Renderer2D::DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, F32 depth)
     {
-        DrawLineCall(from, to, color, 0.0f);
+        DrawLineCall(from, to, color, depth);
     }
 
     void Renderer2D::DrawQuadEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
@@ -155,7 +158,8 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
+        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth,
+                           primitiveType);
     }
 
     void Renderer2D::DrawQuadEditor(U32 entityId, const glm::mat3& transform,
@@ -164,23 +168,26 @@ namespace Engine
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(spriteRenderer.SortingLayer,
                                                                         spriteRenderer.OrderInLayer);
-        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth, primitiveType);
+        DrawQuadEditorCall(entityId, FlipTransformIfNeeded(transform, spriteRenderer), spriteRenderer, depth,
+                           primitiveType);
     }
 
     void Renderer2D::DrawPolygonEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
-                                       const Component::PolygonRenderer& polygonRenderer)
+                                       const Component::PolygonRenderer& polygonRenderer,
+                                       RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
                                                                         polygonRenderer.OrderInLayer);
-        DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth);
+        DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawPolygonEditor(U32 entityId, const glm::mat3& transform,
-                                       const Component::PolygonRenderer& polygonRenderer)
+                                       const Component::PolygonRenderer& polygonRenderer,
+                                       RendererAPI::PrimitiveType primitiveType)
     {
         const F32 depth = s_BatchData.SortingLayer->CalculateLayerDepth(polygonRenderer.SortingLayer,
                                                                         polygonRenderer.OrderInLayer);
-        DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth);
+        DrawPolygonEditorCall(entityId, transform, polygonRenderer, depth, primitiveType);
     }
 
     void Renderer2D::DrawFontEditor(U32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text)
@@ -196,9 +203,10 @@ namespace Engine
         DrawFontFixedEditorCall(entityId, fontRenderer, text);
     }
 
-    void Renderer2D::DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color)
+    void Renderer2D::DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color,
+                                    F32 depth)
     {
-        DrawLineEditorCall(entityId, from, to, color, 0.0f);
+        DrawLineEditorCall(entityId, from, to, color, depth);
     }
 
     void Renderer2D::DrawQuadCall(const Component::LocalToWorldTransform2D& transform,
@@ -227,16 +235,27 @@ namespace Engine
     }
 
     void Renderer2D::DrawPolygonCall(const Component::LocalToWorldTransform2D& transform,
-                                     const Component::PolygonRenderer& polygonRenderer, F32 depth)
+                                     const Component::PolygonRenderer& polygonRenderer, F32 depth,
+                                     RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, polygonRenderer, depth);
+            return;
+        }
         s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(polygonRenderer),
                                                polygonRenderer.Polygon->GetVertices(),
                                                polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawPolygonCall(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer,
-                                     F32 depth)
+                                     F32 depth, RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, polygonRenderer, depth);
+            return;
+        }
         s_BatchData.TriangleBatch.PushVertices(transform, depth, ShadingInfoCr::Create(polygonRenderer),
                                                polygonRenderer.Polygon->GetVertices(),
                                                polygonRenderer.Polygon->GetIndices());
@@ -334,7 +353,8 @@ namespace Engine
             return;
         }
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(spriteRenderer),
-                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+                                                     s_BatchData.ReferenceQuad.Position,
+                                                     s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawQuadEditorCall(U32 entityId, const glm::mat3& transform,
@@ -347,23 +367,36 @@ namespace Engine
             return;
         }
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(spriteRenderer),
-                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+                                                     s_BatchData.ReferenceQuad.Position,
+                                                     s_BatchData.ReferenceQuad.Indices);
     }
 
     void Renderer2D::DrawPolygonEditorCall(U32 entityId, const Component::LocalToWorldTransform2D& transform,
-                                           const Component::PolygonRenderer& polygonRenderer, F32 depth)
+                                           const Component::PolygonRenderer& polygonRenderer, F32 depth,
+                                           RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, polygonRenderer, depth);
+            return;
+        }
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
-                                               polygonRenderer.Polygon->GetVertices(),
-                                               polygonRenderer.Polygon->GetIndices());
+                                                     polygonRenderer.Polygon->GetVertices(),
+                                                     polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawPolygonEditorCall(U32 entityId, const glm::mat3& transform,
-                                           const Component::PolygonRenderer& polygonRenderer, F32 depth)
+                                           const Component::PolygonRenderer& polygonRenderer, F32 depth,
+                                           RendererAPI::PrimitiveType primitiveType)
     {
+        if (primitiveType == RendererAPI::PrimitiveType::Line)
+        {
+            DrawOutlineCall(transform, polygonRenderer, depth);
+            return;
+        }
         s_BatchData.TriangleBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(polygonRenderer),
-                                               polygonRenderer.Polygon->GetVertices(),
-                                               polygonRenderer.Polygon->GetIndices());
+                                                     polygonRenderer.Polygon->GetVertices(),
+                                                     polygonRenderer.Polygon->GetIndices());
     }
 
     void Renderer2D::DrawFontEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
@@ -393,8 +426,10 @@ namespace Engine
                 glm::vec2{font.GetCharacters()[ch].Size * fontSizeCoeff},
                 glm::vec2{1.0f, 0.0f}
             };
-            s_BatchData.TextBatchEditor.PushVertices(entityId, transform, depth, ShadingInfoCr::Create(fontRenderer, ch),
-                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+            s_BatchData.TextBatchEditor.PushVertices(entityId, transform, depth,
+                                                     ShadingInfoCr::Create(fontRenderer, ch),
+                                                     s_BatchData.ReferenceQuad.Position,
+                                                     s_BatchData.ReferenceQuad.Indices);
             x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
         }
     }
@@ -438,7 +473,8 @@ namespace Engine
                 glm::vec2{1.0f, 0.0f}
             };
             s_BatchData.TextBatchEditor.PushVertices(entityId, transform, 1.0f, ShadingInfoCr::Create(fontRenderer, ch),
-                                               s_BatchData.ReferenceQuad.Position, s_BatchData.ReferenceQuad.Indices);
+                                                     s_BatchData.ReferenceQuad.Position,
+                                                     s_BatchData.ReferenceQuad.Indices);
             x += font.GetCharacters()[ch].Advance * fontSizeCoeff;
         }
     }
@@ -448,7 +484,8 @@ namespace Engine
     {
         ShadingInfo<std::array<glm::vec2, 2>> shi;
         shi.Tint = color;
-        s_BatchData.LineBatchEditor.PushVertices(entityId, depth, shi, std::array<glm::vec2, 2>{from, to}, std::array<U32, 2>{0, 1});
+        s_BatchData.LineBatchEditor.PushVertices(entityId, depth, shi, std::array<glm::vec2, 2>{from, to},
+                                                 std::array<U32, 2>{0, 1});
     }
 
     void Renderer2D::DrawOutlineCall(const Component::LocalToWorldTransform2D& transform,
@@ -463,16 +500,18 @@ namespace Engine
             vertex.Position = glm::vec3(referenceQuad.Position[i], 0.0f);
             vertex.Position *= glm::vec3{transform.Scale, 1.0f};
             vertex.Position = glm::vec3{
-                transform.Rotation.RotationVec.x * vertex.Position.x - transform.Rotation.RotationVec.y * vertex.Position.y,
-                transform.Rotation.RotationVec.y * vertex.Position.x + transform.Rotation.RotationVec.x * vertex.Position.y,
+                transform.Rotation.RotationVec.x * vertex.Position.x - transform.Rotation.RotationVec.y * vertex.
+                Position.y,
+                transform.Rotation.RotationVec.y * vertex.Position.x + transform.Rotation.RotationVec.x * vertex.
+                Position.y,
                 0.0f
             };
             vertex.Position += glm::vec3{transform.Position, depth};
         }
-        DrawLine(vertices[0].Position, vertices[1].Position, spriteRenderer.Tint);
-        DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint);
-        DrawLine(vertices[2].Position, vertices[3].Position, spriteRenderer.Tint);
-        DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint);
+        DrawLine(vertices[0].Position, vertices[1].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[2].Position, vertices[3].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint, depth);
     }
 
     void Renderer2D::DrawOutlineCall(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
@@ -484,14 +523,43 @@ namespace Engine
         for (U32 i = 0; i < 4; i++)
         {
             BatchVertex& vertex = vertices[i];
-            vertex.Position = transform * glm::vec3(referenceQuad.Position[i], 1.0f) + glm::vec3{
-                0.0f, 0.0f, depth
-            };
+            vertex.Position = transform * glm::vec3(referenceQuad.Position[i], 0.0f) +
+                glm::vec3{0.0f, 0.0f, depth};
         }
-        DrawLine(vertices[0].Position, vertices[1].Position, spriteRenderer.Tint);
-        DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint);
-        DrawLine(vertices[2].Position, vertices[3].Position, spriteRenderer.Tint);
-        DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint);
+        DrawLine(vertices[0].Position, vertices[1].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[1].Position, vertices[2].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[2].Position, vertices[3].Position, spriteRenderer.Tint, depth);
+        DrawLine(vertices[3].Position, vertices[0].Position, spriteRenderer.Tint, depth);
+    }
+
+    void Renderer2D::DrawOutlineCall(const Component::LocalToWorldTransform2D& transform,
+                                     const Component::PolygonRenderer& polygonRenderer, F32 depth)
+    {
+        auto& vertices = polygonRenderer.Polygon->GetVertices();
+        glm::vec2 lineStart = transform.Transform(vertices.back());
+        glm::vec2 lineEnd = transform.Transform(vertices.front());
+        DrawLine(lineStart, lineEnd, polygonRenderer.Tint, depth);
+        for (U32 i = 1; i < vertices.size(); i++)
+        {
+            lineStart = lineEnd;
+            lineEnd = transform.Transform(vertices[i]);
+            DrawLine(lineStart, lineEnd, polygonRenderer.Tint, depth);
+        }
+    }
+
+    void Renderer2D::DrawOutlineCall(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer,
+                                     F32 depth)
+    {
+        auto& vertices = polygonRenderer.Polygon->GetVertices();
+        glm::vec2 lineStart = transform * glm::vec3{vertices.back(), 0.0f};
+        glm::vec2 lineEnd = transform * glm::vec3{vertices.front(), 0.0f};
+        DrawLine(lineStart, lineEnd, polygonRenderer.Tint, depth);
+        for (U32 i = 1; i < vertices.size(); i++)
+        {
+            lineStart = lineEnd;
+            lineEnd = transform * glm::vec3{vertices[i], 0.0f};
+            DrawLine(lineStart, lineEnd, polygonRenderer.Tint, depth);
+        }
     }
 
     Component::LocalToWorldTransform2D Renderer2D::FlipTransformIfNeeded(
@@ -504,16 +572,18 @@ namespace Engine
     }
 
     glm::mat3 Renderer2D::FlipTransformIfNeeded(const glm::mat3& transform,
-        const Component::SpriteRenderer& spriteRenderer)
+                                                const Component::SpriteRenderer& spriteRenderer)
     {
         auto flipped = transform;
         if (spriteRenderer.FlipX)
         {
-            flipped[0][0] *= -1; flipped[1][0] *= -1;
+            flipped[0][0] *= -1;
+            flipped[1][0] *= -1;
         }
         if (spriteRenderer.FlipY)
         {
-            flipped[0][1] *= -1; flipped[1][1] *= -1;
+            flipped[0][1] *= -1;
+            flipped[1][1] *= -1;
         }
         return flipped;
     }
@@ -523,7 +593,7 @@ namespace Engine
         s_BatchData.TriangleBatch.Shutdown();
         s_BatchData.LineBatch.Shutdown();
         s_BatchData.TextBatch.Shutdown();
-        
+
         s_BatchData.TriangleBatchEditor.Shutdown();
         s_BatchData.LineBatchEditor.Shutdown();
         s_BatchData.TextBatchEditor.Shutdown();

@@ -4,7 +4,7 @@
 
 namespace Engine
 {
-	OpenGLShader::OpenGLShader(std::string name, std::string source) : m_Id(0), m_Name(std::move(name))
+	OpenGLShader::OpenGLShader(const std::string& name, const std::string& source) : m_Id(0), m_Name(std::move(name))
 	{
 		auto shadersSources = ExtractShaders(source);
 		CreateShaderProgram(shadersSources);
@@ -44,7 +44,7 @@ namespace Engine
 		return shaderMap;
 	}
 	
-	void OpenGLShader::CreateShaderProgram(const std::map<GLuint, std::string> sources)
+	void OpenGLShader::CreateShaderProgram(const std::map<GLuint, std::string>& sources)
 	{
 		m_Id = glCreateProgram();
 		for (auto&& [shaderType, shaderSource] : sources)
@@ -61,7 +61,7 @@ namespace Engine
 			if (!success)
 			{
 				glGetShaderInfoLog(shaderId, 512, nullptr, infoLog);
-				ENGINE_ERROR("Shader compile error: {}", infoLog);
+				ENGINE_CORE_ERROR("Shader compile error: {}", infoLog);
 			}
 			glAttachShader(m_Id, shaderId);
 			glDeleteShader(shaderId);
@@ -74,7 +74,7 @@ namespace Engine
 		if (!success) 
 		{
 			glGetProgramInfoLog(m_Id, 512, nullptr, infoLog);
-			ENGINE_ERROR("Shader program link failed: {}", infoLog);
+			ENGINE_CORE_ERROR("Shader program link failed: {}", infoLog);
 		}
 	}
 

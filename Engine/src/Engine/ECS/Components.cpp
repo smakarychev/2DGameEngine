@@ -50,29 +50,22 @@ namespace Engine::Component
 
     glm::vec2 LocalToWorldTransform2D::Transform(const glm::vec2& point) const
     {
-        return Math::Rotate(point, Rotation) + Position;
+        return TransformPoint2D(point, Position, Rotation, Scale);
     }
 
     glm::vec2 LocalToWorldTransform2D::TransformDirection(const glm::vec2& dir) const
     {
-        return Math::Rotate(dir, Rotation);
+        return TransformDir2D(dir, Rotation);
     }
 
     glm::vec2 LocalToWorldTransform2D::InverseTransform(const glm::vec2& point) const
     {
-        glm::vec2 translated = point - Position;
-        return glm::vec2{
-            translated.x * Rotation.RotationVec.x + translated.y * Rotation.RotationVec.y,
-            -translated.x * Rotation.RotationVec.y + translated.y * Rotation.RotationVec.x
-        };
+        return InverseTransformPoint2D(point, Position, Rotation, Scale);
     }
 
     glm::vec2 LocalToWorldTransform2D::InverseTransformDirection(const glm::vec2& dir) const
     {
-        return glm::vec2{
-            dir.x * Rotation.RotationVec.x + dir.y * Rotation.RotationVec.y,
-            -dir.x * Rotation.RotationVec.y + dir.y * Rotation.RotationVec.x
-        };
+        return InverseTransformDir2D(dir, Rotation);
     }
 
     LocalToParentTransform2D::LocalToParentTransform2D() = default;

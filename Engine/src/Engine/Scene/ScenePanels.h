@@ -95,7 +95,6 @@ namespace Engine
         AssetsPanelInfo m_AssetsPanelInfo{};
         SceneControlsInfo m_SceneControlsInfo{};
         
-        std::unordered_map<Entity, bool> m_TraversalMap;
         std::vector<Ref<ComponentUIDescBase>> m_ComponentUIDescriptions;
         
         struct SavedState

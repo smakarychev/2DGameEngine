@@ -16,7 +16,7 @@ namespace Engine
 
 	struct PixelData
 	{
-		F64 Data;
+		F64 Data{};
 		operator U8() { return  *reinterpret_cast<U8*>(&Data); }
 		operator I8() { return  *reinterpret_cast<I8*>(&Data); }
 		operator U16() { return *reinterpret_cast<U16*>(&Data); }

@@ -149,7 +149,7 @@ void MarioScene::OnSceneGlobalUpdate(Entity addedEntity)
 {
     InitEntities();
     m_SceneGraph.UpdateGraphOfEntity(addedEntity);
-    SceneUtils::TraverseTreeAndApply(addedEntity, m_Registry, [&](Entity e)
+    SceneUtils::TraverseTree(addedEntity, m_Registry, [&](Entity e)
     {
         if (m_Registry.Has<Component::BoxCollider2D>(e)) SceneUtils::SynchronizePhysics(*this, e, SceneUtils::PhysicsSynchroSetting::ColliderOnly);
         if (m_Registry.Has<Component::RigidBody2D>(e)) SceneUtils::SynchronizePhysics(*this, e, SceneUtils::PhysicsSynchroSetting::RBOnly);
@@ -170,7 +170,7 @@ void MarioScene::Open(const std::string& filename)
     m_SceneGraph.OnUpdate();
     SceneUtils::SynchronizePhysics(*this);
     m_ScenePanels.ResetActiveEntity();
-    SceneUtils::SynchonizeCamerasWithTransforms(*this);
+    SceneUtils::SynchronizeCamerasWithTransforms(*this);
     m_IsSceneReady = true;
     InitGameWinCollisionCallback();
     
@@ -292,7 +292,7 @@ void MarioScene::SPhysics(F32 dt)
     }
     for (auto e : View<Component::RigidBody2D, Component::LocalToParentTransform2D>(m_Registry))
     {
-        SceneUtils::SynchronizeWithPhysicsLocalTransforms(*this, e);
+        SceneUtils::SynchronizeWithPhysicsLocal(*this, e);
     }
 }
 

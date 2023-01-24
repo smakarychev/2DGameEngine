@@ -82,10 +82,10 @@ namespace Engine
 		}
 
 		// Clamps `val` between `min` and `max`.
-		template <typename T>
-		T Clamp(T val, T min, T max)
+		template <typename T, typename U, typename V>
+		decltype(auto) Clamp(T val, U min, V max)
 		{
-			return std::clamp<T>(val, min, max);
+			return std::clamp<std::common_type_t<T, U, V>>(val, min, max);
 		}
 
 		template <typename T>
@@ -105,16 +105,46 @@ namespace Engine
 			return std::sqrt(val);
 		}
 
-		template <typename T>
-		constexpr T Max(const T& first, const T& second)
+		template <typename T, typename U>
+		constexpr decltype(auto) Max(const T& first, const U& second)
 		{
-			return std::max<T>(first, second);
+			return std::max<std::common_type_t<T, U>>(first, second);
 		}
-
 		template <typename T>
-		T Min(const T& first, const T& second)
+		constexpr decltype(auto) Max(const glm::vec<2, T>& first, const glm::vec<2, T>& second)
 		{
-			return std::min<T>(first, second);
+			return glm::vec<2, T>{Max(first.x, second.x), Max(first.y, second.y)};
+		}
+		template <typename T>
+		constexpr decltype(auto) Max(const glm::vec<3, T>& first, const glm::vec<3, T>& second)
+		{
+			return glm::vec<3, T>{Max(first.x, second.x), Max(first.y, second.y), Max(first.z, second.z)};
+		}
+		template <typename T>
+		constexpr decltype(auto) Max(const glm::vec<4, T>& first, const glm::vec<4, T>& second)
+		{
+			return glm::vec<4, T>{Max(first.x, second.x), Max(first.y, second.y), Max(first.z, second.z), Max(first.w, second.w)};
+		}
+		
+		template <typename T, typename U>
+		constexpr decltype(auto) Min(const T& first, const U& second)
+		{
+			return std::min<std::common_type_t<T, U>>(first, second);
+		}
+		template <typename T>
+		constexpr decltype(auto) Min(const glm::vec<2, T>& first, const glm::vec<2, T>& second)
+		{
+			return glm::vec<2, T>{Min(first.x, second.x), Min(first.y, second.y)};
+		}
+		template <typename T>
+		constexpr decltype(auto) Min(const glm::vec<3, T>& first, const glm::vec<3, T>& second)
+		{
+			return glm::vec<3, T>{Min(first.x, second.x), Min(first.y, second.y), Min(first.z, second.z)};
+		}
+		template <typename T>
+		constexpr decltype(auto) Min(const glm::vec<4, T>& first, const glm::vec<4, T>& second)
+		{
+			return glm::vec<4, T>{Min(first.x, second.x), Min(first.y, second.y), Min(first.z, second.z), Min(first.w, second.w)};
 		}
 
 		template <typename T = float>
@@ -123,9 +153,14 @@ namespace Engine
 			return static_cast<T>(3.14159265358979323846);
 		}
 
-		constexpr U64 I32PairKey(std::pair<I32, I32> pair)
+		constexpr U64 U32PairKey(std::pair<U32, U32> pair)
 		{
 			return static_cast<U64>(pair.first) << 32 | static_cast<U32>(pair.second);
+		}
+
+		constexpr I64 I32PairKey(std::pair<I32, I32> pair)
+		{
+			return static_cast<I64>(pair.first) << 32 | pair.second;
 		}
 
 		constexpr std::floating_point auto SnapToGrid(std::floating_point auto val, std::floating_point auto size)

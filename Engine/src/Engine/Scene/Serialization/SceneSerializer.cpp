@@ -323,7 +323,7 @@ namespace Engine
             {
                 if (!registry.Has<Component::Prefab>(active)) return;
                 std::vector<Entity> entitiesToSerialize;
-                SceneUtils::TraverseTreeAndApply(active, registry, [&](Entity e)
+                SceneUtils::TraverseTree(active, registry, [&](Entity e)
                 {
                    entitiesToSerialize.push_back(e); 
                 });

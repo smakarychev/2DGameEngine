@@ -188,7 +188,7 @@ namespace Engine::Component
 
     struct PolygonRenderer
     {
-        RegularPolygon* Polygon{nullptr};
+        Polygon* Polygon{nullptr};
         Texture* Texture{nullptr};
         glm::vec4 Tint{glm::vec4{1.0f}};
         glm::vec2 Tiling{glm::vec2{1.0f}};

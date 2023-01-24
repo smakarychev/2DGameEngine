@@ -20,7 +20,7 @@ void RigidBodyPhysicsExample::OnAttach()
     m_FrameBuffer = FrameBuffer::Create(spec);
     RenderCommand::SetClearColor(glm::vec3{ 0.1f, 0.1f, 0.1f });
 
-    m_World.SetContactListener(m_ContactListener.get());
+    m_World.SetContactListener(m_ContactListener.Get());
     Physics::ContactResolver::StoreContactPoints(true);
 
     m_World.SetGravity(glm::vec2{ 0.0f });
@@ -78,6 +78,7 @@ void RigidBodyPhysicsExample::OnAttach()
     rbDef.Inertia = rbDef.Mass / 6.0f * 4.0f * box.HalfSize.x * box.HalfSize.x;
     m_Mover = m_World.CreateBody(rbDef);
     m_World.SetCollider(m_Mover, colDef);
+    m_Mover->AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
 
     //boulder.AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
     //boulder.GetCollider()->SetSensor(true);
@@ -109,6 +110,10 @@ void RigidBodyPhysicsExample::OnAttach()
 void RigidBodyPhysicsExample::OnUpdate()
 {
     static F32 frameTime = 0;
+    static F32 worstFrameTime = 0;
+    static F32 avgFrameTime = 0;
+    static F32 alphaFilter = 0.2f;
+    static U32 frames = 1;
     ENGINE_WARN("Frame time: {:.4f}ms", (Time::Get() - frameTime));
     F32 dt = 1.0f / 60.0f;
     m_CameraController->OnUpdate(dt);
@@ -118,7 +123,10 @@ void RigidBodyPhysicsExample::OnUpdate()
     {
         Timer timer;
         m_World.Update(dt);
-        ENGINE_INFO("Simulation time: {:.4f}ms ({} fps)", timer.GetTime(), timer.GetFPS());
+        F32 dt = timer.GetTime();
+        if (dt > worstFrameTime) worstFrameTime += alphaFilter * (dt - worstFrameTime);
+        avgFrameTime = avgFrameTime + 1.0f / frames * (dt - avgFrameTime);
+        ENGINE_INFO("Simulation time: {:.4f}ms, Worst: {:.4f}ms, Avg: {:.4f}ms", dt, worstFrameTime, avgFrameTime);
         if (Input::GetKey(Key::Space)) m_World.SetGravity(glm::vec2{ 0.0f, -10.0f });
         if (Input::GetKeyDown(Key::R)) m_World.SetGravity(Random::Float2(-30.0f, 30.0f));
         if (Input::GetKey(Key::A)) m_Mover->AddForce({ -10.0f,   0.0f }, Physics::ForceMode::Impulse);
@@ -131,6 +139,12 @@ void RigidBodyPhysicsExample::OnUpdate()
     if (Input::GetKeyDown(Key::E)) m_World.EnableWarmStart(!m_World.IsWarmStartEnabled());
     Render();
     frameTime = F32(Time::Get());
+    frames++;
+    if (frames > 300)
+    {
+        avgFrameTime = 0.0f; frames = 1;
+    }
+    ENGINE_INFO("Tree cost: {}", m_World.GetBroadPhase().GetBVHTree().ComputeTotalCost());
 }
 
 void RigidBodyPhysicsExample::OnImguiUpdate()

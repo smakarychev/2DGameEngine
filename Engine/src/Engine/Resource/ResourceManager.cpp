@@ -114,7 +114,7 @@ namespace Engine
 
 				TightAtlasPacker packer;
 				packer.setDimensionsConstraint(TightAtlasPacker::DimensionsConstraint::POWER_OF_TWO_RECTANGLE);
-				packer.setMinimumScale(48.0f);
+				packer.setMinimumScale(48.0);
 				packer.setPixelRange(4.0);
 				packer.setMiterLimit(1.0);
 				packer.pack(glyphs.data(), (I32)glyphs.size());
@@ -161,26 +161,26 @@ namespace Engine
 	void ExtractCharacters(Font& font, const std::vector<msdf_atlas::GlyphGeometry>& glyphs)
 	{
 		std::vector<Font::CharacterInfo> chars(glyphs.back().getCodepoint() + 1);
-		U32 atlasWidth = font.GetAtlas().GetData().Width;
-		U32 atlasHeight = font.GetAtlas().GetData().Height;
+		F32 atlasWidth = static_cast<F32>(font.GetAtlas().GetData().Width);
+		F32 atlasHeight = static_cast<F32>(font.GetAtlas().GetData().Height);
 		for (auto& glyph : glyphs)
 		{
 			F64 l, b, r, t;
 			glyph.getQuadAtlasBounds(l, b, r, t);
-			glm::vec2 bl { F32(l) / atlasWidth, F32(b) / atlasHeight };
-			glm::vec2 tr { F32(r) / atlasWidth, F32(t) / atlasHeight };
+			glm::vec2 bl { static_cast<F32>(l) / atlasWidth, static_cast<F32>(b) / atlasHeight };
+			glm::vec2 tr { static_cast<F32>(r) / atlasWidth, static_cast<F32>(t) / atlasHeight };
 
 			glyph.getQuadPlaneBounds(l, b, r, t);
-			l /= font.GetGeometryScale();
-			b /= font.GetGeometryScale();
-			r /= font.GetGeometryScale();
-			t /= font.GetGeometryScale();
+			l /= static_cast<F64>(font.GetGeometryScale());
+			b /= static_cast<F64>(font.GetGeometryScale());
+			r /= static_cast<F64>(font.GetGeometryScale());
+			t /= static_cast<F64>(font.GetGeometryScale());
 			Font::CharacterInfo character
 			{
 				{ { {bl.x, bl.y }, {tr.x, bl.y}, {tr.x, tr.y}, {bl.x, tr.y} } },
 				glm::vec2{ r - l, t - b },
-				glm::vec2{ (r + l) / 2.0f, (t + b) / 2.0f },
-				(F32)glyph.getAdvance() / (F32)font.GetGeometryScale()
+				glm::vec2{ (r + l) / 2.0, (t + b) / 2.0 },
+				static_cast<F32>(glyph.getAdvance()) / font.GetGeometryScale()
 			};
 			U32 codePoint = glyph.getCodepoint();
 			chars[codePoint] = character;

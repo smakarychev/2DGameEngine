@@ -10,14 +10,14 @@ namespace Engine
     void PrefabUtils::CreatePrefabFromEntity(Entity entity, const std::string& prefabName, Scene& scene)
     {
         std::string fullName = "assets/prefabs/" + prefabName + ".prefab";
-        U64 prefabId = PrefabUtils::GeneratePrefabId();
+        U64 prefabId = GeneratePrefabId();
         ENGINE_CORE_TRACE("Creating prefab: {}, generated id: {}", fullName, prefabId);
         SceneSerializer serializer(scene);
         serializer.SetComponentSerializers(scene.GetSerializer().GetComponentSerializers());
 
         auto& registry = scene.GetRegistry();
         std::vector<Entity> prefabEntities;
-        SceneUtils::TraverseTreeAndApply(entity, registry, [&](Entity e)
+        SceneUtils::TraverseTree(entity, registry, [&](Entity e)
         {
             if (!registry.Has<Component::BelongsToPrefab>(e))
             {

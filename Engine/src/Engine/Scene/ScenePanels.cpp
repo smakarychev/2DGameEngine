@@ -86,30 +86,21 @@ namespace Engine
         m_ActiveEntity = entityUnderMouse;
         // If entity belongs to prefab, set it's prefab as active entity instead.
         auto& registry = m_Scene.GetRegistry();
-        if (registry.Has<Component::BelongsToPrefab>(m_ActiveEntity))
+        if (registry.Has<Component::BelongsToPrefab>(m_ActiveEntity)) 
         {
-            auto& belToPrefab = registry.Get<Component::BelongsToPrefab>(m_ActiveEntity);
-            U64 prefabId = belToPrefab.PrefabId;
-            Entity parent = registry.Get<Component::ParentRel>(m_ActiveEntity).Parent;
-            while (!registry.Has<Component::Prefab>(parent) && !registry.Get<Component::Prefab>(parent).Id == prefabId)
-            {
-                parent = registry.Get<Component::ParentRel>(parent).Parent;
-            }
-            m_ActiveEntity = parent;
+            m_ActiveEntity = SceneUtils::FindParentingPrefab(m_ActiveEntity, registry);
         }
     }
 
     void ScenePanels::DrawHierarchyPanel()
     {
-        m_TraversalMap.clear();
-        std::vector<Entity> topLevelEntities = FindTopLevelEntities();
         auto& registry = m_Scene.GetRegistry();
-        ImGui::Begin("Scene");
 
+        ImGui::Begin("Scene");
+        std::vector<Entity> topLevelEntities = FindTopLevelEntities();
         for (auto e : topLevelEntities)
         {
             DrawHierarchyOf(e);
-            MarkHierarchyOf(e, m_TraversalMap);
         }
 
         // Drag and drop to change hierarchy.
@@ -144,10 +135,11 @@ namespace Engine
         bool hasChildren = registry.Has<Component::ChildRel>(entity);
         bool isPrefab = registry.Has<Component::Prefab>(entity);
         auto& name = registry.Get<Component::Name>(entity);
+        
         ImGuiTreeNodeFlags flags = ((m_ActiveEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
             ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ((hasChildren && !isPrefab) ? ImGuiTreeNodeFlags_DefaultOpen : 0);
-        bool opened = ImGui::TreeNodeEx((void*)(U64)(U32)entity, flags,
+        bool opened = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<U64>(entity.Id)), flags,
                                         (name.EntityName + " (" + std::to_string(entity.Id) + ")").c_str());
 
         // Right click on entity to open it's menu.
@@ -171,7 +163,6 @@ namespace Engine
         // Drag and drop to change hierarchy.
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
-            // Set payload to carry the index of our item (could be anything)
             ImGui::SetDragDropPayload("entityHierarchy", &entity, sizeof(Entity));
             ImGui::Text((name.EntityName + " (" + std::to_string(entity.Id) + ")").c_str());
             ImGui::EndDragDropSource();
@@ -190,18 +181,15 @@ namespace Engine
         {
             m_ActiveEntity = entity;
         }
+        
         if (opened)
         {
             if (hasChildren)
             {
-                auto& childRel = registry.Get<Component::ChildRel>(entity);
-                auto curr = childRel.First;
-                while (curr != NULL_ENTITY)
+                SceneUtils::TraverseChildren(entity, registry, [&](Entity e)
                 {
-                    DrawHierarchyOf(curr);
-                    auto& parentRel = registry.Get<Component::ParentRel>(curr);
-                    curr = parentRel.Next;
-                }
+                    DrawHierarchyOf(e);
+                });
             }
             ImGui::TreePop();
         }
@@ -214,14 +202,10 @@ namespace Engine
         traversalMap[entity] = true;
         if (registry.Has<Component::ChildRel>(entity))
         {
-            auto& childRel = registry.Get<Component::ChildRel>(entity);
-            auto curr = childRel.First;
-            while (curr != NULL_ENTITY)
+            SceneUtils::TraverseChildren(entity, registry, [&](Entity e) 
             {
-                MarkHierarchyOf(curr, traversalMap);
-                auto& parentRel = registry.Get<Component::ParentRel>(curr);
-                curr = parentRel.Next;
-            }
+                MarkHierarchyOf(e, traversalMap);
+            });
         }
     }
 
@@ -257,7 +241,7 @@ namespace Engine
 
             CheckState();
             
-            SceneUtils::TraverseTreeAndApply(m_ActiveEntity, registry, [&](Entity e)
+            SceneUtils::TraverseTree(m_ActiveEntity, registry, [&](Entity e)
             {
                 if (registry.Has<Component::BoxCollider2D>(e))
                 {
@@ -279,7 +263,6 @@ namespace Engine
     {
         const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-        auto& registry = uiDesc.GetAttachedRegistry();
 
         ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -295,8 +278,7 @@ namespace Engine
         bool removeComponent = false;
         if (ImGui::BeginPopup("ComponentSettings"))
         {
-            if (ImGui::MenuItem("Remove component"))
-                removeComponent = true;
+            if (ImGui::MenuItem("Remove component")) removeComponent = true;
             ImGui::EndPopup();
         }
 
@@ -411,7 +393,7 @@ namespace Engine
             ImGui::PushID(pathString.c_str());
 
             Ref<Texture> icon = m_AssetsPanelInfo.Icons.DirectoryIcon;
-            if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(icon->GetId()),
+            if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(static_cast<U64>(icon->GetId())),
                                    {totalIconSize, totalIconSize},
                                    {0, 1}, {1, 0}))
             {
@@ -429,8 +411,9 @@ namespace Engine
             ImGui::PushID(pathString.c_str());
 
             Ref<Texture> icon = m_AssetsPanelInfo.Icons.FileIcon;
-            ImGui::Image(reinterpret_cast<ImTextureID>(icon->GetId()), {totalIconSize, totalIconSize},
-                         {0, 1}, {1, 0});
+            ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<U64>(icon->GetId())),
+                    {totalIconSize, totalIconSize},
+                    {0, 1}, {1, 0});
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
             {
@@ -502,7 +485,7 @@ namespace Engine
                                                     : registy.Get<Component::LocalToWorldTransform2D>(m_ActiveEntity);
         if (tf.Position != m_SavedState.Position)
         {
-            SceneUtils::TraverseTreeAndApply(m_ActiveEntity, registy, [&](Entity e)
+            SceneUtils::TraverseTree(m_ActiveEntity, registy, [&](Entity e)
             {
                 if (registy.Has<Component::RigidBody2D>(e))
                 {

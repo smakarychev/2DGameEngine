@@ -114,12 +114,17 @@ namespace Engine
 		}
 	}
 
-	MemoryManager::ManagedPoolAllocator& MemoryManager::GetPoolAllocator(U64 typeSizeBytes)
+	Ref<MemoryManager::ManagedPoolAllocator> MemoryManager::GetPoolAllocatorRef(U64 typeSizeBytes)
 	{
 		auto newPool = CreateRef<ManagedPoolAllocator>(typeSizeBytes);
 		newPool->GetUnderlyingAllocator()->SetDebugName("mPool" + std::to_string(typeSizeBytes));
 		s_ManagedPools.emplace_back(newPool);
-		return *s_ManagedPools.back();
+		return s_ManagedPools.back();
+	}
+
+	MemoryManager::ManagedPoolAllocator& MemoryManager::GetPoolAllocator(U64 typeSizeBytes)
+	{
+		return *GetPoolAllocatorRef(typeSizeBytes);
 	}
 
 	void MemoryManager::PrintStats()

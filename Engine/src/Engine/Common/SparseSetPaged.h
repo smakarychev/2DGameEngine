@@ -10,7 +10,6 @@ namespace Engine
     static_assert(Math::IsPowerOf2(SPARSE_SET_PAGE_SIZE), "Page size must be a power of 2");
     static const U32 SPARSE_SET_PAGE_SIZE_LOG = Math::Log2(SPARSE_SET_PAGE_SIZE);
     
-    
     // ST - sparse type, DT - dense type, Dec - dense type decomposer.
     template <typename ST, typename DT, typename Dec>
     class SparseSetPaged
@@ -24,7 +23,7 @@ namespace Engine
             using pointer = value_type*;
             using reference = value_type&;
 
-            Iterator(std::vector<DT>& dense, U32 index) : m_Dense(dense), m_Index(index) { }
+            Iterator(std::vector<DT>& dense, U32 index) : m_Index(index), m_Dense(dense) { }
             
             reference operator*() const { return m_Dense[m_Index]; }
             pointer operator->() { return &m_Dense[m_Index]; }

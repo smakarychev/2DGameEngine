@@ -5,6 +5,7 @@
 #include "QuadTreeExample/QuadTreeExample.h"
 #include "ParticlePhysicsExample/ParticlePhysicsExample.h"
 #include "RigidBodyPhysicsExample/RigidBodyPhysicsExample.h"
+#include "RigidBodyNewPhysicsExample/RigidBodyNewPhysicsExample.h"
 #include "MarioExample/MarioGame.h"
 
 class SandboxApp : public Engine::Application
@@ -16,7 +17,8 @@ public:
 		//PushLayer(Engine::CreateRef<QuadTreeExample>());
 		//PushLayer(Engine::CreateRef<ParticlePhysicsExample>());
 		//PushLayer(Engine::CreateRef<RigidBodyPhysicsExample>());
-		PushLayer(Engine::CreateRef<MarioGame>());
+		PushLayer(Engine::CreateRef<RigidBodyNewPhysicsExample>());
+		//PushLayer(Engine::CreateRef<MarioGame>());
 	}
 	~SandboxApp()
 	{

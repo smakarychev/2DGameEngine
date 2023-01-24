@@ -13,6 +13,7 @@
 #include "Engine/Memory/MemoryManager.h"
 
 #include "Engine/Platform/OpenGL/OpenGLContext.h"
+#include "Engine/Rendering/Renderer.h"
 
 namespace Engine
 {
@@ -35,22 +36,30 @@ namespace Engine
 		// Initialize glfw.
 		ENGINE_CORE_INFO("Initializing the GLFW: version {}", glfwGetVersionString());
 		auto status = glfwInit();
-		ENGINE_CORE_ASSERT(status != GLFW_FALSE, "Failed to initialize glfw.");
-		glfwWindowHint(GLFW_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_VERSION_MINOR, 6);
-
-		// Create an glfwwindow.
-		ENGINE_CORE_INFO("Creating a window \"{}\" ({} {}).", m_Data.Title, m_Data.Width, m_Data.Height);
-		m_Window = glfwCreateWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str(), nullptr, nullptr);
-		ENGINE_CORE_ASSERT(m_Window != 0, "Failed to create glfwWindow.");
-
-		// Create an opengl context.
-		m_Context = CreateRef<OpenGLContext>(m_Window);
-		m_Context->Init();
-
+		ENGINE_CORE_ASSERT(status != GLFW_FALSE, "Failed to initialize glfw.")
 
 		// Set glfw error callback.
 		glfwSetErrorCallback([](I32 error, const char* description) { ENGINE_CORE_ERROR("GLFW error #{}: {}.", error, description); });
+		
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+
+		// Create an glfwwindow.
+		ENGINE_CORE_INFO("Creating a window \"{}\" ({} {}).", m_Data.Title, m_Data.Width, m_Data.Height);
+		m_Window = glfwCreateWindow(static_cast<I32>(m_Data.Width), static_cast<I32>(m_Data.Height),
+		                            m_Data.Title.c_str(), nullptr, nullptr);
+		ENGINE_CORE_ASSERT(m_Window != nullptr, "Failed to create glfwWindow.")
+
+#if		defined(ENGINE_DEBUG)
+			if (Renderer::GetAPI() == RendererAPI::APIType::OpenGL)
+				glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
+		
+		// Create an opengl context.
+		m_Context = CreateRef<OpenGLContext>(m_Window);
+		m_Context->Init();
 		
 		// Set all (needed) event callbacks.
 		glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -79,19 +88,19 @@ namespace Engine
 				{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
 					data.EventCallbackFn(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					KeyReleasedEvent event(key);
+					KeyReleasedEvent event(static_cast<KeyCode>(key));
 					data.EventCallbackFn(event);
 					break;
 				}
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(key, true);
+					KeyPressedEvent event(static_cast<KeyCode>(key), true);
 					data.EventCallbackFn(event);
 					break;
 				}
@@ -102,7 +111,7 @@ namespace Engine
 			{
 				WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
-				KeyTypedEvent event(keycode);
+				KeyTypedEvent event(static_cast<KeyCode>(keycode));
 				data.EventCallbackFn(event);
 			});
 
@@ -114,13 +123,13 @@ namespace Engine
 				{
 				case GLFW_PRESS:
 				{
-					MouseButtonPressedEvent event(button);
+					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
 					data.EventCallbackFn(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					MouseButtonReleasedEvent event(button);
+					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
 					data.EventCallbackFn(event);
 					break;
 				}

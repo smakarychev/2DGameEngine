@@ -33,10 +33,10 @@ namespace Engine
 	{
 
 	public:
-		OpenGLShader(std::string name, std::string source);
-		~OpenGLShader();
+		OpenGLShader(const std::string& name, const std::string& source);
+		~OpenGLShader() override;
 
-		U32 GetId() const override { return m_Id; };
+		U32 GetId() const override { return m_Id; }
 
 		virtual void Bind() override;
 		
@@ -52,7 +52,7 @@ namespace Engine
 		virtual void SetUniformBool(	const std::string& uniformName, bool value) override;
 	private:
 		std::map<GLuint, std::string> ExtractShaders(const std::string& source);
-		void CreateShaderProgram(const std::map<GLuint, std::string> sources);
+		void CreateShaderProgram(const std::map<GLuint, std::string>& sources);
 
 		GLint GetUniformLocation(const std::string& uniformName);
 

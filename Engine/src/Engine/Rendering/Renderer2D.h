@@ -120,6 +120,7 @@ namespace Engine
                           const ShadingInfo<VerticesContainer>& shadingInfo,
                           const VerticesContainer& transformedVertices,
                           const IndicesContainer& indices);
+
     private:
         void PushVertex(const glm::vec2& referenceVertex,
                         const Component::LocalToWorldTransform2D& transform,
@@ -152,6 +153,7 @@ namespace Engine
                                         const glm::vec2& uv,
                                         const glm::vec4& tint,
                                         const glm::vec2& textureTiling = glm::vec2{1.0f});
+
     private:
         Data m_Data;
         bool m_IsInitialized = false;
@@ -404,6 +406,7 @@ namespace Engine
     class Renderer2D
     {
         friend class RenderCommand;
+
     public:
         struct BatchVertex
         {
@@ -463,7 +466,7 @@ namespace Engine
                         {LayoutElement::Float2, "a_uv"},
                         {LayoutElement::Float2, "a_textureTiling"},
                         {LayoutElement::Float4, "a_color"},
-                        {LayoutElement::UInt,    "a_entityId"},
+                        {LayoutElement::UInt, "a_entityId"},
                     }
                 };
                 return layout;
@@ -584,24 +587,28 @@ namespace Engine
 
         static void SetSortingLayer(const SortingLayer& layer) { *s_BatchData.SortingLayer = layer; }
         static const SortingLayer& GetSortingLayer() { return *s_BatchData.SortingLayer; }
-        
+
         static void BeginScene(Camera* camera, SortingLayer* sortingLayer = &DefaultSortingLayer);
         static void EndScene();
         static void Reset();
 
-        static void DrawQuad(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer,
+        static void DrawQuad(const Component::LocalToWorldTransform2D& transform,
+                             const Component::SpriteRenderer& spriteRenderer,
                              RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawQuad(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
                              RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygon(const Component::LocalToWorldTransform2D& transform,
-                                const Component::PolygonRenderer& polygonRenderer);
-        static void DrawPolygon(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer);
+                                const Component::PolygonRenderer& polygonRenderer,
+                                RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
+        static void DrawPolygon(const glm::mat3& transform, const Component::PolygonRenderer& polygonRenderer,
+                                RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         // WinApi uses DrawText as a macro >:(
         // `fontSize` as if camera is exactly one unit away.
         static void DrawFont(const Component::FontRenderer& fontRenderer, const std::string& text);
         // Fixed font retains its relative position and size as camera moves/zooms.
         static void DrawFontFixed(const Component::FontRenderer& fontRenderer, const std::string& text);
-        static void DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4{1.0f});
+        static void DrawLine(const glm::vec2& from, const glm::vec2& to, const glm::vec4& color = glm::vec4{1.0f},
+                             F32 depth = 0.0f);
 
         static void DrawQuadEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
                                    const Component::SpriteRenderer& spriteRenderer,
@@ -610,14 +617,16 @@ namespace Engine
                                    const Component::SpriteRenderer& spriteRenderer,
                                    RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonEditor(U32 entityId, const Component::LocalToWorldTransform2D& transform,
-                                      const Component::PolygonRenderer& polygonRenderer);
+                                      const Component::PolygonRenderer& polygonRenderer,
+                                      RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonEditor(U32 entityId, const glm::mat3& transform,
-                                      const Component::PolygonRenderer& polygonRenderer);
+                                      const Component::PolygonRenderer& polygonRenderer,
+                                      RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawFontEditor(U32 entityId, const Component::FontRenderer& fontRenderer, const std::string& text);
         static void DrawFontFixedEditor(U32 entityId, const Component::FontRenderer& fontRenderer,
                                         const std::string& text);
-        static void DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color);
-
+        static void DrawLineEditor(U32 entityId, const glm::vec2& from, const glm::vec2& to,
+                                   const glm::vec4& color = glm::vec4{1.0f}, F32 depth = 0.0f);
 
     private:
         // These functions are to be executed by a command queue (currently unimplemented).
@@ -629,9 +638,11 @@ namespace Engine
                                  F32 depth = 0.0f,
                                  RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonCall(const Component::LocalToWorldTransform2D& transform,
-                                    const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
+                                    const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f,
+                                    RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonCall(const glm::mat3& transform2D, const Component::PolygonRenderer& polygonRenderer,
-                                    F32 depth = 0.0f);
+                                    F32 depth = 0.0f,
+                                    RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawFontCall(const Component::FontRenderer& fontRenderer, const std::string& text,
                                  F32 depth = 0.0f);
         static void DrawFontFixedCall(const Component::FontRenderer& fontRenderer, const std::string& text);
@@ -644,9 +655,13 @@ namespace Engine
                                        const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f,
                                        RendererAPI::PrimitiveType primitiveType = RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonEditorCall(U32 entityId, const Component::LocalToWorldTransform2D& transform,
-                                          const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
+                                          const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f,
+                                          RendererAPI::PrimitiveType primitiveType =
+                                              RendererAPI::PrimitiveType::Triangle);
         static void DrawPolygonEditorCall(U32 entityId, const glm::mat3& transform,
-                                          const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
+                                          const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f,
+                                          RendererAPI::PrimitiveType primitiveType =
+                                              RendererAPI::PrimitiveType::Triangle);
         static void DrawFontEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
                                        const std::string& text, F32 depth = 0.0f);
         static void DrawFontFixedEditorCall(U32 entityId, const Component::FontRenderer& fontRenderer,
@@ -658,10 +673,16 @@ namespace Engine
                                     const Component::SpriteRenderer& spriteRenderer, F32 depth = 0.0f);
         static void DrawOutlineCall(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer,
                                     F32 depth = 0.0f);
+        static void DrawOutlineCall(const Component::LocalToWorldTransform2D& transform,
+                                    const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
+        static void DrawOutlineCall(const glm::mat3& transform,
+                                    const Component::PolygonRenderer& polygonRenderer, F32 depth = 0.0f);
 
-        static Component::LocalToWorldTransform2D FlipTransformIfNeeded(const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer);
-        static glm::mat3 FlipTransformIfNeeded(const glm::mat3& transform, const Component::SpriteRenderer& spriteRenderer);
-        
+        static Component::LocalToWorldTransform2D FlipTransformIfNeeded(
+            const Component::LocalToWorldTransform2D& transform, const Component::SpriteRenderer& spriteRenderer);
+        static glm::mat3 FlipTransformIfNeeded(const glm::mat3& transform,
+                                               const Component::SpriteRenderer& spriteRenderer);
+
     private:
         static BatchRendererData s_BatchData;
     };
@@ -673,6 +694,7 @@ namespace Engine
     {
         vertex.Color = tint;
     }
+
     template <>
     inline void BatchRenderer2D<Renderer2D::BatchVertexLineEditor>::InitVertexColorData(
         Renderer2D::BatchVertexLineEditor& vertex, F32 textureIndex, const glm::vec2& uv,

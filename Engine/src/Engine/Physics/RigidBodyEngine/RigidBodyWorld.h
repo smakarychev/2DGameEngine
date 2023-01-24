@@ -14,7 +14,6 @@ namespace Engine::Physics
 {
 	using namespace Types;
 
-	//! The main problem now is the lack of ability to delete bodies.
 	class RigidBodyWorld2D
 	{
 		using RigidBodyList = RigidBodyListEntry2D;

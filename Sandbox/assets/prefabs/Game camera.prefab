@@ -32,7 +32,7 @@ Prefabs:
       Rotation: [1, 0]
       Scale: [1, 1]
     LocalToParentTransform:
-      Position: [-15, -2]
+      Position: [-10, -2]
       Rotation: [1, 0]
       Scale: [1, 1]
     ChildRel:
@@ -54,7 +54,7 @@ Prefabs:
       Rotation: [1, 0]
       Scale: [1, 1]
     LocalToParentTransform:
-      Position: [-18, -2]
+      Position: [-12, -2]
       Rotation: [1, 0]
       Scale: [1, 1]
     ChildRel:

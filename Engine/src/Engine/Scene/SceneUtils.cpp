@@ -20,13 +20,10 @@ namespace
             if (curr == toFindNode) return true;
             if (registry.Has<Component::ChildRel>(curr))
             {
-                auto& childRel = registry.Get<Component::ChildRel>(curr);
-                Entity child = childRel.First;
-                for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+                SceneUtils::TraverseChildren(curr, registry, [&](Entity e)
                 {
-                    entityQueue.push(child);
-                    child = registry.Get<Component::ParentRel>(child).Next;
-                }
+                    entityQueue.push(e);
+                });
             }
         }
         return false;
@@ -39,8 +36,6 @@ namespace Engine
     {
         auto& registry = scene.GetRegistry();
         Entity entity = registry.CreateEntity(tag);
-        // We need both of these, because first is convenient for physics,
-        // and second for rendering and scene hierarchies.
         auto& tf = registry.Add<Component::LocalToWorldTransform2D>(entity);
         return {entity, tf};
     }
@@ -68,14 +63,10 @@ namespace Engine
         // Before deleting entity, detach it from parent (if any) and delete it's children (if any).
         if (registry.Has<Component::ChildRel>(entity))
         {
-            auto& childRel = registry.Get<Component::ChildRel>(entity);
-            Entity child = childRel.First;
-            while (child != NULL_ENTITY)
+            TraverseChildrenPostFn(entity, registry, [&](Entity e)
             {
-                Entity next = registry.Get<Component::ParentRel>(child).Next;
-                DeleteEntity(scene, child, false);
-                child = next;
-            }
+                DeleteEntity(scene, e, false);
+            });
         }
         if (registry.Has<Component::ParentRel>(entity)) RemoveChild(scene, entity, false);
         registry.DeleteEntity(entity);
@@ -249,7 +240,7 @@ namespace Engine
         localToWorld = {tf.Position, tf.Scale, tf.Rotation};
     }
 
-    void SceneUtils::SynchronizeWithPhysicsLocalTransforms(Scene& scene, Entity entity)
+    void SceneUtils::SynchronizeWithPhysicsLocal(Scene& scene, Entity entity)
     {
         auto& registry = scene.GetRegistry();
         auto& tf = registry.Get<Component::LocalToWorldTransform2D>(entity);
@@ -258,7 +249,7 @@ namespace Engine
         registry.Get<Component::LocalToParentTransform2D>(entity) = tf.Concatenate(parentTf.Inverse());
     }
 
-    void SceneUtils::SynchonizeCamerasWithTransforms(Scene& scene)
+    void SceneUtils::SynchronizeCamerasWithTransforms(Scene& scene)
     {
         auto& registry = scene.GetRegistry();
         for (auto e : View<Component::Camera>(registry))
@@ -324,7 +315,7 @@ namespace Engine
             }
         }
         // Update all `child` children depth.
-        TraverseExceptRootAndApply(child, registry, [&](Entity e)
+        TraverseExceptRoot(child, registry, [&](Entity e)
         {
             auto& parentRel = registry.Get<Component::ParentRel>(e);
             parentRel.Depth += 1;
@@ -354,10 +345,10 @@ namespace Engine
         parentChildRef.ChildrenCount--;
 
         // Update all `child` children depth.
-        TraverseExceptRootAndApply(child, registry, [&](Entity e)
+        TraverseExceptRoot(child, registry, [&](Entity e)
         {
-            auto& parentRel = registry.Get<Component::ParentRel>(e);
-            parentRel.Depth -= 1;
+            auto& parentRelE = registry.Get<Component::ParentRel>(e);
+            parentRelE.Depth -= 1;
         });
 
         registry.Remove<Component::ParentRel>(child);
@@ -391,6 +382,18 @@ namespace Engine
         return curr;
     }
 
+    Entity SceneUtils::FindParentingPrefab(Entity entity, Registry& registry)
+    {
+        auto& belToPrefab = registry.Get<Component::BelongsToPrefab>(entity);
+        U64 prefabId = belToPrefab.PrefabId;
+        Entity parent = registry.Get<Component::ParentRel>(entity).Parent;
+        while (!registry.Has<Component::Prefab>(parent) && registry.Get<Component::Prefab>(parent).Id != prefabId)
+        {
+            parent = registry.Get<Component::ParentRel>(parent).Parent;
+        }
+        return parent;
+    }
+
     glm::vec2 SceneUtils::GetMousePosition(Scene& scene)
     {
         glm::vec2 mousePos = Input::MousePosition();
@@ -416,7 +419,7 @@ namespace Engine
     SceneUtils::AssetPayloadType SceneUtils::GetAssetPayloadTypeFromString(const std::string& fileName)
     {
         static std::vector<std::string> sceneExtensions  = { "scene" };
-        static std::vector<std::string> prefabExtensions = {"prefab"};
+        static std::vector<std::string> prefabExtensions = { "prefab" };
         static std::vector<std::string> imageExtensions  = { "png", "jpg", "jpeg" };
         // TODO: Font.
         
@@ -431,5 +434,6 @@ namespace Engine
         if (std::ranges::find(sceneExtensions, fileExtension) != sceneExtensions.end()) return AssetPayloadType::Scene;
         if (std::ranges::find(prefabExtensions, fileExtension) != prefabExtensions.end()) return AssetPayloadType::Prefab;
         if (std::ranges::find(imageExtensions, fileExtension) != imageExtensions.end()) return AssetPayloadType::Image;
+        return AssetPayloadType::Unknown;
     }
 }

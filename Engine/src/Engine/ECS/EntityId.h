@@ -55,7 +55,7 @@ namespace std
 	template<>
 	struct hash<Engine::EntityId>
 	{
-		Engine::U64 operator()(const Engine::EntityId& entity) const
+		Engine::U64 operator()(const Engine::EntityId& entity) const noexcept
 		{
 			return static_cast<Engine::U64>(entity.Id);
 		}

@@ -5,10 +5,6 @@
 
 #include <array>
 
-/*glm::vec2 ditstMAMax = ifrom.Contacts[1inedexOfMaxdepth].
-* Use enlarged aabbs for less replace operations
-*/
-
 namespace Engine::Physics
 {
 	// Holds a pair of colliders, whose bounds are colliding.
@@ -22,7 +18,7 @@ namespace Engine::Physics
 	class BroadPhase2D
 	{
 	public:
-		// Returns the undelying tree structure.
+		// Returns the underlying tree structure.
 		const BVHTree2D<Bounds>& GetBVHTree() const { return m_Tree; }
 		BVHTree2D<Bounds>& GetBVHTree() { return m_Tree; }
 		void Clear();

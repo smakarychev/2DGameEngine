@@ -148,6 +148,7 @@ namespace Engine
 		static void Dealloc(void* memory, U64 sizeBytes);
 
 		// Returns a new pool allocator to user, keeps track of alloc/dealloc stats.
+		static Ref<ManagedPoolAllocator> GetPoolAllocatorRef(U64 typeSizeBytes);
 		static ManagedPoolAllocator& GetPoolAllocator(U64 typeSizeBytes);
 		template <typename T>
 		static ManagedPoolAllocator& GetPoolAllocator() { return GetPoolAllocator(sizeof(T)); }
@@ -237,7 +238,13 @@ namespace Engine
 		return static_cast<T*>(memory);
 	}
 
-
+	template <typename T, typename Alloc, typename ... Args>
+	T* NewAlloc(Alloc& alloc, Args&&... args)
+	{
+		void* memory = static_cast<void*>(alloc.template Alloc<T>());
+		return new (memory) T(std::forward<Args>(args)...);
+	}
+	
 	template <typename T>
 	void Delete(T* obj)
 	{
@@ -269,4 +276,11 @@ namespace Engine
 		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T) * count);
 	}
 
+	template <typename T, typename Alloc, typename ... Args>
+	void DeleteAlloc(Alloc& alloc, T* obj)
+	{
+		obj->~T();
+		alloc.Dealloc(obj);
+	}
+	
 }

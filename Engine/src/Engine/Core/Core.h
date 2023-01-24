@@ -15,12 +15,16 @@
 							friend T* Engine::New(Args&&... args); \
 							template <typename T, typename ... Args> \
 							friend T* Engine::NewArr(U64 count, Args&&... args); \
+							template <typename T, typename Alloc, typename ... Args> \
+							friend T* Engine::NewAlloc(Alloc& alloc, Args&&... args); \
 							template <typename T> \
 							friend void Engine::Delete(T * obj); \
 							template <typename T, U64 Count> \
 							friend void Engine::Delete(T * obj); \
 							template <typename T> \
-							friend void Engine::DeleteArr(T * obj, U64 count);
+							friend void Engine::DeleteArr(T * obj, U64 count); \
+							template <typename T, typename Alloc, typename ... Args> \
+							friend void Engine::DeleteAlloc(Alloc& alloc, T* obj);
 
 constexpr Engine::Types::U64 Bit(Engine::Types::U64 pos) { return Engine::Types::U64(1) << pos; }
 
@@ -41,12 +45,28 @@ namespace Engine
 	}
 
 	template<typename T>
-	using Scope = std::unique_ptr<T, decltype(&Delete<T>)>;
+	class Scope
+	{
+	public:
+		constexpr Scope() : m_Ptr(New<T>(), Delete) {}
+		template <typename ... Args>
+		constexpr Scope(Args&& ... args) : m_Ptr(New<T>(std::forward<Args>(args)...), Delete) {}
+		T* Get() { return m_Ptr.get(); }
+		T* Get() const { return m_Ptr.get(); }
+
+		bool operator==(T* ptr) { return m_Ptr == ptr; }
+		bool operator!=(T* ptr) { return m_Ptr != ptr; }
+
+		T* operator->() { return Get(); }
+		T* operator->() const { return Get(); }
+	private:
+		std::unique_ptr<T, decltype(&Delete<T>)> m_Ptr;
+	};
 
 	template <typename T, typename ... Args>
 	constexpr Scope<T> CreateScope(Args&&... args)
 	{
-		return std::unique_ptr<T, decltype(&Delete<T>)>(New<T>(std::forward<Args>(args)...), Delete<T>);
+		return Scope<T>(std::forward<Args>(args)...);
 	}
 }
 

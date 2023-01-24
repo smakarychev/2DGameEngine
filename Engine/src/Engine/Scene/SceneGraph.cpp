@@ -2,6 +2,7 @@
 
 #include "SceneGraph.h"
 
+#include "SceneUtils.h"
 #include "Engine/ECS/View.h"
 #include "Serialization/Prefab.h"
 
@@ -42,15 +43,11 @@ namespace Engine
             {
                 auto& record = m_TransformHierarchy[layer][parentI];
                 if (!m_Registry.Has<Component::ChildRel>(record.EntityId)) continue;
-                auto& childRel = m_Registry.Get<Component::ChildRel>(record.EntityId);
-                Entity child = childRel.First;
-                for (U32 childI = 0; childI < childRel.ChildrenCount; childI++)
+                SceneUtils::TraverseChildren(record.EntityId, m_Registry, [&](Entity e)
                 {
-                    auto& childLocalToParent = m_Registry.Get<Component::LocalToParentTransform2D>(child);
-                    m_TransformHierarchy[layer + 1].emplace_back(parentI, child,
-                                                                 childLocalToParent);
-                    child = m_Registry.Get<Component::ParentRel>(child).Next;
-                }
+                    auto& childLocalToParent = m_Registry.Get<Component::LocalToParentTransform2D>(e);
+                    m_TransformHierarchy[layer + 1].emplace_back(parentI, e, childLocalToParent);
+                });
             }
         }
 
@@ -93,14 +90,9 @@ namespace Engine
                 continue;
             }
 
-            auto& parentRel = m_Registry.Get<Component::ParentRel>(e);
-            Entity curr = parentRel.Parent;
-            while (m_Registry.Has<Component::ParentRel>(curr))
-            {
-                curr = m_Registry.Get<Component::ParentRel>(curr).Parent;
-            }
-            MarkHierarchyOf(curr, traversal);
-            result.push_back(curr);
+            Entity topOfTree = SceneUtils::FindTopOfTree(e, m_Registry);
+            MarkHierarchyOf(topOfTree, traversal);
+            result.push_back(topOfTree);
         }
         return result;
     }
@@ -111,14 +103,10 @@ namespace Engine
         traversalMap[entity] = true;
         if (m_Registry.Has<Component::ChildRel>(entity))
         {
-            auto& childRel = m_Registry.Get<Component::ChildRel>(entity);
-            auto curr = childRel.First;
-            while (curr != NULL_ENTITY)
+            SceneUtils::TraverseChildren(entity, m_Registry, [&](Entity e)
             {
-                MarkHierarchyOf(curr, traversalMap);
-                auto& parentRel = m_Registry.Get<Component::ParentRel>(curr);
-                curr = parentRel.Next;
-            }
+               MarkHierarchyOf(e, traversalMap); 
+            });
         }
     }
 

@@ -97,7 +97,7 @@ namespace Engine::Physics
 		info.Colliders = potentialContact.Colliders;
 		info.NodeIds = potentialContact.NodeIds;
 		info.AccumulatedNormalImpulses = info.AccumulatedTangentImpulses = { 0.0f };
-		// Check if any of colliders are sensors, and set flag if so.
+		// Check if any of colliders is sensor, and set flag if so.
 		info.SetSensors();
 		return AddContactInfo(info);
 	}

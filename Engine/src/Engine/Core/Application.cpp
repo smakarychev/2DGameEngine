@@ -1,6 +1,8 @@
 #include "enginepch.h"
 #include "Application.h"
 
+#include <ranges>
+
 #include "Engine/Core/Input.h"
 #include "Engine/Memory/MemoryManager.h"
 #include "Engine/Rendering/Renderer.h"
@@ -68,9 +70,9 @@ namespace Engine {
 		dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(Application::OnWindowResize));
 		Input::OnEvent(event);
 
-		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); it++)
+		for (auto& layer : std::ranges::reverse_view(m_LayerStack))
 		{
- 			(*it)->OnEvent(event);
+			layer->OnEvent(event);
 			if (event.Handled) break;
 		}
 	}

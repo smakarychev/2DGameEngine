@@ -21,7 +21,7 @@ Entities:
         Mask: 65535
         Group: 0
       Offset: [0, 0]
-      HalfSize: [18, 11]
+      HalfSize: [9, 5.5]
       IsSensor: true
     MarioAwakeTag:
       {}

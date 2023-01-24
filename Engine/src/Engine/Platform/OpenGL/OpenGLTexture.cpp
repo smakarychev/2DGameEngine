@@ -24,7 +24,10 @@ namespace Engine
 		auto&& [internalFormat, dataFormat] = GetInternalFormatFormatPair(textureData.PixelFormat);
 
 		glTextureStorage2D(m_Id, 1, internalFormat, (GLsizei)textureData.Width, (GLsizei)textureData.Height);
-		glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GetPixelDataType(textureData.PixelFormat), textureData.Data);
+		if (textureData.Data)
+		{
+			glTextureSubImage2D(m_Id, 0, 0, 0, (GLsizei)textureData.Width, (GLsizei)textureData.Height, dataFormat, GetPixelDataType(textureData.PixelFormat), textureData.Data);
+		}
 
 		if (textureData.GenerateMipmaps)
 		{

@@ -12,6 +12,7 @@ namespace Engine
 
 	void OpenGLRendererAPI::Init()
 	{
+		ENGINE_CORE_INFO("Vendor: {}. Renderer: {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glFrontFace(GL_CCW);
