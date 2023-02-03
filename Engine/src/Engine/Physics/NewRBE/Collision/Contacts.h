@@ -56,9 +56,7 @@ namespace Engine::WIP::Physics
 		}
 		F32 GetFriction() const
 		{
-			return std::min(
-				Colliders[0]->GetPhysicsMaterial().Friction,
-				Colliders[1]->GetPhysicsMaterial().Friction);
+			return std::sqrt(Colliders[0]->GetPhysicsMaterial().Friction * Colliders[1]->GetPhysicsMaterial().Friction);
 		}
 	private:
 		U32 Flags{0};

@@ -128,8 +128,7 @@ namespace Engine::WIP::Physics
 	{
 		// Transform local space to world space.
 		glm::vec2 transformedPoint = TransformToWorld(point);
-		AddForce(force);
-		AddTorque(transformedPoint.x * force.y - transformedPoint.y * force.x);
+		ApplyForce(force, transformedPoint);
 	}
 
 	void RigidBody2D::ApplyForce(const glm::vec2& force, const glm::vec2& point)

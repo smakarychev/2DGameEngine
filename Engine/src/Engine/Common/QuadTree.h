@@ -119,7 +119,7 @@ namespace Engine
 			std::sort(freeItems.begin(), freeItems.end());
 			freeIndex = 0;
 			I32 freeItem = 0;
-			if (freeIndex < freeItems.size()) freeItem = freeItems[freeIndex];
+			if (freeIndex < static_cast<I32>(freeItems.size())) freeItem = freeItems[freeIndex];
 			else freeItem = -1;
 			for (U32 i = 0; i < m_Items.Size(); i++)
 			{
@@ -259,7 +259,7 @@ namespace Engine
 			item->Location.Container->Erase(item->Location.Index);
 		}
 
-		void Relocate(typename const std::vector<QuadTreeItem<T>>::iterator& item, const CRect& newLocation)
+		void Relocate(const typename std::vector<QuadTreeItem<T>>::iterator& item, const CRect& newLocation)
 		{
 			item->Location.Container->Erase(item->Location.Index);
 			item->Location = m_QuadTree.Insert(static_cast<I32>(item - m_Items.begin()), newLocation);

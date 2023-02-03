@@ -78,24 +78,24 @@ void RigidBodyPhysicsExample::OnAttach()
     rbDef.Inertia = rbDef.Mass / 6.0f * 4.0f * box.HalfSize.x * box.HalfSize.x;
     m_Mover = m_World.CreateBody(rbDef);
     m_World.SetCollider(m_Mover, colDef);
-    m_Mover->AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
+    //m_Mover->AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
 
     //boulder.AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
     //boulder.GetCollider()->SetSensor(true);
     rbDef.Type = Physics::RigidBodyType2D::Dynamic;
     tf.Rotation = 0.0;
-    F32 step = 0.2f / 0.25f;
-    for (U32 y = 0; y < 20; y++)
+    F32 step = 0.1f / 0.25f;
+    for (U32 y = 0; y < 21; y++)
     {
         for (I32 x = 0; x < 20; x++)
         {
-            tf.Position = { x * step, y * step - 10 * step };
+            tf.Position = { x * step - 5 * step, y * step - 10.5f * step };
             m_Transforms.push_back(CreateRef<Component::LocalToWorldTransform2D>(tf));
             rbDef.AttachedTransform = m_Transforms.back().get();
             colDef.AttachedTransform = m_Transforms.back().get();
             //rbDef.Position += glm::vec2(Random::Float2(-step * 0.5f, step * 0.5f));
             Physics::CircleCollider2D circle{ glm::vec2{0.0f}, step * 0.25f };
-            Physics::BoxCollider2D box{ glm::vec2{0.0f}, glm::vec2{ 1 * step * 0.25f, step * 0.25f} };
+            Physics::BoxCollider2D box{ glm::vec2{0.0f}, glm::vec2{ 1 * step * 0.5f, step * 0.5f} };
             colDef.Collider = &box;
             colDef.PhysicsMaterial.Restitution = 0.3f;
             rbDef.Mass = 1.1f;

@@ -2,6 +2,7 @@
 #include "Components.h"
 
 #include "Engine/Math/LinearAlgebra.h"
+#include "Engine/Common/Geometry2D.h"
 
 namespace Engine::Component
 {

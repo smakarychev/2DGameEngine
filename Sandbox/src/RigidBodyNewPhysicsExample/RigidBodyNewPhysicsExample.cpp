@@ -28,7 +28,7 @@ void RigidBodyNewPhysicsExample::OnAttach()
     WIP::Physics::PolygonCollider2D boxCol;
     boxCol.SetAsBox({0.1f, 0.1f});
     WIP::Physics::PolygonCollider2D wideBoxCol;
-    wideBoxCol.SetAsBox(glm::vec2{ 18.0f, 0.5f });
+    wideBoxCol.SetAsBox(glm::vec2{ 18.0f, 2.5f });
     Component::LocalToWorldTransform2D tf;
     tf.Position = {0.0f, 1.0f};
     m_Transforms.push_back(CreateRef<Component::LocalToWorldTransform2D>(tf));
@@ -69,12 +69,10 @@ void RigidBodyNewPhysicsExample::OnAttach()
     rbDef.Transform = *m_Transforms.back();
     WIP::Physics::PolygonCollider2D somethingWicked(
         {{
-            {-1.0f, -1.0f},
-            { 1.0f, -1.0f},
-            { 1.5f,  0.6f},
-            { 0.0f,  0.0f},
-            { 0.0f,  1.5f},
-            {-1.5f,  0.6f},
+            {-2.0f,  0.0f},
+            { 0.0f, -0.3f},
+            { 0.0f,  0.3f},
+            { 2.0f,  0.0f},
         }}
     );
     //somethingWicked.SetAsBox(glm::vec2{1.5f});
@@ -83,27 +81,50 @@ void RigidBodyNewPhysicsExample::OnAttach()
     rbDef.Transform = *m_Transforms.back();
     colDef.Collider = &somethingWicked;
     colDef.PhysicsMaterial.Restitution = 0.0f;
+    colDef.PhysicsMaterial.Density = 10.0f;
     m_Mover = m_World.CreateBody(rbDef);
     m_World.AddCollider(m_Mover, colDef);
-    m_Mover->AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
+    WIP::Physics::PolygonCollider2D somethingWicked2(
+        {{
+            { 0.0f, -2.0f},
+            { -0.3f, 0.0f},
+            { 0.3f,  0.0f},
+            { 0.0f,  2.0f},
+        }}
+    );
+    colDef.Collider = &somethingWicked2;
+    m_World.AddCollider(m_Mover, colDef);
+    //m_Mover->AddForce(glm::vec2{ 2000.0f * m_Mover->GetMass(), 0.0f });
 
     //boulder.AddForce(glm::vec2{ 1000.0f * rbDef.Mass, 0.0f });
     //boulder.GetCollider()->SetSensor(true);
     rbDef.Type = WIP::Physics::RigidBodyType2D::Dynamic;
     tf.Rotation = 0.0;
-    F32 step = 0.2f / 0.25f;
-    for (U32 y = 0; y < 20; y++)
+    F32 step = 0.1f / 0.25f;
+    WIP::Physics::PolygonCollider2D hexagon(
+        {{
+            { 0.0f, -0.2f},
+            { 0.2f, -0.1f},
+            { 0.2f,  0.1f},
+            { 0.0f,  0.2f},
+            {-0.2f, -0.1f},
+            {-0.2f,  0.1f},
+        }}
+    );
+    
+    for (U32 y = 0; y < 21; y++)
     {
-        for (I32 x = 0; x < 20; x++)
+        for (I32 x = 0; x < 40; x++)
         {
-            tf.Position = { x * step, y * step - 10 * step };
+            tf.Position = { x * step - 5 * step, y * step - 10.5f * step };
+            tf.Rotation = Random::Float(-Math::Pi(), Math::Pi());
             m_Transforms.push_back(CreateRef<Component::LocalToWorldTransform2D>(tf));
             rbDef.Transform = *m_Transforms.back();
             //rbDef.Position += glm::vec2(Random::Float2(-step * 0.5f, step * 0.5f));
-            WIP::Physics::CircleCollider2D circle{ glm::vec2{0.0f}, step * 0.25f };
             WIP::Physics::PolygonCollider2D box;
-            auto bbox = box.SetAsBox(glm::vec2{ step * 0.25f, step * 0.25f});
-            colDef.Collider = &box;
+            auto bbox = box.SetAsBox(glm::vec2{ step * 0.5f, step * 0.5f});
+            colDef.Collider = &hexagon;
+            colDef.PhysicsMaterial.Density = 1.0f;
             colDef.PhysicsMaterial.Restitution = 0.3f;
             auto body = m_World.CreateBody(rbDef);
             m_World.AddCollider(body, colDef);
@@ -135,6 +156,7 @@ void RigidBodyNewPhysicsExample::OnUpdate()
         avgFrameTime = avgFrameTime + 1.0f / frames * (dt - avgFrameTime);
         ENGINE_INFO("Simulation time: {:.4f}ms, Worst: {:.4f}ms, Avg: {:.4f}ms", dt, worstFrameTime, avgFrameTime);
         if (Input::GetKey(Key::Space)) m_World.SetGravity(glm::vec2{ 0.0f, -10.0f });
+        if (Input::GetKey(Key::X)) m_World.SetGravity(glm::vec2{ 0.0f, 0.0f });
         if (Input::GetKeyDown(Key::R)) m_World.SetGravity(Random::Float2(-30.0f, 30.0f));
         if (Input::GetKey(Key::A)) m_Mover->AddForce({ -10.0f,   0.0f }, WIP::Physics::ForceMode::Impulse);
         if (Input::GetKey(Key::D)) m_Mover->AddForce({  10.0f,   0.0f }, WIP::Physics::ForceMode::Impulse);

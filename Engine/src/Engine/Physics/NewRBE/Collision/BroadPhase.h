@@ -161,7 +161,7 @@ namespace Engine::WIP::Physics
 		Collider2D* secondaryCollider = reinterpret_cast<Collider2D*>(m_Tree.GetPayload(secondaryNode));
 		// No contact resolution between colliders of the same body.
 		if (primaryCollider->GetAttachedRigidBody() == secondaryCollider->GetAttachedRigidBody()) return;
-		U64 mapKey = Math::I32PairKey(std::make_pair(primaryNode, secondaryNode));
+		I64 mapKey = Math::I32PairKey(std::make_pair(primaryNode, secondaryNode));
 		if (m_ContactsMap.find(mapKey) != m_ContactsMap.end()) return;		
 		
 		PotentialContact2D contact{ {primaryCollider, secondaryCollider} };

@@ -2,9 +2,8 @@
 
 #include "Collider.h"
 
-#include <complex.h>
-
 #include "Engine/ECS/Components.h"
+#include "Engine/Math/LinearAlgebra.h"
 #include "Engine/Physics/NewRBE/RigidBody.h"
 
 namespace Engine::WIP::Physics
@@ -206,8 +205,6 @@ namespace Engine::WIP::Physics
 			min = Math::Min(v, min);
 			max = Math::Max(v, max);
 		}
-		min -= glm::vec2 {m_Radius, m_Radius};
-		max += glm::vec2 {m_Radius, m_Radius};
 		AABB2D bounds = DefaultBounds2D::GetFromMinMax(min, max);
 		return Box2D{.Center = bounds.Center, .HalfSize = bounds.HalfSize};
 	}
@@ -226,8 +223,6 @@ namespace Engine::WIP::Physics
 			min = Math::Min(transformed, min);
 			max = Math::Max(transformed, max);
 		}
-		min -= glm::vec2 {m_Radius, m_Radius};
-		max += glm::vec2 {m_Radius, m_Radius};
 		return DefaultBounds2D::GetFromMinMax(min, max);
 	}
 
@@ -255,7 +250,7 @@ namespace Engine::WIP::Physics
 
 			inertia += (0.25f * oneThird * D) * (integralX2 + integralY2);
 		}
-		MassInfo2D massInfo;
+		MassInfo2D massInfo{};
 		massInfo.Mass = area * m_PhysicsMaterial.Density;
 		centroid = (1.0f / area) * centroid;
 		massInfo.CenterOfMass = centroid + refPoint;

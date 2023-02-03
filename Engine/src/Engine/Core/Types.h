@@ -20,9 +20,9 @@ namespace Engine
 		using F64 = double;
 
 		inline auto operator""_B(const U64 val)   -> U64 { return val; }
-		inline auto operator""_KiB(const U64 val) -> U64 { return 1024 * val; }
-		inline auto operator""_MiB(const U64 val) -> U64 { return 1024 * 1024 * val; }
-		inline auto operator""_GiB(const U64 val) -> U64 { return 1024 * 1024 * 1024 * val; }
+		inline auto operator""_KiB(const U64 val) -> U64 { return 1024llu * val; }
+		inline auto operator""_MiB(const U64 val) -> U64 { return 1024llu * 1024llu * val; }
+		inline auto operator""_GiB(const U64 val) -> U64 { return 1024llu * 1024llu * 1024llu * val; }
 	}
 }
 

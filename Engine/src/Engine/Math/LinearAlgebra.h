@@ -34,7 +34,7 @@ namespace Engine
         
         inline glm::vec2 CombineRotation(const glm::vec2& rotVecA, const glm::vec2& rotVecB)
         {
-            return ComplexMultiply(rotVecA, rotVecB);
+            return glm::normalize(ComplexMultiply(rotVecA, rotVecB));
         }
 
         inline glm::vec2 Rotate(const glm::vec2& vec, const glm::vec2& rotVec)

@@ -68,7 +68,10 @@ namespace Engine::WIP::Physics
 				OnContactDestroy(toDelete);
 				continue;
 			}
-
+			// Before performing heavy contact generation, check that tight aabb of objects actually collide.
+			if (!wasTouching &&
+				!colliderA->GenerateBounds(colliderA->GetAttachedTransform())
+					.Intersects(colliderB->GenerateBounds(colliderB->GetAttachedTransform()))) continue;
 			Contact2D* narrowContact = ContactManager::Create(m_ContactAllocator, colliderA, colliderB);
 			if (contactInfo->Manifold == nullptr)
 			{

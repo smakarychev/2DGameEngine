@@ -96,7 +96,7 @@ namespace Engine::WIP::Physics
 				return;
 			}
 			const glm::vec2 centerOffset = second.Center - first.Center;
-			const F32 distance = glm::distance(first.Center, second.Center);
+			const F32 distance = glm::length(centerOffset);
 			Radius = (first.Radius + second.Radius + distance) * 0.5f;
 			Center = first.Center;
 			if (distance > 0)
@@ -108,6 +108,19 @@ namespace Engine::WIP::Physics
 		void Expand(const glm::vec2& expansion)
 		{
 			Radius += Math::Max(expansion.x, expansion.y);
+		}
+
+		void EncapsulatePoint(const glm::vec2& point)
+		{
+			glm::vec2 distVec = point - Center;
+			F32 distSquared = glm::length2(distVec);
+			if (distSquared > Radius * Radius)
+			{
+				F32 dist = Math::Sqrt(distSquared);
+				F32 radius = 0.5f * (Radius + dist);
+				Center += (radius - Radius) / dist * distVec;
+				Radius = radius;
+			}
 		}
 
 		F32 GetPerimeter() const
