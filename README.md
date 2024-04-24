@@ -40,8 +40,7 @@ Mario clone with scene editor
 
 Demonstration of physics engine
 
-![rbphysics](./images/physics.mp4)
-
+https://github.com/smakarychev/2DGameEngine/assets/49116143/517d8c15-41c0-4055-8bb2-146c365d482c
 
 ### GemWars
 A very simple geometry wars clone
