@@ -31,8 +31,10 @@ Mario clone with scene editor
 
 ![editor](./images/editor.png)
 
-![game1](./images/game1.png)
-![game2](./images/game2.png)
+|  ![game1](./images/game1.png) | ![game2](./images/game2.png)   |
+| ----------- |----|
+
+
 
 ### Rigid body physics
 
