@@ -111,8 +111,8 @@ namespace Engine
 		struct ManagedPoolAllocator
 		{
 		public:
-			ManagedPoolAllocator(U64 typeSizeBytes)
-				: m_Allocator(CreateRef<PoolAllocator>(typeSizeBytes)), m_Stats(), m_BaseTypeSize(m_Allocator->GetBaseTypeSize())
+			ManagedPoolAllocator(U64 typeSizeBytes, U64 count = POOL_ALLOCATOR_DEFAULT_COUNT, U64 incrementElements = POOL_ALLOCATOR_INCREMENT_ELEMENTS)
+				: m_Allocator(CreateRef<PoolAllocator>(typeSizeBytes, count, incrementElements)), m_Stats(), m_BaseTypeSize(m_Allocator->GetBaseTypeSize())
 			{}
 			const MemoryManagerStats& GetStats() const { return m_Stats; }
 			PoolAllocator* GetUnderlyingAllocator() const { return m_Allocator.get(); }
@@ -198,8 +198,8 @@ namespace Engine
 		struct MarkedAllocator
 		{
 			AllocatorPolyType<PoolAllocator*, BuddyAllocator*, FreelistRedBlackAllocator*> Allocator;
-			U64 Mark;
-			U64 HigherBound;
+			U64 Mark{};
+			U64 HigherBound{};
 		};
 
 		static std::vector<MarkedAllocator> s_Allocators;
@@ -276,7 +276,7 @@ namespace Engine
 		MemoryManager::Dealloc(static_cast<void*>(obj), sizeof(T) * count);
 	}
 
-	template <typename T, typename Alloc, typename ... Args>
+	template <typename T, typename Alloc>
 	void DeleteAlloc(Alloc& alloc, T* obj)
 	{
 		obj->~T();

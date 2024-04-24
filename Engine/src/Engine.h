@@ -110,3 +110,6 @@
 #include "Engine/Scene/Serialization/Prefab.h"
 #include "Engine/Scene/Serialization/SceneSerializer.h"
 #include "Engine/Scene/Serialization/SerializationUtils.h"
+
+/* TEMP */
+#include "Engine/Physics/NewRBE/Newest/PhysicsSystem.h"

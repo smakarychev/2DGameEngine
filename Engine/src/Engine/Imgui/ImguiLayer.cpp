@@ -24,7 +24,7 @@ namespace Engine
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		ImGui::SetAllocatorFunctions([](U64 size, void*) { return MemoryManager::Alloc(size); }, [](void* address, void*) { return MemoryManager::Dealloc(address); });
+		//ImGui::SetAllocatorFunctions([](U64 size, void*) { return MemoryManager::Alloc(size); }, [](void* address, void*) { return MemoryManager::Dealloc(address); });
 		SetUpStyle();
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow(), true);
 		ImGui_ImplOpenGL3_Init("#version 450");

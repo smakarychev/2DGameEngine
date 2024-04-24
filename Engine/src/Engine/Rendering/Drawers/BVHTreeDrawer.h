@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Engine/Math/MathUtils.h"
-#include "Engine/Physics/NewRBE/Collision/BVHTree.h"
+#include "Engine/Physics/NewRBE/Newest/Collision/BroadPhase/BVHTree.h"
 
 #include "Engine/Physics/RigidBodyEngine/Collision/BroadPhase.h"
 #include "Engine/Rendering/Renderer2D.h"
@@ -13,7 +13,7 @@ namespace Engine
 	public:
 		static void Draw(const Physics::BVHTree2D<Physics::AABB2D>& tree);
 		// TODO: TEMP
-		static void Draw(const WIP::Physics::BVHTree2D<WIP::Physics::AABB2D>& tree);
+		static void Draw(const WIP::Physics::Newest::BVHTree2D& tree);
 	};
 
 	inline void BVHTreeDrawer::Draw(const Physics::BVHTree2D<Physics::AABB2D>& tree)
@@ -44,7 +44,7 @@ namespace Engine
 		}
 	}
 
-	inline void BVHTreeDrawer::Draw(const WIP::Physics::BVHTree2D<WIP::Physics::AABB2D>& tree)
+	inline void BVHTreeDrawer::Draw(const WIP::Physics::Newest::BVHTree2D& tree)
 	{
 		for (const auto& node : tree.m_Nodes)
 		{

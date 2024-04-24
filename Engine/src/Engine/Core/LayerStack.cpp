@@ -12,8 +12,8 @@ namespace Engine
 
 	LayerStack::~LayerStack()
 	{
-		for (auto layer : m_Layers)
-			layer->~Layer();
+		for (auto& layer : m_Layers)
+			layer->OnDetach();
 	}
 
 	void LayerStack::PushLayer(Ref<Layer> layer)

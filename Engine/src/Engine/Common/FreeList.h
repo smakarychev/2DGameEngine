@@ -40,8 +40,8 @@ namespace Engine
 		T& operator[](I32 n);
 		const T& operator[](I32 n) const;
 
-		std::vector<FreeElement>::iterator begin() { return m_Data.begin(); }
-		std::vector<FreeElement>::iterator end() { return m_Data.end(); }
+		typename std::vector<FreeElement>::iterator begin() { return m_Data.begin(); }
+		typename std::vector<FreeElement>::iterator end() { return m_Data.end(); }
 
 	private:
 		union FreeElement
@@ -99,13 +99,13 @@ namespace Engine
 	}
 
 	template<typename T>
-	inline I32 FreeList<T>::GetFirstFree()
+	I32 FreeList<T>::GetFirstFree()
 	{
 		return m_FirstFree;
 	}
 
 	template<typename T>
-	FreeList<T>::FreeElement FreeList<T>::Get(I32 n)
+	typename FreeList<T>::FreeElement FreeList<T>::Get(I32 n)
 	{
 		return m_Data[n];
 	}

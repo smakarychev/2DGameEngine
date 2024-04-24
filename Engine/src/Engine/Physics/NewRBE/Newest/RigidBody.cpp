@@ -2,6 +2,8 @@
 
 #include "RigidBody.h"
 
+#include "Collision/Colliders/Collider2D.h"
+
 namespace Engine::WIP::Physics::Newest
 {
     RigidBody2D::RigidBody2D(const RigidBodyDesc2D& rbDesc)
@@ -11,7 +13,19 @@ namespace Engine::WIP::Physics::Newest
     
     void RigidBody2D::RecalculateBounds()
     {
+        ENGINE_CORE_ASSERT(m_Collider != nullptr, "Body without collider has no bounds.")
         m_Bounds = m_Collider->GenerateBounds(m_Transform);
+        
+        glm::vec2 largestAxis = m_Bounds.HalfSize.x > m_Bounds.HalfSize.y ?
+            glm::vec2{m_Bounds.HalfSize.x, 0.0f} :
+            glm::vec2{0.0f, m_Bounds.HalfSize.y};
+        m_DynamicsData->SetTestSpheres({m_Bounds.Center, m_Bounds.Center + largestAxis});
+    }
+
+    void RigidBody2D::RecalculateMass()
+    {
+        MassInfo2D mi = m_Collider->CalculateMass();
+        m_DynamicsData->SetMassInfo(mi);
     }
 
     void RigidBody2D::RecalculateCenterOfMass()
@@ -138,7 +152,8 @@ namespace Engine::WIP::Physics::Newest
 
     const glm::vec2& RigidBody2D::GetForce() const
     {
-        return m_DynamicsData == nullptr ? 0.0f : m_DynamicsData->GetForce();
+        static constexpr auto nullVec2 =glm::vec2{0.0f}; 
+        return m_DynamicsData == nullptr ? nullVec2 : m_DynamicsData->GetForce();
     }
 
     const glm::vec2& RigidBody2D::GetForceU() const
@@ -262,7 +277,7 @@ namespace Engine::WIP::Physics::Newest
 
     DynamicsFlags2D RigidBody2D::GetDynamicsFlags() const
     {
-        return m_DynamicsData == nullptr ? DynamicsFlags2D::None : m_DynamicsData->GetDynamicsFlags();
+        return m_DynamicsData == nullptr ? DynamicsFlags2D{ DynamicsFlags2D::None } : m_DynamicsData->GetDynamicsFlags();
     }
 
     DynamicsFlags2D RigidBody2D::GetDynamicsFlagsU() const

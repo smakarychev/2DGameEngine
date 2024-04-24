@@ -2,9 +2,9 @@
 
 #include <glm/glm.hpp>
 
+#include "Collision/Colliders/Bounds2D.h"
 #include "Engine/Core/Core.h"
 #include "Engine/Core/Types.h"
-#include "Engine/Physics/NewRBE/Newest/Colliders/Collider2D.h"
 
 namespace Engine::WIP::Physics::Newest
 {
@@ -27,7 +27,8 @@ namespace Engine::WIP::Physics::Newest
 			RestrictX = Bit(2), RestrictY = Bit(3), RestrictPos = RestrictX | RestrictY,
 			RestrictPosAndRotation = RestrictRotation | RestrictPos,
 			DisallowSleep = Bit(4),
-			UseSyntheticMass = Bit(5), UseSyntheticInertia = Bit(6)
+			UseSyntheticMass = Bit(5), UseSyntheticInertia = Bit(6),
+			EnableSelfCollision = Bit(7)
 		};
 		DFlags Flags;
 		bool CheckFlag(DFlags flag) const { return (Flags & flag) == flag; }
@@ -62,20 +63,24 @@ namespace Engine::WIP::Physics::Newest
 	
 	class DynamicsData2D
 	{
+		friend class BodyManager;
 	public:
 		DynamicsData2D(const DynamicsDataDesc2D& ddDesc);
-
-		void RecalculateMass(MassCalculation massCalculation = MassCalculation::MassAndInertia);
 
 		F32 GetInverseMass() const { return m_InverseMass; }
 		void SetInverseMass(F32 inverseMass) { m_InverseMass = inverseMass; }
 		F32 GetMass() const { return 1.0f / m_InverseMass; }
-		void SetMass(F32 mass) { m_InverseMass = Math::CompareEqual(mass, 0.0f) ? 0.0f : 1.0f / mass; }
+		void SetMass(F32 mass) { m_InverseMass = mass > 0.0f ? 1.0f / mass : 0.0f; }
+
+		bool HasFiniteMass() const { return m_InverseMass > 0.0f; }
+		bool HasFiniteInertia() const { return m_InverseInertia > 0.0f; }
 
 		F32 GetInverseInertia() const { return m_InverseInertia; }
 		void SetInverseInertia(F32 inverseInertia) { m_InverseInertia = inverseInertia; }
 		F32 GetInertia() const { return 1.0f / m_InverseInertia; }
-		void SetInertia(F32 inertia) { m_InverseInertia = Math::CompareEqual(inertia, 0.0f) ? 0.0f : 1.0f / inertia; }
+		void SetInertia(F32 inertia) { m_InverseInertia = inertia > 0.0f ? 1.0f / inertia : 0.0f; }
+
+		void SetMassInfo(const MassInfo2D& massInfo) { m_InverseMass = massInfo.Mass > 0.0f ? 1.0f / massInfo.Mass : 0.0f; m_InverseInertia = massInfo.Inertia > 0.0f ? 1.0f / massInfo.Inertia : 0.0f; }
 		
 		const glm::vec2& GetLinearVelocity() const { return m_LinearVelocity; }
 		void SetLinearVelocity(const glm::vec2& linearVelocity) { m_LinearVelocity = linearVelocity; }

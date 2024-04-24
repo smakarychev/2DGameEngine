@@ -16,11 +16,6 @@ namespace Engine::WIP::Physics::Newest
         if (m_DynamicsFlags.CheckFlag(DynamicsFlags2D::RestrictRotation)) m_InverseInertia = 0.0f;
     }
 
-    void DynamicsData2D::RecalculateMass(MassCalculation massCalculation)
-    {
-        ENGINE_CORE_ASSERT(false, "Unimplemented.")
-    }
-
     void DynamicsData2D::SetTestSpheres(const std::array<glm::vec2, 2>& points)
     {
         m_TestSpheres[0] = CircleBounds2D(points[0], 0.0f);

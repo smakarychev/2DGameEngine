@@ -20,7 +20,6 @@ namespace Engine {
 
 	Application::~Application()	
 	{
-
 	}
 
 	void Application::OnCreate()

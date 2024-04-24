@@ -118,7 +118,7 @@ void MarioScene::OnRender()
 
 void MarioScene::OnImguiUpdate()
 {
-    //m_ScenePanels.OnMainMenuDraw();
+    m_ScenePanels.OnMainMenuDraw();
 
     glm::vec2 mousePos = Input::MousePosition();
     
@@ -142,7 +142,7 @@ void MarioScene::OnImguiUpdate()
     
     if (!m_IsSceneReady) return;
     
-    //m_ScenePanels.OnImguiUpdate();
+    m_ScenePanels.OnImguiUpdate();
 }
 
 void MarioScene::OnSceneGlobalUpdate(Entity addedEntity)
@@ -317,8 +317,8 @@ void MarioScene::SRender()
     SGameMenu();
 
     // TODO: toggle debug draw.
-    //RigidBodyWorldDrawer::Draw(m_RigidBodyWorld2D);
-    //BVHTreeDrawer::Draw(m_RigidBodyWorld2D.GetBroadPhase().GetBVHTree());
+    RigidBodyWorldDrawer::Draw(m_RigidBodyWorld2D);
+    BVHTreeDrawer::Draw(m_RigidBodyWorld2D.GetBroadPhase().GetBVHTree());
     
     Renderer2D::EndScene();
     camera->CameraFrameBuffer->Unbind();

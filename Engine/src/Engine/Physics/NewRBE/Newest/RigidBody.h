@@ -1,23 +1,23 @@
 ﻿#pragma once
 
-#include "CollisionLayer.h"
+#include "Collision/CollisionLayer.h"
 #include "DynamicsData.h"
 #include "Engine/Math/LinearAlgebra.h"
 #include "Engine/Physics/NewRBE/Newest/Transform.h"
 
 namespace Engine::WIP::Physics::Newest
 {
-    class DynamicsData2D;
-    
+	class Collider2D;
+	class DynamicsData2D;
     
     enum class BodyType { Static, Dynamic, Kinematic };
-    enum class StartUpBehaviour { SetActive, SetInactive }; // TODO: move to body manager.
     
     struct RigidBodyDesc2D
     {
         Transform2D Transform{};
         BodyType BodyType{BodyType::Static};
         CollisionLayer CollisionLayer{CL_INVALID_LAYER};
+    	DynamicsDataDesc2D DynamicsDataDesc{};
     };
 
     using RigidBodyId2D = U32;
@@ -25,6 +25,8 @@ namespace Engine::WIP::Physics::Newest
     
     class RigidBody2D
     {
+    	friend class PhysicsFactory;
+    	friend class BodyManager;
     public:
         RigidBody2D(const RigidBodyDesc2D& rbDesc);
         
@@ -35,11 +37,16 @@ namespace Engine::WIP::Physics::Newest
         bool IsDynamic() const { return m_Type == BodyType::Dynamic; }
         bool IsKinematic() const { return m_Type == BodyType::Kinematic; }
 
+    	bool IsInBroadPhase() const { return m_IndexInBroadPhase != RB_INVALID_ID; }
+    	void SetIndexInBroadPhase(RigidBodyId2D index) { m_IndexInBroadPhase = index; }
+    	RigidBodyId2D GetIndexInBroadPhase() const { return m_IndexInBroadPhase; }
+    	
+    	bool HasCollider() const { return m_Collider != nullptr; }
 		Collider2D* GetCollider() const { return m_Collider; }
     	void SetCollider(Collider2D* collider) { m_Collider = collider; }
     	
-    	void SetUserData(void* userData) { m_UserData = userData; }
     	void* GetUserData() const { return m_UserData; }
+    	void SetUserData(void* userData) { m_UserData = userData; }
 
     	const glm::vec2& GetCenterOfMass() const { return m_CenterOfMass; }
     	void RecalculateCenterOfMass();
@@ -51,9 +58,9 @@ namespace Engine::WIP::Physics::Newest
     	const glm::vec2& GetRotation() const { return m_Transform.Rotation; }
     	void AddRotation(F32 angleRad) { m_Transform.Rotation = Math::CombineRotation(m_Transform.Rotation, Rotation(angleRad)); }
 
-    	void SetTransform(const Transform2D& transform) { m_Transform = transform; }
     	const Transform2D& GetTransform() const { return m_Transform; }
     	Transform2D& GetTransform() { return m_Transform; }
+    	void SetTransform(const Transform2D& transform) { m_Transform = transform; }
     	glm::vec2 TransformToWorld(const glm::vec2& point) const;
     	glm::vec2 TransformDirectionToWorld(const glm::vec2& dir) const;
     	glm::vec2 TransformToLocal(const glm::vec2& point) const;
@@ -65,6 +72,7 @@ namespace Engine::WIP::Physics::Newest
     	const AABB2D& GetBounds() const { return m_Bounds; }
     	void SetBounds(const AABB2D& bounds) { m_Bounds = bounds; }
     	void RecalculateBounds();
+    	void RecalculateMass();
     	
     	// **** Dynamics data related **********************************************
         const DynamicsData2D& GetDynamicsData() const;
@@ -132,13 +140,12 @@ namespace Engine::WIP::Physics::Newest
     	Collider2D* m_Collider{nullptr};
 
     	CollisionLayer m_CollisionLayer{CL_INVALID_LAYER};
+    	RigidBodyId2D m_IndexInBroadPhase{ RB_INVALID_ID };
 
     	// Bounds in world space.
     	AABB2D m_Bounds{}; 
 
 		void* m_UserData{nullptr};
-    	
-        //TODO: collider.
     };
 }
 

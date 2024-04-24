@@ -4,9 +4,8 @@
 
 #include "Engine/Rendering/Renderer2D.h"
 
-#include <glm/gtc/type_ptr.hpp>
-
-#include "Engine/Physics/NewRBE/RigidBodyWorld.h"
+#include "Engine/Physics/NewRBE/Newest/PhysicsSystem.h"
+#include "Engine/Physics/NewRBE/Newest/Collision/Colliders/PolygonCollider2D.h"
 
 namespace Engine
 {
@@ -15,7 +14,7 @@ namespace Engine
     public:
 		static void Draw(const Physics::RigidBodyWorld2D& world);
 		//TODO: TEMP
-		static void Draw(const WIP::Physics::RigidBodyWorld2D& world);
+		static void Draw(const WIP::Physics::Newest::PhysicsSystem& physicsSystem);
 	};
 
 	inline void RigidBodyWorldDrawer::Draw(const Physics::RigidBodyWorld2D& world)
@@ -64,15 +63,16 @@ namespace Engine
 		}
 	}
 
-	inline void RigidBodyWorldDrawer::Draw(const WIP::Physics::RigidBodyWorld2D& world)
+	inline void RigidBodyWorldDrawer::Draw(const WIP::Physics::Newest::PhysicsSystem& physicsSystem)
 	{
         const glm::vec4 dynamicBodyColliderColor = glm::vec4{ 0.31f, 0.45f, 0.38f, 1.0f };
         const glm::vec4 kinematicBodyColliderColor = glm::vec4{ 0.31f, 0.38f, 0.45f, 1.0f };
         const glm::vec4 staticBodyColliderColor = glm::vec4{ 0.45f, 0.31f, 0.38f, 1.0f };
 
-		for (auto& bodyEntry : world.GetBodyList())
+		auto& bodies = physicsSystem.m_BodyManager.GetBodies();
+		for (auto* body : bodies)
 		{
-			WIP::Physics::RigidBody2D* body = bodyEntry.GetRigidBody();
+			if (!physicsSystem.m_BodyManager.IsBodyValid(body)) continue;
 			Component::LocalToWorldTransform2D bodyCoMTransform;
 			bodyCoMTransform.Position = body->GetTransform().Transform(body->GetCenterOfMass());
 			bodyCoMTransform.Scale = glm::vec2{0.05f, 0.05f};
@@ -83,10 +83,10 @@ namespace Engine
 			sp.Tint = {0.5f,0.5f,0.5f, 1.0f};
 			Renderer2D::DrawQuad(bodyCoMTransform, sp);
 
-			for (auto& colliderEntry : body->GetColliderList())
+			if (body->HasCollider())
 			{
-				WIP::Physics::PolygonCollider2D* collider = static_cast<WIP::Physics::PolygonCollider2D*>(colliderEntry.GetCollider());
-				WIP::Physics::AABB2D colliderBounds = collider->GenerateBounds(WIP::Physics::Transform2D{});
+				auto* collider = reinterpret_cast<WIP::Physics::Newest::PolygonCollider2D*>(body->GetCollider());
+				WIP::Physics::Newest::AABB2D colliderBounds = collider->GenerateLocalBounds();
 				Component::LocalToWorldTransform2D colliderTransform{};
 
 				colliderTransform = colliderTransform.Concatenate(bodyRealTransform);
@@ -95,9 +95,9 @@ namespace Engine
 				pr.Polygon = &polygon;
 				switch (body->GetType())
 				{
-				case WIP::Physics::RigidBodyType2D::Dynamic: pr.Tint = dynamicBodyColliderColor; break;
-				case WIP::Physics::RigidBodyType2D::Kinematic: pr.Tint = kinematicBodyColliderColor; break;
-				case WIP::Physics::RigidBodyType2D::Static: pr.Tint = staticBodyColliderColor; break;
+				case WIP::Physics::Newest::BodyType::Dynamic: pr.Tint = dynamicBodyColliderColor; break;
+				case WIP::Physics::Newest::BodyType::Kinematic: pr.Tint = kinematicBodyColliderColor; break;
+				case WIP::Physics::Newest::BodyType::Static: pr.Tint = staticBodyColliderColor; break;
 				}
 	
 				Renderer2D::DrawPolygon(colliderTransform, pr, RendererAPI::PrimitiveType::Line);

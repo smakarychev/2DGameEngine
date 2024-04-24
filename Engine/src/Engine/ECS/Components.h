@@ -21,10 +21,6 @@ class FiniteStateMachine;
 namespace Engine
 {
     class CameraController;
-}
-
-namespace Engine
-{
     class Registry;
 }
 

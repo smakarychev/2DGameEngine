@@ -1,3 +1,4 @@
+* [ ] **!!!IMPORTANT!!!** Check if I can use `PopCallback` and `SwapCallback` (in `ComponentPool`) as lambdas, that are initialized in some method (`Init`) that is dependant on parameter T. 
 * [ ] Change contact normal to be local **!!!ASAP!!!** (only box-box is correct).
 * [ ] Change contact ref point to be local **!!!ASAP!!!** (only box-box is correct).
 * [x] Implement asking mem. manager for new pool allocator.
